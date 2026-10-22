@@ -1,7 +1,7 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.2 ✦
---  Home • Players • Player • Auto Fish • Car • Misc • Chat • News • Settings
+--  ✦ LYNEX HUB v3.1 ✦
+--  Home • Players • Player • Auto Fish • Car • Misc • News • Settings
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -11,7 +11,6 @@ local Lighting         = game:GetService("Lighting")
 local RunService       = game:GetService("RunService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local TeleportService  = game:GetService("TeleportService")
-local TextChatService  = game:GetService("TextChatService")
 
 local localPlayer = Players.LocalPlayer
 local playerGui   = localPlayer:WaitForChild("PlayerGui")
@@ -329,7 +328,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs  ◀️ + Chat
+-- 10) Tabs  ◀️ + Misc (جديد)
 --==================================================================
 local TABS = {
     { id = "home",     name = "Home",      icon = "⌂"  },
@@ -337,9 +336,8 @@ local TABS = {
     { id = "player",   name = "Player",    icon = "●"  },
     { id = "autofish", name = "Auto Fish", icon = "≋"  },
     { id = "car",      name = "Car",       icon = "🚗" },
-    { id = "misc",     name = "Misc",      icon = "⚒"  },
-    { id = "chat",     name = "Chat",      icon = "✉"  },  -- ◀️ جديد
-    { id = "news",     name = "News",      icon = "▤"  },
+    { id = "misc",     name = "Misc",      icon = "⚒"  },  -- ◀️ جديد
+    { id = "news",     name = "News",      icon = "✉"  },
     { id = "settings", name = "Settings",  icon = "⚙"  },
 }
 
@@ -482,7 +480,6 @@ end
 local uidLbl = smallInfo(infoX, 95, "#", "—")
 local ageLbl = smallInfo(infoX + 100, 95, "◷", "—")
 
--- Server Information
 local SERVER_ROWS = {
     { key = "players",  icon = "◉", label = "Players"   },
     { key = "gameName", icon = "✦", label = "Game Name" },
@@ -1046,303 +1043,7 @@ Players.PlayerRemoving:Connect(function()
 end)
 
 --==================================================================
--- 15) Chat Page  ◀️ جديد
---==================================================================
-local CHAT_MAX_MESSAGES = 100
-local chatMessages = {}
-local chatSeenIds = {}
-local chatFilter = ""
-local chatRenderQueued = false
-
-local chatPage = createPage("chat")
-create("UIPadding", {
-    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 6),
-    PaddingRight = UDim.new(0, 4),
-}, chatPage)
-
--- ── Search bar ──
-local chatSearchFrame = create("Frame", {
-    Name = "ChatSearchFrame", Size = UDim2.new(1, 0, 0, 38),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, ZIndex = 4,
-}, chatPage)
-addCorner(9, chatSearchFrame); addStroke(THEME.BORDER, 1, 0.2, chatSearchFrame)
-
-create("TextLabel", {
-    Size = UDim2.fromOffset(18, 38), Position = UDim2.new(0, 7, 0, 0),
-    BackgroundTransparency = 1, Text = "⌕", Font = FONT.Bold, TextSize = 15,
-    TextColor3 = THEME.P_GLOW, ZIndex = 5,
-}, chatSearchFrame)
-
-local chatSearchBox = create("TextBox", {
-    Name = "ChatSearchBox", Size = UDim2.new(1, -64, 1, 0),
-    Position = UDim2.new(0, 26, 0, 0), BackgroundTransparency = 1, Text = "",
-    PlaceholderText = "Search message, DisplayName, or Username…",
-    PlaceholderColor3 = THEME.TX_SUBTLE, Font = FONT.Medium, TextSize = 11,
-    TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-    ClearTextOnFocus = false, MultiLine = false, TextEditable = true, ZIndex = 5,
-}, chatSearchFrame)
-
-local chatClearBtn = create("TextButton", {
-    Size = UDim2.fromOffset(28, 28), Position = UDim2.new(1, -32, 0.5, -14),
-    BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
-    Text = "✕", Font = FONT.Bold, TextSize = 10, TextColor3 = THEME.P_GLOW,
-    Visible = false, ZIndex = 5,
-}, chatSearchFrame)
-addCorner(6, chatClearBtn)
-
--- ── Status / notice ──
-local chatStatusLbl = create("TextLabel", {
-    Size = UDim2.new(1, 0, 0, 18),
-    Position = UDim2.new(0, 0, 0, 44),
-    BackgroundTransparency = 1, Text = "◈  Waiting for messages…",
-    Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5,
-}, chatPage)
-
--- ── Message list ──
-local chatList = create("ScrollingFrame", {
-    Name = "ChatList", Size = UDim2.new(1, 0, 1, -70),
-    Position = UDim2.new(0, 0, 0, 70), BackgroundTransparency = 1,
-    BorderSizePixel = 0, ScrollBarThickness = 3,
-    ScrollBarImageColor3 = THEME.P_BRIGHT,
-    CanvasSize = UDim2.new(0, 0, 0, 0),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    ScrollingDirection = Enum.ScrollingDirection.Y, ZIndex = 4,
-}, chatPage)
-create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, chatList)
-create("UIPadding", { PaddingRight = UDim.new(0, 2), PaddingBottom = UDim.new(0, 4) }, chatList)
-
--- ── Unsupported notice ──
-local chatUnsupported = create("TextLabel", {
-    Size = UDim2.new(1, 0, 0, 80),
-    Position = UDim2.new(0, 0, 0.5, -40),
-    BackgroundTransparency = 1,
-    Text = "⚠  Chat service is not available in this experience.\nRoblox does not expose in-game messages to scripts here.",
-    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
-    TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-    Visible = false, ZIndex = 5,
-}, chatPage)
-
--- ── Message card builder ──
-local function buildChatCard(msg, order)
-    local card = create("Frame", {
-        Name = "Msg_" .. tostring(msg.id),
-        Size = UDim2.new(1, 0, 0, 62),
-        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.08,
-        BorderSizePixel = 0, LayoutOrder = order, ZIndex = 5,
-    }, chatList)
-    addCorner(8, card); addStroke(THEME.BORDER, 1, 0.25, card)
-
-    -- Avatar
-    local avFrame = create("Frame", {
-        Size = UDim2.fromOffset(38, 38),
-        Position = UDim2.new(0, 8, 0, 8),
-        BackgroundColor3 = THEME.BG_CARD_HI, BorderSizePixel = 0,
-        ClipsDescendants = true, ZIndex = 6,
-    }, card)
-    addCorner(19, avFrame); addStroke(THEME.P_BRIGHT, 1, 0.3, avFrame)
-
-    local avatar = create("ImageLabel", {
-        Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-        Image = "", ScaleType = Enum.ScaleType.Crop, ZIndex = 7,
-    }, avFrame)
-    -- default fallback avatar
-    pcall(function()
-        avatar.Image = string.format("rbxthumb://type=AvatarHeadShot&id=%d&w=150&h=150", msg.userId)
-    end)
-
-    -- DisplayName
-    create("TextLabel", {
-        Size = UDim2.new(1, -58, 0, 16),
-        Position = UDim2.new(0, 52, 0, 6),
-        BackgroundTransparency = 1,
-        Text = msg.displayName,
-        Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
-    }, card)
-
-    -- Username
-    create("TextLabel", {
-        Size = UDim2.new(1, -58, 0, 12),
-        Position = UDim2.new(0, 52, 0, 22),
-        BackgroundTransparency = 1,
-        Text = "@" .. msg.username,
-        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
-    }, card)
-
-    -- Message text
-    create("TextLabel", {
-        Size = UDim2.new(1, -58, 0, 24),
-        Position = UDim2.new(0, 52, 0, 34),
-        BackgroundTransparency = 1,
-        Text = msg.text,
-        Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextWrapped = true, ZIndex = 6,
-    }, card)
-
-    return card
-end
-
--- ── Render ──
-local function renderChat()
-    if chatRenderQueued then return end
-    chatRenderQueued = true
-    task.defer(function()
-        chatRenderQueued = false
-        if not chatList or not chatList.Parent then return end
-
-        for _, child in ipairs(chatList:GetChildren()) do
-            if child:IsA("Frame") then child:Destroy() end
-        end
-
-        local filter = tostring(chatFilter or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
-        local order = 0
-        local visibleCount = 0
-
-        for _, msg in ipairs(chatMessages) do
-            local match = filter == ""
-                or msg.text:lower():find(filter, 1, true) ~= nil
-                or msg.displayName:lower():find(filter, 1, true) ~= nil
-                or msg.username:lower():find(filter, 1, true) ~= nil
-            if match then
-                order += 1
-                buildChatCard(msg, order)
-                visibleCount += 1
-            end
-        end
-
-        if visibleCount == 0 then
-            create("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 50),
-                BackgroundTransparency = 1,
-                Text = filter == "" and "◌  No messages yet" or "◌  No messages match your search",
-                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_SUBTLE,
-                TextXAlignment = Enum.TextXAlignment.Center,
-                TextYAlignment = Enum.TextYAlignment.Center,
-                LayoutOrder = 1, ZIndex = 5,
-            }, chatList)
-        end
-
-        -- Scroll to bottom (newest)
-        task.defer(function()
-            if chatList and chatList.Parent then
-                chatList.CanvasPosition = Vector2.new(0, math.huge)
-            end
-        end)
-    end)
-end
-
--- ── Add message ──
-local function addChatMessage(text, userId, displayName, username)
-    if not text or text == "" then return end
-    if not userId or userId <= 0 then return end
-
-    -- Prevent duplicate
-    local msgId = tostring(userId) .. "|" .. text .. "|" .. tostring(os.clock())
-    -- Use a simpler dedupe key: just avoid exact same text from same user in <0.5s
-    -- We'll use TextChatService MessageId if available (passed separately)
-end
-
--- ── Chat event connection (TextChatService) ──
-local chatConnection = nil
-local function setupChatListener()
-    -- Check if TextChatService is active
-    local okVersion, chatVersion = pcall(function()
-        return TextChatService.ChatVersion
-    end)
-
-    if not okVersion or not chatVersion then
-        chatUnsupported.Visible = true
-        chatStatusLbl.Text = "⚠  Chat service unavailable"
-        return
-    end
-
-    -- If LegacyChatService, MessageReceived may not fire; show notice
-    if chatVersion == Enum.ChatVersion.LegacyChatService then
-        chatUnsupported.Visible = true
-        chatStatusLbl.Text = "⚠  Legacy chat detected — limited support"
-        return
-    end
-
-    -- Connect MessageReceived
-    chatConnection = TextChatService.MessageReceived:Connect(function(message)
-        if not message then return end
-        local textSource = message.TextSource
-        if not textSource then return end
-        local userId = textSource.UserId
-        if not userId or userId <= 0 then return end
-
-        local player = Players:GetPlayerByUserId(userId)
-        if not player then return end
-
-        local text = message.Text
-        if not text or text == "" then return end
-
-        -- Dedupe using MessageId
-        local msgId = message.MessageId
-        if msgId then
-            if chatSeenIds[msgId] then return end
-            chatSeenIds[msgId] = true
-        end
-
-        local entry = {
-            id = msgId or tostring(userId) .. "_" .. tostring(#chatMessages),
-            userId = userId,
-            displayName = player.DisplayName,
-            username = player.Name,
-            text = text,
-        }
-
-        table.insert(chatMessages, entry)
-        if #chatMessages > CHAT_MAX_MESSAGES then
-            table.remove(chatMessages, 1)
-        end
-
-        chatStatusLbl.Text = "◈  " .. tostring(#chatMessages) .. " messages"
-        renderChat()
-    end)
-
-    chatStatusLbl.Text = "◈  Listening for messages…"
-end
-
--- ── Search logic ──
-local chatSearchThread = nil
-chatSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-    chatClearBtn.Visible = chatSearchBox.Text ~= ""
-    chatFilter = chatSearchBox.Text
-    if chatSearchThread then pcall(task.cancel, chatSearchThread) end
-    chatSearchThread = task.delay(0.06, function()
-        chatSearchThread = nil
-        renderChat()
-    end)
-end)
-chatClearBtn.MouseButton1Click:Connect(function()
-    chatSearchBox.Text = ""
-    chatFilter = ""
-    renderChat()
-end)
-
--- ── Start listener ──
-setupChatListener()
-
--- ── Cleanup ──
-local function chatCleanup()
-    if chatConnection then
-        pcall(function() chatConnection:Disconnect() end)
-        chatConnection = nil
-    end
-    chatMessages = {}
-    chatSeenIds = {}
-end
-
---==================================================================
--- 16) News
+-- 15) News
 --==================================================================
 local newsPage = createPage("news")
 local newsScroll = create("ScrollingFrame", {
@@ -1376,7 +1077,6 @@ local NEWS_DATA = {
     { title = "Server Info + Auto Fish", body = "Home now shows live Server Information. New Auto Fish tab loads the fishing script on demand.", date = "2025-03-08" },
     { title = "Car Script Tab", body = "New Car tab added. Load and run the Car Script on demand — mobile friendly with press animations.", date = "2025-03-15" },
     { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
-    { title = "Chat Tab", body = "New Chat tab displays public messages with avatar, DisplayName, Username, and instant search — mobile friendly.", date = "2025-03-29" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1412,7 +1112,7 @@ for i, item in ipairs(NEWS_DATA) do
 end
 
 --==================================================================
--- 17) Settings helpers
+-- 16) Settings helpers
 --==================================================================
 local settingsPage = createPage("settings")
 local settingsScroll = create("ScrollingFrame", {
@@ -1558,7 +1258,7 @@ local resetBtn = create("TextButton", {
 addCorner(10, resetBtn); addStroke(THEME.DANGER, 1.2, 0.15, resetBtn)
 
 --==================================================================
--- 18) Player Page
+-- 16.5) Player Page
 --==================================================================
 local playerPage = createPage("player", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, playerPage)
@@ -2012,11 +1712,10 @@ _G.LYNEX_CLEANUP = function()
     end
     if spectate.active then pcall(function() stopSpectating("silent") end) end
     if _G.LYNEX_CLEANUP_MISC then pcall(_G.LYNEX_CLEANUP_MISC) end
-    chatCleanup()
 end
 
 --==================================================================
--- 19) Auto Fish Page
+-- 16.6) Auto Fish Page
 --==================================================================
 local AUTO_FISH_URL = "https://raw.githubusercontent.com/coronavip100-max/Auto-fish/refs/heads/main/Auto%20fish"
 
@@ -2218,7 +1917,7 @@ end)
 styleActionButton(afLoadBtn, afLoadStroke)
 
 --==================================================================
--- 20) Car Page
+-- 16.7) Car Page
 --==================================================================
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
 
@@ -2407,7 +2106,7 @@ end)
 styleActionButton(carLoadBtn, carLoadStroke)
 
 --==================================================================
--- 21) Misc Page
+-- 16.8) Misc Page  ◀️ جديد
 --==================================================================
 local miscPage = createPage("misc", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, miscPage)
@@ -2428,6 +2127,7 @@ local miscState = {
     zoomOriginalMin = nil,
 }
 
+-- ── Misc Header card ──
 local miscHeaderCard = create("Frame", {
     Size = UDim2.new(1, 0, 0, 86),
     BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
@@ -2465,6 +2165,7 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscHeaderCard)
 
+-- ── Local-only notice ──
 local miscNotice = create("Frame", {
     Size = UDim2.new(1, 0, 0, 40),
     BackgroundColor3 = Color3.fromRGB(50, 30, 20), BackgroundTransparency = 0.15,
@@ -2479,6 +2180,7 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscNotice)
 
+-- ── Helper: two-button row ──
 local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight)
     local row = create("Frame", {
         Size = UDim2.new(1, 0, 0, 46), BackgroundTransparency = 1,
@@ -2513,6 +2215,7 @@ local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight
     return leftBtn, rightBtn
 end
 
+-- ── Helper: full-width button ──
 local function createMiscButton(parent, order, label, color, strokeColor, onClick)
     local btn = create("TextButton", {
         Size = UDim2.new(1, 0, 0, 44),
@@ -2528,6 +2231,7 @@ local function createMiscButton(parent, order, label, color, strokeColor, onClic
     return btn
 end
 
+-- ── Quality helpers ──
 local function getUserGameSettings()
     local ok, usFn = pcall(function() return UserSettings end)
     if not ok or not usFn then return nil end
@@ -2563,7 +2267,7 @@ local function getQualityIndex(setting)
     return nil
 end
 
-local qualityStatusLbl
+local qualityStatusLbl  -- forward ref
 
 local function updateQualityStatus()
     if not qualityStatusLbl then return end
@@ -2593,6 +2297,7 @@ local function increaseQuality()
     captureQualityOriginal()
     local lvl = getCurrentQualityLevel()
     if not lvl then
+        -- Fallback: modify Lighting
         pcall(function()
             Lighting.GlobalShadows = true
             Lighting.ShadowSoftness = 0.2
@@ -2635,6 +2340,7 @@ local function decreaseQuality()
     end
 end
 
+-- ── Lighting helpers ──
 local function captureLightingOriginals()
     if miscState.lightingOriginal then return end
     miscState.lightingOriginal = {
@@ -2679,6 +2385,7 @@ local function applyDay()
     showToast("◈  Day applied (local only)")
 end
 
+-- ── Server helpers ──
 local teleportBusy = false
 
 local function showConfirm(titleText, messageText, onConfirm)
@@ -2789,6 +2496,7 @@ local function rejoinServer()
     )
 end
 
+-- ── Infinite Zoom ──
 local function toggleInfiniteZoom(enabled)
     if enabled then
         if not miscState.zoomCaptured then
@@ -2816,6 +2524,11 @@ local function toggleInfiniteZoom(enabled)
     end
 end
 
+-- ══════════════════════════════════════════════════════════════════
+--  Misc UI — Build sections
+-- ══════════════════════════════════════════════════════════════════
+
+-- GRAPHICS section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  GRAPHICS", Font = FONT.Bold, TextSize = 12,
@@ -2839,6 +2552,7 @@ qualityStatusLbl = create("TextLabel", {
 }, miscPage)
 updateQualityStatus()
 
+-- TIME section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  TIME OF DAY", Font = FONT.Bold, TextSize = 12,
@@ -2859,6 +2573,7 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
+-- SERVER section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  SERVER", Font = FONT.Bold, TextSize = 12,
@@ -2880,6 +2595,7 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
+-- CAMERA section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  CAMERA", Font = FONT.Bold, TextSize = 12,
@@ -2902,6 +2618,7 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
+-- ── Misc cleanup ──
 _G.LYNEX_CLEANUP_MISC = function()
     if miscState.lightingOriginal then
         pcall(function()
@@ -2929,7 +2646,7 @@ _G.LYNEX_CLEANUP_MISC = function()
 end
 
 --==================================================================
--- 22) Floating button
+-- 17) Floating button
 --==================================================================
 local floatingBtn = create("TextButton", {
     Name = "FloatingBtn", Size = UDim2.fromOffset(48, 48),
@@ -2954,7 +2671,7 @@ floatingBadge = create("Frame", {
 addCorner(5, floatingBadge); addStroke(THEME.BG_PANEL, 1.5, 0, floatingBadge)
 
 --==================================================================
--- 23) Fade
+-- 18) Fade
 --==================================================================
 local origTransparency = {}
 local function scanTransparency(obj)
@@ -3011,7 +2728,7 @@ local function fadeTo(value, duration, style, direction, onDone)
 end
 
 --==================================================================
--- 24) Glow
+-- 19) Glow
 --==================================================================
 task.spawn(function()
     while screenGui and screenGui.Parent do
@@ -3032,7 +2749,7 @@ task.spawn(function()
 end)
 
 --==================================================================
--- 25) Press & Hover
+-- 20) Press & Hover
 --==================================================================
 local function attachPressEffect(btn)
     local baseSize = btn.Size
@@ -3076,7 +2793,7 @@ if UserInputService.MouseEnabled then
 end
 
 --==================================================================
--- 26) Drag
+-- 21) Drag
 --==================================================================
 local dragging, dragStart, startPos = false, nil, nil
 header.InputBegan:Connect(function(input)
@@ -3103,7 +2820,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --==================================================================
--- 27) Sidebar
+-- 22) Sidebar
 --==================================================================
 local sidebarOpen = true
 sidebar.Size = UDim2.new(0, sidebarW, 1, 0)
@@ -3122,7 +2839,7 @@ end
 menuBtn.MouseButton1Click:Connect(function() setSidebar(not sidebarOpen) end)
 
 --==================================================================
--- 28) Tab System
+-- 23) Tab System
 --==================================================================
 local pageTweens, pageOrigPos = {}, {}
 for id, page in pairs(tabPages) do pageOrigPos[id] = page.Position end
@@ -3173,7 +2890,6 @@ local function switchTab(id)
         animatePageIn(page, id)
         if id == "news" then animateNewsCards() end
         if id == "players" then renderPlayers(searchBox.Text) end
-        if id == "chat" then renderChat() end
     end
 end
 for id, data in pairs(tabButtons) do
@@ -3181,7 +2897,7 @@ for id, data in pairs(tabButtons) do
 end
 
 --==================================================================
--- 29) Show/Hide
+-- 24) Show/Hide
 --==================================================================
 local function hideWindow()
     windowHidden = true; removeBlur()
@@ -3222,7 +2938,7 @@ closeBtn.MouseButton1Click:Connect(hideWindow)
 floatingBtn.MouseButton1Click:Connect(showWindow)
 
 --==================================================================
--- 30) Profile
+-- 25) Profile
 --==================================================================
 local function loadPlayerProfile()
     pcall(function()
@@ -3242,7 +2958,7 @@ end
 loadPlayerProfile()
 
 --==================================================================
--- 31) Settings functions
+-- 26) Settings functions
 --==================================================================
 function applyWindowTransparency(pct)
     settings.transparency = math.clamp(pct, 0, 90)
@@ -3274,7 +2990,7 @@ resetBtn.MouseButton1Click:Connect(function()
 end)
 
 --==================================================================
--- 32) Viewport
+-- 27) Viewport
 --==================================================================
 local function onViewportChange()
     local w, h = computeWindowSize()
@@ -3299,7 +3015,7 @@ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 end)
 
 --==================================================================
--- 33) Startup
+-- 28) Startup
 --==================================================================
 switchTab("home")
 applyBlur()
@@ -3322,4 +3038,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.2] ✦ Ready — Home + Players + Player + Auto Fish + Car + Misc + Chat + News + Settings")
+print("[LYNEX HUB v3.1] ✦ Ready — Home + Players + Player + Auto Fish + Car + Misc + News + Settings")
