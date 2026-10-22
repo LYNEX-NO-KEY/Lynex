@@ -1,7 +1,7 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.0 ✦
---  Home • Players • Player • Auto Fish • Car • News • Settings
+--  ✦ LYNEX HUB v3.1 ✦
+--  Home • Players • Player • Auto Fish • Car • Misc • News • Settings
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -10,6 +10,7 @@ local TweenService     = game:GetService("TweenService")
 local Lighting         = game:GetService("Lighting")
 local RunService       = game:GetService("RunService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local TeleportService  = game:GetService("TeleportService")
 
 local localPlayer = Players.LocalPlayer
 local playerGui   = localPlayer:WaitForChild("PlayerGui")
@@ -137,14 +138,6 @@ local function showToast(message)
         tween(label, TweenInfo.new(0.3), { TextTransparency = 1 })
         task.delay(0.35, function() if toast then toast:Destroy() end end)
     end)
-end
-
-local function copyText(text, label)
-    if typeof(setclipboard) == "function" then
-        local ok = pcall(setclipboard, text)
-        if ok then showToast("✦ " .. (label or "Copied")); return true end
-    end
-    showToast("✦ " .. text); return false
 end
 
 local function openURL(url)
@@ -315,9 +308,9 @@ local sidebar = create("Frame", {
     BackgroundColor3 = THEME.BG_SIDEBAR, BackgroundTransparency = 0.2,
     BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 3,
 }, body)
-create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, sidebar)
+create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, sidebar)
 create("UIPadding", {
-    PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7),
+    PaddingTop = UDim.new(0, 8), PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7),
 }, sidebar)
 
 local content = create("Frame", {
@@ -335,14 +328,15 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs  ◀️ + Car (جديد)
+-- 10) Tabs  ◀️ + Misc (جديد)
 --==================================================================
 local TABS = {
     { id = "home",     name = "Home",      icon = "⌂"  },
     { id = "players",  name = "Players",   icon = "◉"  },
     { id = "player",   name = "Player",    icon = "●"  },
     { id = "autofish", name = "Auto Fish", icon = "≋"  },
-    { id = "car",      name = "Car",       icon = "🚗" },  -- ◀️ جديد
+    { id = "car",      name = "Car",       icon = "🚗" },
+    { id = "misc",     name = "Misc",      icon = "⚒"  },  -- ◀️ جديد
     { id = "news",     name = "News",      icon = "✉"  },
     { id = "settings", name = "Settings",  icon = "⚙"  },
 }
@@ -486,7 +480,6 @@ end
 local uidLbl = smallInfo(infoX, 95, "#", "—")
 local ageLbl = smallInfo(infoX + 100, 95, "◷", "—")
 
--- Server Information
 local SERVER_ROWS = {
     { key = "players",  icon = "◉", label = "Players"   },
     { key = "gameName", icon = "✦", label = "Game Name" },
@@ -579,7 +572,6 @@ updateServerInfo()
 Players.PlayerAdded:Connect(updateServerInfo)
 Players.PlayerRemoving:Connect(updateServerInfo)
 
--- Discord Button
 local DISCORD_URL = "https://discord.gg/xzNRnKyVd"
 local discordBtn = create("TextButton", {
     Name = "DiscordBtn", Size = UDim2.new(1, 0, 0, 52),
@@ -1084,6 +1076,7 @@ local NEWS_DATA = {
     { title = "Player Tab", body = "New Player tab with Movement, Special Movement and Visuals — speed, jump, flight, gravity, rotation, infinite jump, swimming, iPad view, invisible.", date = "2025-03-01" },
     { title = "Server Info + Auto Fish", body = "Home now shows live Server Information. New Auto Fish tab loads the fishing script on demand.", date = "2025-03-08" },
     { title = "Car Script Tab", body = "New Car tab added. Load and run the Car Script on demand — mobile friendly with press animations.", date = "2025-03-15" },
+    { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1718,6 +1711,7 @@ _G.LYNEX_CLEANUP = function()
         if cam then pcall(function() cam.FieldOfView = playerState.ipadView.originalFov or 70 end) end
     end
     if spectate.active then pcall(function() stopSpectating("silent") end) end
+    if _G.LYNEX_CLEANUP_MISC then pcall(_G.LYNEX_CLEANUP_MISC) end
 end
 
 --==================================================================
@@ -1923,7 +1917,7 @@ end)
 styleActionButton(afLoadBtn, afLoadStroke)
 
 --==================================================================
--- 16.7) Car Page  ◀️ جديد
+-- 16.7) Car Page
 --==================================================================
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
 
@@ -1933,7 +1927,6 @@ create("UIPadding", {
     PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
 }, carPage)
 
--- ── Header card ──
 local carHeaderCard = create("Frame", {
     Size = UDim2.new(1, 0, 0, 86),
     BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
@@ -1971,7 +1964,6 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carHeaderCard)
 
--- ── Action card ──
 local carActionCard = create("Frame", {
     Size = UDim2.new(1, 0, 0, 114),
     BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
@@ -2009,7 +2001,6 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carActionCard)
 
--- ── Instructions card ──
 local carInstrCard = create("Frame", {
     Size = UDim2.new(1, 0, 0, 146),
     BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
@@ -2045,7 +2036,6 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carInstrCard)
 
--- ── Loader logic ──
 local carLoadBusy = false
 
 local function setCarStatus(text, color)
@@ -2114,6 +2104,546 @@ carLoadBtn.MouseButton1Click:Connect(function()
 end)
 
 styleActionButton(carLoadBtn, carLoadStroke)
+
+--==================================================================
+-- 16.8) Misc Page  ◀️ جديد
+--==================================================================
+local miscPage = createPage("misc", true)
+create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, miscPage)
+create("UIPadding", {
+    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+}, miscPage)
+
+local miscOrderCounter = 0
+local function miscOrder() miscOrderCounter += 1; return miscOrderCounter end
+
+local miscState = {
+    qualityCaptured = false,
+    qualityOriginal = nil,
+    lightingOriginal = nil,
+    zoomActive = false,
+    zoomCaptured = false,
+    zoomOriginalMax = nil,
+    zoomOriginalMin = nil,
+}
+
+-- ── Misc Header card ──
+local miscHeaderCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 86),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = miscOrder(), ZIndex = 4,
+}, miscPage)
+addCorner(12, miscHeaderCard); addStroke(THEME.BORDER, 1, 0.15, miscHeaderCard)
+
+local miscIconFrame = create("Frame", {
+    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+}, miscHeaderCard)
+addCorner(30, miscIconFrame)
+addStroke(THEME.P_GLOW, 1.5, 0.2, miscIconFrame)
+addGradient(miscIconFrame, {
+    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+}, 45)
+create("TextLabel", {
+    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+    Text = "⚒", Font = FONT.Logo, TextSize = 26,
+    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+}, miscIconFrame)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+    BackgroundTransparency = 1, Text = "Misc Utilities",
+    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, miscHeaderCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+    BackgroundTransparency = 1,
+    Text = "Client-side tweaks: Graphics, Time, Server actions, Camera.",
+    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, miscHeaderCard)
+
+-- ── Local-only notice ──
+local miscNotice = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Color3.fromRGB(50, 30, 20), BackgroundTransparency = 0.15,
+    BorderSizePixel = 0, LayoutOrder = miscOrder(), ZIndex = 4,
+}, miscPage)
+addCorner(8, miscNotice); addStroke(Color3.fromRGB(200, 140, 60), 1, 0.3, miscNotice)
+create("TextLabel", {
+    Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "⚠  Graphics, Time & Zoom changes are CLIENT-SIDE only. Other players won't see them.",
+    Font = FONT.Medium, TextSize = 9, TextColor3 = Color3.fromRGB(255, 210, 150),
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, miscNotice)
+
+-- ── Helper: two-button row ──
+local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight)
+    local row = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 46), BackgroundTransparency = 1,
+        LayoutOrder = order, ZIndex = 4,
+    }, parent)
+    local leftBtn = create("TextButton", {
+        Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+        Text = leftText, Font = FONT.Bold, TextSize = 12,
+        TextColor3 = THEME.TX_MAIN, TextScaled = false, ZIndex = 5,
+    }, row)
+    addCorner(10, leftBtn)
+    local leftStroke = addStroke(THEME.P_GLOW, 1.5, 0.2, leftBtn)
+    addGradient(leftBtn, {
+        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+        ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+    }, 90)
+    styleActionButton(leftBtn, leftStroke)
+    leftBtn.MouseButton1Click:Connect(onLeft)
+
+    local rightBtn = create("TextButton", {
+        Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0.5, 4, 0, 0),
+        BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
+        Text = rightText, Font = FONT.Bold, TextSize = 12,
+        TextColor3 = THEME.TX_MAIN, TextScaled = false, ZIndex = 5,
+    }, row)
+    addCorner(10, rightBtn)
+    local rightStroke = addStroke(THEME.P_GLOW, 1.5, 0.3, rightBtn)
+    styleActionButton(rightBtn, rightStroke)
+    rightBtn.MouseButton1Click:Connect(onRight)
+
+    return leftBtn, rightBtn
+end
+
+-- ── Helper: full-width button ──
+local function createMiscButton(parent, order, label, color, strokeColor, onClick)
+    local btn = create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 44),
+        BackgroundColor3 = color, AutoButtonColor = false,
+        Text = label, Font = FONT.Bold, TextSize = 13,
+        TextColor3 = THEME.TX_MAIN, TextScaled = false, ZIndex = 5,
+        LayoutOrder = order,
+    }, parent)
+    addCorner(10, btn)
+    local stroke = addStroke(strokeColor, 1.5, 0.2, btn)
+    styleActionButton(btn, stroke)
+    btn.MouseButton1Click:Connect(onClick)
+    return btn
+end
+
+-- ── Quality helpers ──
+local function getUserGameSettings()
+    local ok, usFn = pcall(function() return UserSettings end)
+    if not ok or not usFn then return nil end
+    local ok2, s = pcall(function() return UserSettings():GetService("UserGameSettings") end)
+    return ok2 and s or nil
+end
+
+local QUALITY_LEVELS = {}
+for i = 1, 10 do
+    local ok, lvl = pcall(function() return Enum.SavedQualitySetting["QualityLevel" .. i] end)
+    if ok and lvl then table.insert(QUALITY_LEVELS, lvl) end
+end
+
+local function getCurrentQualityLevel()
+    local s = getUserGameSettings()
+    if not s then return nil end
+    local ok, lvl = pcall(function() return s.SavedQualityLevel end)
+    return ok and lvl or nil
+end
+
+local function setQualityLevel(lvl)
+    local s = getUserGameSettings()
+    if not s then return false end
+    local ok = pcall(function() s.SavedQualityLevel = lvl end)
+    return ok
+end
+
+local function getQualityIndex(setting)
+    if not setting then return nil end
+    for i, lvl in ipairs(QUALITY_LEVELS) do
+        if lvl == setting then return i end
+    end
+    return nil
+end
+
+local qualityStatusLbl  -- forward ref
+
+local function updateQualityStatus()
+    if not qualityStatusLbl then return end
+    local lvl = getCurrentQualityLevel()
+    if not lvl then
+        qualityStatusLbl.Text = "◈ Current: Unknown / Automatic"
+        return
+    end
+    local idx = getQualityIndex(lvl)
+    if idx then
+        qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
+    else
+        qualityStatusLbl.Text = "◈ Current: Automatic"
+    end
+end
+
+local function captureQualityOriginal()
+    if miscState.qualityCaptured then return end
+    local lvl = getCurrentQualityLevel()
+    if lvl then
+        miscState.qualityOriginal = lvl
+        miscState.qualityCaptured = true
+    end
+end
+
+local function increaseQuality()
+    captureQualityOriginal()
+    local lvl = getCurrentQualityLevel()
+    if not lvl then
+        -- Fallback: modify Lighting
+        pcall(function()
+            Lighting.GlobalShadows = true
+            Lighting.ShadowSoftness = 0.2
+            Lighting.EnvironmentDiffuseScale = 1
+            Lighting.EnvironmentSpecularScale = 1
+        end)
+        showToast("◈  Quality boosted (Lighting fallback)")
+        return
+    end
+    local idx = getQualityIndex(lvl) or 5
+    idx = math.min(idx + 1, #QUALITY_LEVELS)
+    if setQualityLevel(QUALITY_LEVELS[idx]) then
+        updateQualityStatus()
+        showToast("◈  Quality: Level " .. idx)
+    else
+        showToast("✕  Cannot change quality in this executor")
+    end
+end
+
+local function decreaseQuality()
+    captureQualityOriginal()
+    local lvl = getCurrentQualityLevel()
+    if not lvl then
+        pcall(function()
+            Lighting.GlobalShadows = false
+            Lighting.ShadowSoftness = 1
+            Lighting.EnvironmentDiffuseScale = 0
+            Lighting.EnvironmentSpecularScale = 0
+        end)
+        showToast("◈  Quality reduced (Lighting fallback)")
+        return
+    end
+    local idx = getQualityIndex(lvl) or 5
+    idx = math.max(idx - 1, 1)
+    if setQualityLevel(QUALITY_LEVELS[idx]) then
+        updateQualityStatus()
+        showToast("◈  Quality: Level " .. idx)
+    else
+        showToast("✕  Cannot change quality in this executor")
+    end
+end
+
+-- ── Lighting helpers ──
+local function captureLightingOriginals()
+    if miscState.lightingOriginal then return end
+    miscState.lightingOriginal = {
+        ClockTime = Lighting.ClockTime,
+        Brightness = Lighting.Brightness,
+        Ambient = Lighting.Ambient,
+        OutdoorAmbient = Lighting.OutdoorAmbient,
+        ColorShift_Top = Lighting.ColorShift_Top,
+        ColorShift_Bottom = Lighting.ColorShift_Bottom,
+        FogEnd = Lighting.FogEnd,
+        FogStart = Lighting.FogStart,
+    }
+end
+
+local function applyNight()
+    captureLightingOriginals()
+    pcall(function()
+        Lighting.ClockTime = 0
+        Lighting.Brightness = 0.5
+        Lighting.Ambient = Color3.fromRGB(20, 20, 40)
+        Lighting.OutdoorAmbient = Color3.fromRGB(30, 30, 60)
+        Lighting.ColorShift_Top = Color3.fromRGB(30, 40, 80)
+        Lighting.ColorShift_Bottom = Color3.fromRGB(10, 10, 20)
+        Lighting.FogEnd = 500
+        Lighting.FogStart = 50
+    end)
+    showToast("◈  Night applied (local only)")
+end
+
+local function applyDay()
+    captureLightingOriginals()
+    pcall(function()
+        Lighting.ClockTime = 14
+        Lighting.Brightness = 2
+        Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+        Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+        Lighting.ColorShift_Top = Color3.fromRGB(0, 0, 0)
+        Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+        Lighting.FogEnd = 10000
+        Lighting.FogStart = 0
+    end)
+    showToast("◈  Day applied (local only)")
+end
+
+-- ── Server helpers ──
+local teleportBusy = false
+
+local function showConfirm(titleText, messageText, onConfirm)
+    local overlay = create("Frame", {
+        Size = UDim2.fromScale(1, 1),
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.5,
+        BorderSizePixel = 0, ZIndex = 200,
+    }, screenGui)
+
+    local modal = create("Frame", {
+        Size = UDim2.fromOffset(260, 150),
+        Position = UDim2.new(0.5, -130, 0.5, -75),
+        BackgroundColor3 = THEME.BG_PANEL,
+        BorderSizePixel = 0, ZIndex = 201,
+    }, overlay)
+    addCorner(12, modal)
+    addStroke(THEME.P_BRIGHT, 1.5, 0.15, modal)
+
+    create("TextLabel", {
+        Size = UDim2.new(1, -24, 0, 24),
+        Position = UDim2.new(0, 12, 0, 12),
+        BackgroundTransparency = 1,
+        Text = titleText, Font = FONT.Bold, TextSize = 14,
+        TextColor3 = THEME.TX_MAIN,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202,
+    }, modal)
+
+    create("TextLabel", {
+        Size = UDim2.new(1, -24, 0, 48),
+        Position = UDim2.new(0, 12, 0, 40),
+        BackgroundTransparency = 1,
+        Text = messageText, Font = FONT.Regular, TextSize = 10,
+        TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 202,
+    }, modal)
+
+    local cancelBtn = create("TextButton", {
+        Size = UDim2.new(0.5, -18, 0, 34),
+        Position = UDim2.new(0, 12, 1, -46),
+        BackgroundColor3 = THEME.BG_CARD_HI,
+        AutoButtonColor = false, Text = "Cancel",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM,
+        ZIndex = 202,
+    }, modal)
+    addCorner(8, cancelBtn); addStroke(THEME.BORDER, 1, 0.3, cancelBtn)
+
+    local confirmBtn = create("TextButton", {
+        Size = UDim2.new(0.5, -18, 0, 34),
+        Position = UDim2.new(0.5, 6, 1, -46),
+        BackgroundColor3 = THEME.P_MAIN,
+        AutoButtonColor = false, Text = "Confirm",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN,
+        ZIndex = 202,
+    }, modal)
+    addCorner(8, confirmBtn); addStroke(THEME.P_GLOW, 1.5, 0.2, confirmBtn)
+
+    cancelBtn.MouseButton1Click:Connect(function()
+        pcall(function() overlay:Destroy() end)
+    end)
+    confirmBtn.MouseButton1Click:Connect(function()
+        pcall(function() overlay:Destroy() end)
+        if onConfirm then pcall(onConfirm) end
+    end)
+end
+
+local function changeServer()
+    if teleportBusy then return end
+    showConfirm(
+        "Change Server",
+        "You will be teleported to a new server of this game. Session state will be lost.",
+        function()
+            teleportBusy = true
+            showToast("◈  Finding new server…")
+            local ok, err = pcall(function()
+                TeleportService:Teleport(game.PlaceId, localPlayer)
+            end)
+            if not ok then
+                showToast("✕  Teleport failed: " .. tostring(err))
+                teleportBusy = false
+            end
+            task.delay(3, function() teleportBusy = false end)
+        end
+    )
+end
+
+local function rejoinServer()
+    if teleportBusy then return end
+    showConfirm(
+        "Rejoin Server",
+        "You will rejoin this same server. Session state will be lost.",
+        function()
+            teleportBusy = true
+            showToast("◈  Rejoining server…")
+            local ok, err = pcall(function()
+                if game.JobId and game.JobId ~= "" then
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
+                else
+                    TeleportService:Teleport(game.PlaceId, localPlayer)
+                end
+            end)
+            if not ok then
+                showToast("✕  Rejoin failed: " .. tostring(err))
+                teleportBusy = false
+            end
+            task.delay(3, function() teleportBusy = false end)
+        end
+    )
+end
+
+-- ── Infinite Zoom ──
+local function toggleInfiniteZoom(enabled)
+    if enabled then
+        if not miscState.zoomCaptured then
+            miscState.zoomOriginalMax = localPlayer.CameraMaxZoomDistance
+            miscState.zoomOriginalMin = localPlayer.CameraMinZoomDistance
+            miscState.zoomCaptured = true
+        end
+        local ok = pcall(function()
+            localPlayer.CameraMaxZoomDistance = 10000
+            localPlayer.CameraMinZoomDistance = 0.1
+        end)
+        if ok then
+            miscState.zoomActive = true
+            showToast("◉  Infinite Zoom ON (local only)")
+        else
+            showToast("✕  Camera locked by game")
+        end
+    else
+        pcall(function()
+            localPlayer.CameraMaxZoomDistance = miscState.zoomOriginalMax or 400
+            localPlayer.CameraMinZoomDistance = miscState.zoomOriginalMin or 0.5
+        end)
+        miscState.zoomActive = false
+        showToast("◉  Infinite Zoom OFF")
+    end
+end
+
+-- ══════════════════════════════════════════════════════════════════
+--  Misc UI — Build sections
+-- ══════════════════════════════════════════════════════════════════
+
+-- GRAPHICS section
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+    Text = "✦  GRAPHICS", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
+    LayoutOrder = miscOrder(), ZIndex = 5,
+}, miscPage)
+
+createMiscRow(miscPage, miscOrder(),
+    "▲  Increase Quality", "▼  Decrease Quality",
+    increaseQuality, decreaseQuality
+)
+
+qualityStatusLbl = create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 20),
+    BackgroundTransparency = 1,
+    Text = "◈ Current: —",
+    Font = FONT.Medium, TextSize = 10,
+    TextColor3 = THEME.TX_SUBTLE,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    LayoutOrder = miscOrder(), ZIndex = 4,
+}, miscPage)
+updateQualityStatus()
+
+-- TIME section
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+    Text = "✦  TIME OF DAY", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
+    LayoutOrder = miscOrder(), ZIndex = 5,
+}, miscPage)
+
+createMiscRow(miscPage, miscOrder(),
+    "☾  Night", "☀  Day",
+    applyNight, applyDay
+)
+
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
+    Text = "⚠ Lighting changes are local-only. Other players see their own time.",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+    LayoutOrder = miscOrder(), ZIndex = 4,
+}, miscPage)
+
+-- SERVER section
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+    Text = "✦  SERVER", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
+    LayoutOrder = miscOrder(), ZIndex = 5,
+}, miscPage)
+
+createMiscButton(miscPage, miscOrder(),
+    "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
+
+createMiscButton(miscPage, miscOrder(),
+    "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
+
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
+    Text = "⚠ Teleporting will disconnect you — session state is lost.",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+    LayoutOrder = miscOrder(), ZIndex = 4,
+}, miscPage)
+
+-- CAMERA section
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+    Text = "✦  CAMERA", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
+    LayoutOrder = miscOrder(), ZIndex = 5,
+}, miscPage)
+
+createPlayerToggle(miscPage, miscOrder(),
+    "◉ Infinite Zoom",
+    "Extends camera max distance (local only)",
+    false,
+    toggleInfiniteZoom
+)
+
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
+    Text = "⚠ Some games clamp zoom distance — effect may be limited.",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+    LayoutOrder = miscOrder(), ZIndex = 4,
+}, miscPage)
+
+-- ── Misc cleanup ──
+_G.LYNEX_CLEANUP_MISC = function()
+    if miscState.lightingOriginal then
+        pcall(function()
+            for k, v in pairs(miscState.lightingOriginal) do
+                Lighting[k] = v
+            end
+        end)
+        miscState.lightingOriginal = nil
+    end
+    if miscState.zoomActive then
+        pcall(function()
+            localPlayer.CameraMaxZoomDistance = miscState.zoomOriginalMax or 400
+            localPlayer.CameraMinZoomDistance = miscState.zoomOriginalMin or 0.5
+        end)
+        miscState.zoomActive = false
+    end
+    if miscState.qualityCaptured and miscState.qualityOriginal then
+        local s = getUserGameSettings()
+        if s then
+            pcall(function()
+                s.SavedQualityLevel = miscState.qualityOriginal
+            end)
+        end
+    end
+end
 
 --==================================================================
 -- 17) Floating button
@@ -2508,4 +3038,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.0] ✦ Ready — Home + Players + Player + Auto Fish + Car + News + Settings")
+print("[LYNEX HUB v3.1] ✦ Ready — Home + Players + Player + Auto Fish + Car + Misc + News + Settings")
