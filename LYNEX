@@ -2650,190 +2650,192 @@ end
 --==================================================================
 print("[LYNEX] Section 16.10 — Anti-strike loading...")
 
-local antiStrikePage
-local okAntiStrike, errAntiStrike = pcall(function()
-    local ANTI_STRIKE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Anti"
+do
+    local antiStrikePage
+    local okAntiStrike, errAntiStrike = pcall(function()
+        local ANTI_STRIKE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Anti"
 
-    antiStrikePage = createPage("antistrike", true)
-    create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, antiStrikePage)
-    create("UIPadding", {
-        PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
-    }, antiStrikePage)
+        antiStrikePage = createPage("antistrike", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, antiStrikePage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, antiStrikePage)
 
-    local asHeaderCard = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 86),
-        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
-    }, antiStrikePage)
-    addCorner(12, asHeaderCard); addStroke(THEME.BORDER, 1, 0.15, asHeaderCard)
+        local asHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, antiStrikePage)
+        addCorner(12, asHeaderCard); addStroke(THEME.BORDER, 1, 0.15, asHeaderCard)
 
-    local asIconFrame = create("Frame", {
-        Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
-        BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-    }, asHeaderCard)
-    addCorner(30, asIconFrame)
-    addStroke(THEME.P_GLOW, 1.5, 0.2, asIconFrame)
-    addGradient(asIconFrame, {
-        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-        ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
-    }, 45)
-    create("TextLabel", {
-        Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-        Text = "⛨", Font = FONT.Logo, TextSize = 26,
-        TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-    }, asIconFrame)
+        local asIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, asHeaderCard)
+        addCorner(30, asIconFrame)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, asIconFrame)
+        addGradient(asIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "⛨", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, asIconFrame)
 
-    create("TextLabel", {
-        Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-        BackgroundTransparency = 1, Text = "Anti-strike Script",
-        Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, asHeaderCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-        BackgroundTransparency = 1,
-        Text = "Show and run the Anti-strike Script in supported games. Load the external script to activate.",
-        Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, asHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Anti-strike Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, asHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1,
+            Text = "Show and run the Anti-strike Script in supported games. Load the external script to activate.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, asHeaderCard)
 
-    local asActionCard = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 114),
-        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
-    }, antiStrikePage)
-    addCorner(12, asActionCard); addStroke(THEME.BORDER, 1, 0.15, asActionCard)
+        local asActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, antiStrikePage)
+        addCorner(12, asActionCard); addStroke(THEME.BORDER, 1, 0.15, asActionCard)
 
-    local asStatus = create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-        BackgroundTransparency = 1, Text = "⏸  Status: Idle",
-        Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, asActionCard)
+        local asStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, asActionCard)
 
-    local asLoadBtn = create("TextButton", {
-        Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
-        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-        Text = "◈  Show Anti-strike Script",
-        Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-        TextScaled = false, ZIndex = 5,
-    }, asActionCard)
-    addCorner(10, asLoadBtn)
-    local asLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, asLoadBtn)
-    addGradient(asLoadBtn, {
-        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-        ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
-        ColorSequenceKeypoint.new(1, THEME.P_MAIN),
-    }, 90)
+        local asLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Show Anti-strike Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
+            TextScaled = false, ZIndex = 5,
+        }, asActionCard)
+        addCorner(10, asLoadBtn)
+        local asLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, asLoadBtn)
+        addGradient(asLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
 
-    create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-        BackgroundTransparency = 1,
-        Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
-        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, asActionCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1,
+            Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, asActionCard)
 
-    local asInstrCard = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 146),
-        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
-    }, antiStrikePage)
-    addCorner(12, asInstrCard); addStroke(THEME.BORDER, 1, 0.15, asInstrCard)
+        local asInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, antiStrikePage)
+        addCorner(12, asInstrCard); addStroke(THEME.BORDER, 1, 0.15, asInstrCard)
 
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-        BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, asInstrCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-        BackgroundTransparency = 1,
-        Text = "Press the button above to show and run the Anti-strike Script.",
-        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, asInstrCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-        BackgroundTransparency = 1,
-        Text = "لتفعيل السكربت اضغط على هذا الزر",
-        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, asInstrCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-        BackgroundTransparency = 1,
-        Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
-        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, asInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, asInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1,
+            Text = "Press the button above to show and run the Anti-strike Script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, asInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1,
+            Text = "لتفعيل السكربت اضغط على هذا الزر",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, asInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+            BackgroundTransparency = 1,
+            Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, asInstrCard)
 
-    local asLoadBusy = false
+        local asLoadBusy = false
 
-    local function setAsStatus(text, color)
-        asStatus.Text = text
-        asStatus.TextColor3 = color or THEME.TX_DIM
-    end
+        local function setAsStatus(text, color)
+            asStatus.Text = text
+            asStatus.TextColor3 = color or THEME.TX_DIM
+        end
 
-    asLoadBtn.MouseButton1Click:Connect(function()
-        if asLoadBusy then return end
-        asLoadBusy = true
-        local origText = "◈  Show Anti-strike Script"
-        local origBg = THEME.P_MAIN
-        asLoadBtn.Text = "⏳  Loading…"
-        asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-        setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
+        asLoadBtn.MouseButton1Click:Connect(function()
+            if asLoadBusy then return end
+            asLoadBusy = true
+            local origText = "◈  Show Anti-strike Script"
+            local origBg = THEME.P_MAIN
+            asLoadBtn.Text = "⏳  Loading…"
+            asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
 
-        task.spawn(function()
-            local success = false
-            local errMsg = nil
-            local ok, ret1, ret2 = pcall(function()
-                local body = fetchUrl(ANTI_STRIKE_URL)
-                if not body then return false, "Download failed — check URL or executor HTTP" end
-                if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
-                local fn, compileErr = loadstring(body)
-                if not fn then return false, "Compile error: " .. tostring(compileErr) end
-                local runOk, runErr = pcall(fn)
-                if not runOk then return false, "Runtime error: " .. tostring(runErr) end
-                return true
+            task.spawn(function()
+                local success = false
+                local errMsg = nil
+                local ok, ret1, ret2 = pcall(function()
+                    local body = fetchUrl(ANTI_STRIKE_URL)
+                    if not body then return false, "Download failed — check URL or executor HTTP" end
+                    if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+                    local fn, compileErr = loadstring(body)
+                    if not fn then return false, "Compile error: " .. tostring(compileErr) end
+                    local runOk, runErr = pcall(fn)
+                    if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+                    return true
+                end)
+                if ok then
+                    if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+                else
+                    errMsg = tostring(ret1)
+                end
+                task.wait(0.25)
+                asLoadBusy = false
+                asLoadBtn.Text = origText
+                asLoadBtn.BackgroundColor3 = origBg
+                if success then
+                    setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
+                    showToast("✓  Anti-strike Script loaded")
+                else
+                    warn("[LYNEX Anti-strike] Failed:", errMsg)
+                    setAsStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+                    showToast("✕  " .. (errMsg or "Unknown error"))
+                end
             end)
-            if ok then
-                if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-            else
-                errMsg = tostring(ret1)
-            end
-            task.wait(0.25)
-            asLoadBusy = false
-            asLoadBtn.Text = origText
-            asLoadBtn.BackgroundColor3 = origBg
-            if success then
-                setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
-                showToast("✓  Anti-strike Script loaded")
-            else
-                warn("[LYNEX Anti-strike] Failed:", errMsg)
-                setAsStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-                showToast("✕  " .. (errMsg or "Unknown error"))
-            end
         end)
+
+        styleActionButton(asLoadBtn, asLoadStroke)
     end)
 
-    styleActionButton(asLoadBtn, asLoadStroke)
-end)
-
-if okAntiStrike then
-    print("[LYNEX] ✓ Anti-strike section loaded OK")
-else
-    warn("[LYNEX] ✗ Anti-strike section FAILED:", errAntiStrike)
-    if not antiStrikePage then
-        antiStrikePage = createPage("antistrike", true)
-        create("TextLabel", {
-            Size = UDim2.new(1, 0, 0, 80),
-            BackgroundTransparency = 1,
-            Text = "⚠ تعذّر تحميل تبويب Anti-strike:\n\n" .. tostring(errAntiStrike),
-            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
-            TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-        }, antiStrikePage)
+    if okAntiStrike then
+        print("[LYNEX] ✓ Anti-strike section loaded OK")
+    else
+        warn("[LYNEX] ✗ Anti-strike section FAILED:", errAntiStrike)
+        if not antiStrikePage then
+            antiStrikePage = createPage("antistrike", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80),
+                BackgroundTransparency = 1,
+                Text = "⚠ تعذّر تحميل تبويب Anti-strike:\n\n" .. tostring(errAntiStrike),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, antiStrikePage)
+        end
     end
 end
 
@@ -2842,190 +2844,192 @@ end
 --==================================================================
 print("[LYNEX] Section 16.11 — Chat loading...")
 
-local chatPage
-local okChat, errChat = pcall(function()
-    local CHAT_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Chat"
+do
+    local chatPage
+    local okChat, errChat = pcall(function()
+        local CHAT_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Chat"
 
-    chatPage = createPage("chat", true)
-    create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, chatPage)
-    create("UIPadding", {
-        PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
-    }, chatPage)
+        chatPage = createPage("chat", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, chatPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, chatPage)
 
-    local chHeaderCard = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 86),
-        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
-    }, chatPage)
-    addCorner(12, chHeaderCard); addStroke(THEME.BORDER, 1, 0.15, chHeaderCard)
+        local chHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, chatPage)
+        addCorner(12, chHeaderCard); addStroke(THEME.BORDER, 1, 0.15, chHeaderCard)
 
-    local chIconFrame = create("Frame", {
-        Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
-        BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-    }, chHeaderCard)
-    addCorner(30, chIconFrame)
-    addStroke(THEME.P_GLOW, 1.5, 0.2, chIconFrame)
-    addGradient(chIconFrame, {
-        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-        ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
-    }, 45)
-    create("TextLabel", {
-        Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-        Text = "✎", Font = FONT.Logo, TextSize = 26,
-        TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-    }, chIconFrame)
+        local chIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, chHeaderCard)
+        addCorner(30, chIconFrame)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, chIconFrame)
+        addGradient(chIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "✎", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, chIconFrame)
 
-    create("TextLabel", {
-        Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-        BackgroundTransparency = 1, Text = "Chat Script",
-        Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, chHeaderCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-        BackgroundTransparency = 1,
-        Text = "Show and run the Chat Script in supported games. Load the external script to activate.",
-        Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, chHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Chat Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1,
+            Text = "Show and run the Chat Script in supported games. Load the external script to activate.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chHeaderCard)
 
-    local chActionCard = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 114),
-        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
-    }, chatPage)
-    addCorner(12, chActionCard); addStroke(THEME.BORDER, 1, 0.15, chActionCard)
+        local chActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, chatPage)
+        addCorner(12, chActionCard); addStroke(THEME.BORDER, 1, 0.15, chActionCard)
 
-    local chStatus = create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-        BackgroundTransparency = 1, Text = "⏸  Status: Idle",
-        Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, chActionCard)
+        local chStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chActionCard)
 
-    local chLoadBtn = create("TextButton", {
-        Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
-        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-        Text = "◈  Show Chat Script",
-        Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-        TextScaled = false, ZIndex = 5,
-    }, chActionCard)
-    addCorner(10, chLoadBtn)
-    local chLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, chLoadBtn)
-    addGradient(chLoadBtn, {
-        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-        ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
-        ColorSequenceKeypoint.new(1, THEME.P_MAIN),
-    }, 90)
+        local chLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Show Chat Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
+            TextScaled = false, ZIndex = 5,
+        }, chActionCard)
+        addCorner(10, chLoadBtn)
+        local chLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, chLoadBtn)
+        addGradient(chLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
 
-    create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-        BackgroundTransparency = 1,
-        Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
-        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, chActionCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1,
+            Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chActionCard)
 
-    local chInstrCard = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 146),
-        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-        BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
-    }, chatPage)
-    addCorner(12, chInstrCard); addStroke(THEME.BORDER, 1, 0.15, chInstrCard)
+        local chInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, chatPage)
+        addCorner(12, chInstrCard); addStroke(THEME.BORDER, 1, 0.15, chInstrCard)
 
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-        BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-    }, chInstrCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-        BackgroundTransparency = 1,
-        Text = "Press the button above to show and run the Chat Script.",
-        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, chInstrCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-        BackgroundTransparency = 1,
-        Text = "لتفعيل السكربت اضغط على هذا الزر",
-        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, chInstrCard)
-    create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-        BackgroundTransparency = 1,
-        Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
-        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-    }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1,
+            Text = "Press the button above to show and run the Chat Script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1,
+            Text = "لتفعيل السكربت اضغط على هذا الزر",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+            BackgroundTransparency = 1,
+            Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chInstrCard)
 
-    local chLoadBusy = false
+        local chLoadBusy = false
 
-    local function setChStatus(text, color)
-        chStatus.Text = text
-        chStatus.TextColor3 = color or THEME.TX_DIM
-    end
+        local function setChStatus(text, color)
+            chStatus.Text = text
+            chStatus.TextColor3 = color or THEME.TX_DIM
+        end
 
-    chLoadBtn.MouseButton1Click:Connect(function()
-        if chLoadBusy then return end
-        chLoadBusy = true
-        local origText = "◈  Show Chat Script"
-        local origBg = THEME.P_MAIN
-        chLoadBtn.Text = "⏳  Loading…"
-        chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-        setChStatus("⏳  Fetching script…", THEME.TX_DIM)
+        chLoadBtn.MouseButton1Click:Connect(function()
+            if chLoadBusy then return end
+            chLoadBusy = true
+            local origText = "◈  Show Chat Script"
+            local origBg = THEME.P_MAIN
+            chLoadBtn.Text = "⏳  Loading…"
+            chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setChStatus("⏳  Fetching script…", THEME.TX_DIM)
 
-        task.spawn(function()
-            local success = false
-            local errMsg = nil
-            local ok, ret1, ret2 = pcall(function()
-                local body = fetchUrl(CHAT_URL)
-                if not body then return false, "Download failed — check URL or executor HTTP" end
-                if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
-                local fn, compileErr = loadstring(body)
-                if not fn then return false, "Compile error: " .. tostring(compileErr) end
-                local runOk, runErr = pcall(fn)
-                if not runOk then return false, "Runtime error: " .. tostring(runErr) end
-                return true
+            task.spawn(function()
+                local success = false
+                local errMsg = nil
+                local ok, ret1, ret2 = pcall(function()
+                    local body = fetchUrl(CHAT_URL)
+                    if not body then return false, "Download failed — check URL or executor HTTP" end
+                    if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+                    local fn, compileErr = loadstring(body)
+                    if not fn then return false, "Compile error: " .. tostring(compileErr) end
+                    local runOk, runErr = pcall(fn)
+                    if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+                    return true
+                end)
+                if ok then
+                    if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+                else
+                    errMsg = tostring(ret1)
+                end
+                task.wait(0.25)
+                chLoadBusy = false
+                chLoadBtn.Text = origText
+                chLoadBtn.BackgroundColor3 = origBg
+                if success then
+                    setChStatus("✓  Chat Script executed successfully", THEME.OK)
+                    showToast("✓  Chat Script loaded")
+                else
+                    warn("[LYNEX Chat] Failed:", errMsg)
+                    setChStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+                    showToast("✕  " .. (errMsg or "Unknown error"))
+                end
             end)
-            if ok then
-                if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-            else
-                errMsg = tostring(ret1)
-            end
-            task.wait(0.25)
-            chLoadBusy = false
-            chLoadBtn.Text = origText
-            chLoadBtn.BackgroundColor3 = origBg
-            if success then
-                setChStatus("✓  Chat Script executed successfully", THEME.OK)
-                showToast("✓  Chat Script loaded")
-            else
-                warn("[LYNEX Chat] Failed:", errMsg)
-                setChStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-                showToast("✕  " .. (errMsg or "Unknown error"))
-            end
         end)
+
+        styleActionButton(chLoadBtn, chLoadStroke)
     end)
 
-    styleActionButton(chLoadBtn, chLoadStroke)
-end)
-
-if okChat then
-    print("[LYNEX] ✓ Chat section loaded OK")
-else
-    warn("[LYNEX] ✗ Chat section FAILED:", errChat)
-    if not chatPage then
-        chatPage = createPage("chat", true)
-        create("TextLabel", {
-            Size = UDim2.new(1, 0, 0, 80),
-            BackgroundTransparency = 1,
-            Text = "⚠ تعذّر تحميل تبويب Chat:\n\n" .. tostring(errChat),
-            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
-            TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-        }, chatPage)
+    if okChat then
+        print("[LYNEX] ✓ Chat section loaded OK")
+    else
+        warn("[LYNEX] ✗ Chat section FAILED:", errChat)
+        if not chatPage then
+            chatPage = createPage("chat", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80),
+                BackgroundTransparency = 1,
+                Text = "⚠ تعذّر تحميل تبويب Chat:\n\n" .. tostring(errChat),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, chatPage)
+        end
     end
 end
 
