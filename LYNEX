@@ -1,7 +1,8 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.1 ✦
+--  ✦ LYNEX HUB v3.2 ✦
 --  Home • Players • Player • Auto Fish • Car • Misc • Anti-strike • News • Settings
+--  (Fixed: Anti-strike no longer breaks the entire script)
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -337,7 +338,7 @@ local TABS = {
     { id = "autofish",   name = "Auto Fish",   icon = "≋"  },
     { id = "car",        name = "Car",         icon = "🚗" },
     { id = "misc",       name = "Misc",        icon = "⚒"  },
-    { id = "antistrike", name = "Anti-strike", icon = "🛡" },
+    { id = "antistrike", name = "Anti-strike", icon = "⛨" },
     { id = "news",       name = "News",        icon = "✉"  },
     { id = "settings",   name = "Settings",    icon = "⚙"  },
 }
@@ -1717,37 +1718,55 @@ _G.LYNEX_CLEANUP = function()
 end
 
 --==================================================================
--- 16.6) Auto Fish Page + fetchUrl (المُحدّث)
+-- 16.6) fetchUrl (IMPROVED — detects HTML/404 responses)
+--==================================================================
+local function fetchUrl(url)
+    local body = nil
+
+    if typeof(game.HttpGet) == "function" then
+        local ok, res = pcall(function() return game:HttpGet(url) end)
+        if ok and typeof(res) == "string" and res ~= "" then body = res end
+    end
+
+    if not body then
+        local reqFunc = (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
+            or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
+            or (typeof(http_request) == "function" and http_request)
+            or (typeof(request) == "function" and request)
+        if reqFunc then
+            local ok, resp = pcall(reqFunc, { Url = url, Method = "GET" })
+            if ok and typeof(resp) == "table" and typeof(resp.Body) == "string" and resp.Body ~= "" then
+                body = resp.Body
+            end
+        end
+    end
+
+    if not body then
+        local ok, res = pcall(function()
+            return game:GetService("HttpService"):GetAsync(url)
+        end)
+        if ok and typeof(res) == "string" and res ~= "" then body = res end
+    end
+
+    -- Detect HTML error pages / 404 responses before passing to loadstring
+    if body then
+        local head = body:sub(1, 200):lower()
+        if head:find("404: not found", 1, true)
+           or head:find("<html", 1, true)
+           or head:find("<!doctype", 1, true)
+           or #body < 50 then
+            warn("[LYNEX fetchUrl] Invalid response for:", url)
+            return nil
+        end
+    end
+
+    return body
+end
+
+--==================================================================
+-- 16.7) Auto Fish Page
 --==================================================================
 local AUTO_FISH_URL = "https://raw.githubusercontent.com/coronavip100-max/Auto-fish/refs/heads/main/Auto%20fish"
-
--- ✅ دالة fetchUrl المصححة (تُستخدم من Auto Fish و Car و Anti-strike)
-local function fetchUrl(url)
-    -- 1) المحاولة عبر HttpGet (الأكثر توافقًا مع Delta)
-    if typeof(game.HttpGet) == "function" then
-        local ok, body = pcall(function() return game:HttpGet(url) end)
-        if ok and body and body ~= "" then return body end
-    end
-
-    -- 2) المحاولة عبر request (Fluxus / Synapse / Delta)
-    local reqFunc = (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
-        or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
-        or (typeof(http_request) == "function" and http_request)
-        or (typeof(request) == "function" and request)
-
-    if reqFunc then
-        local ok, resp = pcall(reqFunc, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-
-    -- 3) المحاولة الأخيرة عبر HttpService
-    local ok, body = pcall(function()
-        return game:GetService("HttpService"):GetAsync(url)
-    end)
-    if ok and body then return body end
-
-    return nil
-end
 
 local autoFishPage = createPage("autofish", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, autoFishPage)
@@ -1866,25 +1885,6 @@ create("TextLabel", {
 
 local loadBusy = false
 
-local function loadAutoFishScript()
-    local body = fetchUrl(AUTO_FISH_URL)
-    if not body then
-        return false, "Download failed (no HTTP executor)"
-    end
-    if typeof(loadstring) ~= "function" then
-        return false, "loadstring unavailable"
-    end
-    local fn, compileErr = loadstring(body)
-    if not fn then
-        return false, "Compile error: " .. tostring(compileErr)
-    end
-    local ok, runErr = pcall(fn)
-    if not ok then
-        return false, "Runtime error: " .. tostring(runErr)
-    end
-    return true
-end
-
 local function setAfStatus(text, color)
     afStatus.Text = text
     afStatus.TextColor3 = color or THEME.TX_DIM
@@ -1902,21 +1902,46 @@ afLoadBtn.MouseButton1Click:Connect(function()
     setAfStatus("⏳  Fetching script…", THEME.TX_DIM)
 
     task.spawn(function()
-        local ok, errMsg = pcall(loadAutoFishScript)
-        task.wait(0.25)
+        local success = false
+        local errMsg = nil
 
+        local ok, ret1, ret2 = pcall(function()
+            local body = fetchUrl(AUTO_FISH_URL)
+            if not body then
+                return false, "Download failed — check URL or executor HTTP"
+            end
+            if typeof(loadstring) ~= "function" then
+                return false, "loadstring unavailable"
+            end
+            local fn, compileErr = loadstring(body)
+            if not fn then
+                return false, "Compile error: " .. tostring(compileErr)
+            end
+            local runOk, runErr = pcall(fn)
+            if not runOk then
+                return false, "Runtime error: " .. tostring(runErr)
+            end
+            return true
+        end)
+
+        if ok then
+            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+        else
+            errMsg = tostring(ret1)
+        end
+
+        task.wait(0.25)
         loadBusy = false
         afLoadBtn.Text = origText
         afLoadBtn.BackgroundColor3 = origBg
 
-        if ok and (errMsg ~= false) then
+        if success then
             setAfStatus("✓  Script executed successfully", THEME.OK)
             showToast("✓  Auto Fish loaded")
         else
-            local reason = (errMsg == false) and "Unknown error" or tostring(errMsg)
-            warn("[LYNEX Auto Fish] Failed:", reason)
-            setAfStatus("✕  " .. reason, THEME.DANGER_HI)
-            showToast("✕  " .. reason)
+            warn("[LYNEX Auto Fish] Failed:", errMsg)
+            setAfStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+            showToast("✕  " .. (errMsg or "Unknown error"))
         end
     end)
 end)
@@ -1924,7 +1949,7 @@ end)
 styleActionButton(afLoadBtn, afLoadStroke)
 
 --==================================================================
--- 16.7) Car Page
+-- 16.8) Car Page
 --==================================================================
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
 
@@ -2068,7 +2093,7 @@ carLoadBtn.MouseButton1Click:Connect(function()
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(CAR_URL)
             if not body then
-                return false, "Download failed (no HTTP executor)"
+                return false, "Download failed — check URL or executor HTTP"
             end
             if typeof(loadstring) ~= "function" then
                 return false, "loadstring unavailable"
@@ -2085,17 +2110,12 @@ carLoadBtn.MouseButton1Click:Connect(function()
         end)
 
         if ok then
-            if ret1 == true then
-                success = true
-            else
-                errMsg = ret2 or "Unknown error"
-            end
+            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
         else
             errMsg = tostring(ret1)
         end
 
         task.wait(0.25)
-
         carLoadBusy = false
         carLoadBtn.Text = origText
         carLoadBtn.BackgroundColor3 = origBg
@@ -2114,7 +2134,7 @@ end)
 styleActionButton(carLoadBtn, carLoadStroke)
 
 --==================================================================
--- 16.8) Misc Page
+-- 16.9) Misc Page
 --==================================================================
 local miscPage = createPage("misc", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, miscPage)
@@ -2135,7 +2155,6 @@ local miscState = {
     zoomOriginalMin = nil,
 }
 
--- ── Misc Header card ──
 local miscHeaderCard = create("Frame", {
     Size = UDim2.new(1, 0, 0, 86),
     BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
@@ -2173,7 +2192,6 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscHeaderCard)
 
--- ── Local-only notice ──
 local miscNotice = create("Frame", {
     Size = UDim2.new(1, 0, 0, 40),
     BackgroundColor3 = Color3.fromRGB(50, 30, 20), BackgroundTransparency = 0.15,
@@ -2188,7 +2206,6 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscNotice)
 
--- ── Helper: two-button row ──
 local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight)
     local row = create("Frame", {
         Size = UDim2.new(1, 0, 0, 46), BackgroundTransparency = 1,
@@ -2223,7 +2240,6 @@ local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight
     return leftBtn, rightBtn
 end
 
--- ── Helper: full-width button ──
 local function createMiscButton(parent, order, label, color, strokeColor, onClick)
     local btn = create("TextButton", {
         Size = UDim2.new(1, 0, 0, 44),
@@ -2239,7 +2255,6 @@ local function createMiscButton(parent, order, label, color, strokeColor, onClic
     return btn
 end
 
--- ── Quality helpers ──
 local function getUserGameSettings()
     local ok, usFn = pcall(function() return UserSettings end)
     if not ok or not usFn then return nil end
@@ -2347,7 +2362,6 @@ local function decreaseQuality()
     end
 end
 
--- ── Lighting helpers ──
 local function captureLightingOriginals()
     if miscState.lightingOriginal then return end
     miscState.lightingOriginal = {
@@ -2392,7 +2406,6 @@ local function applyDay()
     showToast("◈  Day applied (local only)")
 end
 
--- ── Server helpers ──
 local teleportBusy = false
 
 local function showConfirm(titleText, messageText, onConfirm)
@@ -2503,7 +2516,6 @@ local function rejoinServer()
     )
 end
 
--- ── Infinite Zoom ──
 local function toggleInfiniteZoom(enabled)
     if enabled then
         if not miscState.zoomCaptured then
@@ -2530,10 +2542,6 @@ local function toggleInfiniteZoom(enabled)
         showToast("◉  Infinite Zoom OFF")
     end
 end
-
--- ══════════════════════════════════════════════════════════════════
---  Misc UI — Build sections
--- ══════════════════════════════════════════════════════════════════
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
@@ -2621,7 +2629,6 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
--- ── Misc cleanup ──
 _G.LYNEX_CLEANUP_MISC = function()
     if miscState.lightingOriginal then
         pcall(function()
@@ -2649,194 +2656,210 @@ _G.LYNEX_CLEANUP_MISC = function()
 end
 
 --==================================================================
--- 16.9) Anti-strike Page ✨ (النسخة المصححة)
+-- 16.10) Anti-strike Page — DEFENSIVE WRAP (FIX)
 --==================================================================
-local ANTI_STRIKE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Anti"
+print("[LYNEX] Section 16.10 — Anti-strike loading...")
 
-local antiStrikePage = createPage("antistrike", true)
-create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, antiStrikePage)
-create("UIPadding", {
-    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
-}, antiStrikePage)
+local antiStrikePage
+local okAntiStrike, errAntiStrike = pcall(function()
+    local ANTI_STRIKE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Anti"
 
-local asHeaderCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 86),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
-}, antiStrikePage)
-addCorner(12, asHeaderCard); addStroke(THEME.BORDER, 1, 0.15, asHeaderCard)
+    antiStrikePage = createPage("antistrike", true)
+    create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, antiStrikePage)
+    create("UIPadding", {
+        PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+    }, antiStrikePage)
 
-local asIconFrame = create("Frame", {
-    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
-    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-}, asHeaderCard)
-addCorner(30, asIconFrame)
-addStroke(THEME.P_GLOW, 1.5, 0.2, asIconFrame)
-addGradient(asIconFrame, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
-}, 45)
-create("TextLabel", {
-    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-    Text = "🛡", Font = FONT.Logo, TextSize = 26,
-    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-}, asIconFrame)
+    local asHeaderCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 86),
+        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+    }, antiStrikePage)
+    addCorner(12, asHeaderCard); addStroke(THEME.BORDER, 1, 0.15, asHeaderCard)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Anti-strike Script",
-    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, asHeaderCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-    BackgroundTransparency = 1,
-    Text = "Show and run the Anti-strike Script in supported games. Load the external script to activate.",
-    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, asHeaderCard)
+    local asIconFrame = create("Frame", {
+        Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+        BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+    }, asHeaderCard)
+    addCorner(30, asIconFrame)
+    addStroke(THEME.P_GLOW, 1.5, 0.2, asIconFrame)
+    addGradient(asIconFrame, {
+        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+        ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+    }, 45)
+    create("TextLabel", {
+        Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+        Text = "⛨", Font = FONT.Logo, TextSize = 26,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+    }, asIconFrame)
 
-local asActionCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 114),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
-}, antiStrikePage)
-addCorner(12, asActionCard); addStroke(THEME.BORDER, 1, 0.15, asActionCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+        BackgroundTransparency = 1, Text = "Anti-strike Script",
+        Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, asHeaderCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+        BackgroundTransparency = 1,
+        Text = "Show and run the Anti-strike Script in supported games. Load the external script to activate.",
+        Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, asHeaderCard)
 
-local asStatus = create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
-    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, asActionCard)
+    local asActionCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 114),
+        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+    }, antiStrikePage)
+    addCorner(12, asActionCard); addStroke(THEME.BORDER, 1, 0.15, asActionCard)
 
-local asLoadBtn = create("TextButton", {
-    Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  Show Anti-strike Script",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-    TextScaled = false, ZIndex = 5,
-}, asActionCard)
-addCorner(10, asLoadBtn)
-local asLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, asLoadBtn)
-addGradient(asLoadBtn, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
-    ColorSequenceKeypoint.new(1, THEME.P_MAIN),
-}, 90)
+    local asStatus = create("TextLabel", {
+        Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+        BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+        Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, asActionCard)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-    BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, asActionCard)
+    local asLoadBtn = create("TextButton", {
+        Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+        Text = "◈  Show Anti-strike Script",
+        Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
+        TextScaled = false, ZIndex = 5,
+    }, asActionCard)
+    addCorner(10, asLoadBtn)
+    local asLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, asLoadBtn)
+    addGradient(asLoadBtn, {
+        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+        ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+        ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+    }, 90)
 
-local asInstrCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 146),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
-}, antiStrikePage)
-addCorner(12, asInstrCard); addStroke(THEME.BORDER, 1, 0.15, asInstrCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+        BackgroundTransparency = 1,
+        Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, asActionCard)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
-    Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, asInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundTransparency = 1,
-    Text = "Press the button above to show and run the Anti-strike Script.",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, asInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-    BackgroundTransparency = 1,
-    Text = "لتفعيل السكربت اضغط على هذا الزر",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, asInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-    BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, asInstrCard)
+    local asInstrCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 146),
+        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+    }, antiStrikePage)
+    addCorner(12, asInstrCard); addStroke(THEME.BORDER, 1, 0.15, asInstrCard)
 
-local asLoadBusy = false
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+        BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, asInstrCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+        BackgroundTransparency = 1,
+        Text = "Press the button above to show and run the Anti-strike Script.",
+        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, asInstrCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+        BackgroundTransparency = 1,
+        Text = "لتفعيل السكربت اضغط على هذا الزر",
+        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, asInstrCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+        BackgroundTransparency = 1,
+        Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, asInstrCard)
 
-local function setAsStatus(text, color)
-    asStatus.Text = text
-    asStatus.TextColor3 = color or THEME.TX_DIM
-end
+    local asLoadBusy = false
 
-asLoadBtn.MouseButton1Click:Connect(function()
-    if asLoadBusy then return end
-    asLoadBusy = true
+    local function setAsStatus(text, color)
+        asStatus.Text = text
+        asStatus.TextColor3 = color or THEME.TX_DIM
+    end
 
-    local origText = "◈  Show Anti-strike Script"
-    local origBg = THEME.P_MAIN
+    asLoadBtn.MouseButton1Click:Connect(function()
+        if asLoadBusy then return end
+        asLoadBusy = true
 
-    asLoadBtn.Text = "⏳  Loading…"
-    asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
+        local origText = "◈  Show Anti-strike Script"
+        local origBg = THEME.P_MAIN
 
-    task.spawn(function()
-        local success = false
-        local errMsg = nil
+        asLoadBtn.Text = "⏳  Loading…"
+        asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+        setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
 
-        local ok, ret1, ret2 = pcall(function()
-            local body = fetchUrl(ANTI_STRIKE_URL)
-            if not body then
-                return false, "Download failed (no HTTP executor returned a body)"
-            end
-            if typeof(loadstring) ~= "function" then
-                return false, "loadstring unavailable"
-            end
-            local fn, compileErr = loadstring(body)
-            if not fn then
-                return false, "Compile error: " .. tostring(compileErr)
-            end
-            local runOk, runErr = pcall(fn)
-            if not runOk then
-                return false, "Runtime error: " .. tostring(runErr)
-            end
-            return true
-        end)
+        task.spawn(function()
+            local success = false
+            local errMsg = nil
 
-        if ok then
-            if ret1 == true then
-                success = true
+            local ok, ret1, ret2 = pcall(function()
+                local body = fetchUrl(ANTI_STRIKE_URL)
+                if not body then
+                    return false, "Download failed — check URL or executor HTTP"
+                end
+                if typeof(loadstring) ~= "function" then
+                    return false, "loadstring unavailable"
+                end
+                local fn, compileErr = loadstring(body)
+                if not fn then
+                    return false, "Compile error: " .. tostring(compileErr)
+                end
+                local runOk, runErr = pcall(fn)
+                if not runOk then
+                    return false, "Runtime error: " .. tostring(runErr)
+                end
+                return true
+            end)
+
+            if ok then
+                if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
             else
-                errMsg = ret2 or "Unknown error"
+                errMsg = tostring(ret1)
             end
-        else
-            errMsg = tostring(ret1)
-        end
 
-        task.wait(0.25)
+            task.wait(0.25)
+            asLoadBusy = false
+            asLoadBtn.Text = origText
+            asLoadBtn.BackgroundColor3 = origBg
 
-        asLoadBusy = false
-        asLoadBtn.Text = origText
-        asLoadBtn.BackgroundColor3 = origBg
-
-        if success then
-            setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
-            showToast("✓  Anti-strike Script loaded")
-        else
-            warn("[LYNEX Anti-strike] Failed:", errMsg)
-            setAsStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "Unknown error"))
-        end
+            if success then
+                setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
+                showToast("✓  Anti-strike Script loaded")
+            else
+                warn("[LYNEX Anti-strike] Failed:", errMsg)
+                setAsStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+                showToast("✕  " .. (errMsg or "Unknown error"))
+            end
+        end)
     end)
+
+    styleActionButton(asLoadBtn, asLoadStroke)
 end)
 
-styleActionButton(asLoadBtn, asLoadStroke)
+if okAntiStrike then
+    print("[LYNEX] ✓ Anti-strike section loaded OK")
+else
+    warn("[LYNEX] ✗ Anti-strike section FAILED:", errAntiStrike)
+    if not antiStrikePage then
+        antiStrikePage = createPage("antistrike", true)
+        create("TextLabel", {
+            Size = UDim2.new(1, 0, 0, 80),
+            BackgroundTransparency = 1,
+            Text = "⚠ تعذّر تحميل تبويب Anti-strike:\n\n" .. tostring(errAntiStrike),
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+            TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+        }, antiStrikePage)
+    end
+end
 
 --==================================================================
 -- 17) Floating button
@@ -3231,4 +3254,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.1] ✦ Ready — Home + Players + Player + Auto Fish + Car + Misc + Anti-strike + News + Settings")
+print("[LYNEX HUB v3.2] ✦ Ready — Anti-strike hardened")
