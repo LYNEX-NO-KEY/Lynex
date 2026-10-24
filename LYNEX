@@ -1,7 +1,7 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.1 ✦
---  Home • Players • Player • Auto Fish • Car • Misc • News • Settings
+--  ✦ LYNEX HUB v3.1 ✦  (with Anti-strike + Horizontal Tabs)
+--  Home • Players • Player • Auto Fish • Car • Misc • Anti-strike • News • Settings
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -294,7 +294,7 @@ local closeBtn = create("TextButton", {
 addCorner(8, closeBtn); addStroke(THEME.DANGER, 1, 0.3, closeBtn)
 
 --==================================================================
--- 9) Body / Sidebar / Content
+-- 9) Body / Tab Bar (Horizontal) / Content
 --==================================================================
 local body = create("Frame", {
     Name = "Body", Size = UDim2.new(1, 0, 1, -headerH),
@@ -302,20 +302,59 @@ local body = create("Frame", {
     BackgroundTransparency = 1, ZIndex = 3,
 }, main)
 
-local sidebarW = 106
-local sidebar = create("Frame", {
-    Name = "Sidebar", Size = UDim2.new(0, sidebarW, 1, 0),
+local tabBarH = 42
+local ARROW_W = 26
+
+local tabBar = create("Frame", {
+    Name = "TabBar", Size = UDim2.new(1, 0, 0, tabBarH),
     BackgroundColor3 = THEME.BG_SIDEBAR, BackgroundTransparency = 0.2,
     BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 3,
 }, body)
-create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, sidebar)
+create("Frame", {
+    Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1),
+    BackgroundColor3 = THEME.BORDER, BackgroundTransparency = 0.5,
+    BorderSizePixel = 0, ZIndex = 3,
+}, tabBar)
+
+local leftArrow = create("TextButton", {
+    Name = "LeftArrow", Size = UDim2.fromOffset(ARROW_W, tabBarH),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.1,
+    AutoButtonColor = false, Text = "◀", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextTransparency = 0.6, ZIndex = 6,
+}, tabBar)
+addStroke(THEME.BORDER, 1, 0.4, leftArrow)
+
+local rightArrow = create("TextButton", {
+    Name = "RightArrow", Size = UDim2.fromOffset(ARROW_W, tabBarH),
+    Position = UDim2.new(1, -ARROW_W, 0, 0),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.1,
+    AutoButtonColor = false, Text = "▶", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextTransparency = 0.6, ZIndex = 6,
+}, tabBar)
+addStroke(THEME.BORDER, 1, 0.4, rightArrow)
+
+local tabScroll = create("ScrollingFrame", {
+    Name = "TabScroll", Size = UDim2.new(1, -ARROW_W * 2, 1, 0),
+    Position = UDim2.new(0, ARROW_W, 0, 0),
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    ScrollBarThickness = 0, CanvasSize = UDim2.new(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.X,
+    ScrollingDirection = Enum.ScrollingDirection.X,
+    ZIndex = 4, ClipsDescendants = true,
+}, tabBar)
+create("UIListLayout", {
+    Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder,
+    FillDirection = Enum.FillDirection.Horizontal,
+    VerticalAlignment = Enum.VerticalAlignment.Center,
+}, tabScroll)
 create("UIPadding", {
-    PaddingTop = UDim.new(0, 8), PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7),
-}, sidebar)
+    PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4),
+}, tabScroll)
 
 local content = create("Frame", {
-    Name = "Content", Size = UDim2.new(1, -sidebarW, 1, 0),
-    Position = UDim2.new(0, sidebarW, 0, 0), BackgroundTransparency = 1, ZIndex = 3,
+    Name = "Content", Size = UDim2.new(1, 0, 1, -tabBarH),
+    Position = UDim2.new(0, 0, 0, tabBarH), BackgroundTransparency = 1, ZIndex = 3,
 }, body)
 create("UIPadding", {
     PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12),
@@ -328,44 +367,53 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs  ◀️ + Misc (جديد)
+-- 10) Tabs (with Anti-strike)
 --==================================================================
 local TABS = {
-    { id = "home",     name = "Home",      icon = "⌂"  },
-    { id = "players",  name = "Players",   icon = "◉"  },
-    { id = "player",   name = "Player",    icon = "●"  },
-    { id = "autofish", name = "Auto Fish", icon = "≋"  },
-    { id = "car",      name = "Car",       icon = "🚗" },
-    { id = "misc",     name = "Misc",      icon = "⚒"  },  -- ◀️ جديد
-    { id = "news",     name = "News",      icon = "✉"  },
-    { id = "settings", name = "Settings",  icon = "⚙"  },
+    { id = "home",       name = "Home",        icon = "⌂"  },
+    { id = "players",    name = "Players",     icon = "◉"  },
+    { id = "player",     name = "Player",      icon = "●"  },
+    { id = "autofish",   name = "Auto Fish",   icon = "≋"  },
+    { id = "car",        name = "Car",         icon = "🚗" },
+    { id = "misc",       name = "Misc",        icon = "⚒"  },
+    { id = "antistrike", name = "Anti-strike", icon = "🛡" },  -- NEW
+    { id = "news",       name = "News",        icon = "✉"  },
+    { id = "settings",   name = "Settings",    icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
+local updateArrowStates  -- forward decl
+
+local function computeTabWidth(tab)
+    local base = 34 + #tab.name * 6
+    return math.clamp(base, 82, 128)
+end
 
 local function createTabButton(tab, order)
+    local btnW = computeTabWidth(tab)
     local btn = create("TextButton", {
-        Name = tab.id .. "Tab", Size = UDim2.new(1, 0, 0, 32),
+        Name = tab.id .. "Tab", Size = UDim2.fromOffset(btnW, 32),
         BackgroundColor3 = THEME.BG_CARD, AutoButtonColor = false,
         Text = "", LayoutOrder = order, ZIndex = 4,
-    }, sidebar)
+    }, tabScroll)
     addCorner(8, btn)
     local stroke = addStroke(THEME.BORDER, 1, 0.4, btn)
     local indicator = create("Frame", {
-        Size = UDim2.new(0, 3, 0.55, 0), Position = UDim2.new(0, 0, 0.225, 0),
+        Size = UDim2.new(0.6, 0, 0, 2), Position = UDim2.new(0.5, 0, 1, -3),
+        AnchorPoint = Vector2.new(0.5, 1),
         BackgroundColor3 = THEME.P_GLOW, BorderSizePixel = 0,
-        Visible = false, ZIndex = 5,
+        Visible = false, ZIndex = 6,
     }, btn)
-    addCorner(2, indicator)
+    addCorner(1, indicator)
     local icon = create("TextLabel", {
-        Size = UDim2.fromOffset(20, 20), Position = UDim2.new(0, 9, 0.5, -10),
-        BackgroundTransparency = 1, Text = tab.icon, Font = FONT.Bold, TextSize = 14,
+        Size = UDim2.fromOffset(16, 16), Position = UDim2.new(0, 6, 0.5, -8),
+        BackgroundTransparency = 1, Text = tab.icon, Font = FONT.Bold, TextSize = 12,
         TextColor3 = THEME.P_GLOW, ZIndex = 5,
     }, btn)
     local label = create("TextLabel", {
-        Size = UDim2.new(1, -36, 1, 0), Position = UDim2.new(0, 32, 0, 0),
-        BackgroundTransparency = 1, Text = tab.name, Font = FONT.Medium, TextSize = 11,
-        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
+        Size = UDim2.new(1, -28, 1, 0), Position = UDim2.new(0, 24, 0, 0),
+        BackgroundTransparency = 1, Text = tab.name, Font = FONT.Medium, TextSize = 10,
+        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, btn)
     tabButtons[tab.id] = { btn = btn, stroke = stroke, indicator = indicator, icon = icon, label = label }
@@ -373,6 +421,53 @@ local function createTabButton(tab, order)
 end
 
 for i, tab in ipairs(TABS) do createTabButton(tab, i) end
+
+--==================================================================
+-- 10.1) Horizontal scroll (arrows)
+--==================================================================
+local function getMaxScrollX()
+    local layout = tabScroll:FindFirstChildOfClass("UIListLayout")
+    if not layout then return 0 end
+    local pad = 0
+    local padding = tabScroll:FindFirstChildOfClass("UIPadding")
+    if padding then pad = padding.PaddingLeft.Offset + padding.PaddingRight.Offset end
+    return math.max(0, layout.AbsoluteContentSize.X + pad - tabScroll.AbsoluteSize.X)
+end
+
+updateArrowStates = function()
+    local pos = tabScroll.CanvasPosition.X
+    local maxScroll = getMaxScrollX()
+    local canLeft = pos > 1
+    local canRight = pos < maxScroll - 1
+    leftArrow.TextTransparency = canLeft and 0 or 0.6
+    rightArrow.TextTransparency = canRight and 0 or 0.6
+    leftArrow.BackgroundTransparency = canLeft and 0.1 or 0.5
+    rightArrow.BackgroundTransparency = canRight and 0.1 or 0.5
+end
+
+local scrollTween = nil
+local function scrollTabBy(px)
+    local current = tabScroll.CanvasPosition.X
+    local maxScroll = getMaxScrollX()
+    local target = math.clamp(current + px, 0, maxScroll)
+    if scrollTween then scrollTween:Cancel() end
+    scrollTween = TweenService:Create(tabScroll, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        CanvasPosition = Vector2.new(target, 0),
+    })
+    scrollTween:Play()
+    task.delay(0.30, updateArrowStates)
+end
+
+leftArrow.MouseButton1Click:Connect(function() scrollTabBy(-220) end)
+rightArrow.MouseButton1Click:Connect(function() scrollTabBy(220) end)
+tabScroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+    if not scrollTween then updateArrowStates() end
+end)
+
+task.defer(function()
+    task.wait(0.05)
+    updateArrowStates()
+end)
 
 --==================================================================
 -- 11) Pages
@@ -1077,6 +1172,7 @@ local NEWS_DATA = {
     { title = "Server Info + Auto Fish", body = "Home now shows live Server Information. New Auto Fish tab loads the fishing script on demand.", date = "2025-03-08" },
     { title = "Car Script Tab", body = "New Car tab added. Load and run the Car Script on demand — mobile friendly with press animations.", date = "2025-03-15" },
     { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
+    { title = "Anti-strike + Horizontal Tabs", body = "New Anti-strike toggle tab. Sidebar converted to horizontal tab bar with left/right scroll arrows.", date = "2025-03-29" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1712,10 +1808,38 @@ _G.LYNEX_CLEANUP = function()
     end
     if spectate.active then pcall(function() stopSpectating("silent") end) end
     if _G.LYNEX_CLEANUP_MISC then pcall(_G.LYNEX_CLEANUP_MISC) end
+    if _G.LYNEX_CLEANUP_ANTI then pcall(_G.LYNEX_CLEANUP_ANTI) end
 end
 
 --==================================================================
--- 16.6) Auto Fish Page
+-- 16.6) fetchUrl helper (shared for external scripts)
+--==================================================================
+local function fetchUrl(url)
+    if typeof(fluxus) == "table" and typeof(fluxus.request) == "function" then
+        local ok, resp = pcall(fluxus.request, { Url = url, Method = "GET" })
+        if ok and resp and resp.Body then return resp.Body end
+    end
+    if typeof(syn) == "table" and typeof(syn.request) == "function" then
+        local ok, resp = pcall(syn.request, { Url = url, Method = "GET" })
+        if ok and resp and resp.Body then return resp.Body end
+    end
+    if typeof(http_request) == "function" then
+        local ok, resp = pcall(http_request, { Url = url, Method = "GET" })
+        if ok and resp and resp.Body then return resp.Body end
+    end
+    if typeof(request) == "function" then
+        local ok, resp = pcall(request, { Url = url, Method = "GET" })
+        if ok and resp and resp.Body then return resp.Body end
+    end
+    local ok, body = pcall(function()
+        return game:GetService("HttpService"):GetAsync(url)
+    end)
+    if ok and body then return body end
+    return nil
+end
+
+--==================================================================
+-- 16.7) Auto Fish Page
 --==================================================================
 local AUTO_FISH_URL = "https://raw.githubusercontent.com/coronavip100-max/Auto-fish/refs/heads/main/Auto%20fish"
 
@@ -1836,30 +1960,6 @@ create("TextLabel", {
 
 local loadBusy = false
 
-local function fetchUrl(url)
-    if typeof(fluxus) == "table" and typeof(fluxus.request) == "function" then
-        local ok, resp = pcall(fluxus.request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    if typeof(syn) == "table" and typeof(syn.request) == "function" then
-        local ok, resp = pcall(syn.request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    if typeof(http_request) == "function" then
-        local ok, resp = pcall(http_request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    if typeof(request) == "function" then
-        local ok, resp = pcall(request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    local ok, body = pcall(function()
-        return game:GetService("HttpService"):GetAsync(url)
-    end)
-    if ok and body then return body end
-    return nil
-end
-
 local function loadAutoFishScript()
     local body = fetchUrl(AUTO_FISH_URL)
     if not body then
@@ -1887,22 +1987,17 @@ end
 afLoadBtn.MouseButton1Click:Connect(function()
     if loadBusy then return end
     loadBusy = true
-
     local origText = "◈  Load Auto Fish Script"
     local origBg = THEME.P_MAIN
-
     afLoadBtn.Text = "⏳  Loading…"
     afLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
     setAfStatus("⏳  Fetching script…", THEME.TX_DIM)
-
     task.spawn(function()
         local ok, errMsg = pcall(loadAutoFishScript)
         task.wait(0.25)
-
         loadBusy = false
         afLoadBtn.Text = origText
         afLoadBtn.BackgroundColor3 = origBg
-
         if ok and (errMsg ~= false) then
             setAfStatus("✓  Script executed successfully", THEME.OK)
             showToast("✓  Auto Fish loaded")
@@ -1917,7 +2012,7 @@ end)
 styleActionButton(afLoadBtn, afLoadStroke)
 
 --==================================================================
--- 16.7) Car Page
+-- 16.8) Car Page
 --==================================================================
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
 
@@ -2046,53 +2141,34 @@ end
 carLoadBtn.MouseButton1Click:Connect(function()
     if carLoadBusy then return end
     carLoadBusy = true
-
     local origText = "◈  Show Car Script"
     local origBg = THEME.P_MAIN
-
     carLoadBtn.Text = "⏳  Loading…"
     carLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
     setCarStatus("⏳  Fetching script…", THEME.TX_DIM)
-
     task.spawn(function()
         local success = false
         local errMsg = nil
-
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(CAR_URL)
-            if not body then
-                return false, "Download failed (no HTTP executor)"
-            end
-            if typeof(loadstring) ~= "function" then
-                return false, "loadstring unavailable"
-            end
+            if not body then return false, "Download failed (no HTTP executor)" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
             local fn, compileErr = loadstring(body)
-            if not fn then
-                return false, "Compile error: " .. tostring(compileErr)
-            end
+            if not fn then return false, "Compile error: " .. tostring(compileErr) end
             local runOk, runErr = pcall(fn)
-            if not runOk then
-                return false, "Runtime error: " .. tostring(runErr)
-            end
+            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
             return true
         end)
-
         if ok then
-            if ret1 == true then
-                success = true
-            else
-                errMsg = ret2 or "Unknown error"
-            end
+            if ret1 == true then success = true
+            else errMsg = ret2 or "Unknown error" end
         else
             errMsg = tostring(ret1)
         end
-
         task.wait(0.25)
-
         carLoadBusy = false
         carLoadBtn.Text = origText
         carLoadBtn.BackgroundColor3 = origBg
-
         if success then
             setCarStatus("✓  Car Script executed successfully", THEME.OK)
             showToast("✓  Car Script loaded")
@@ -2106,7 +2182,7 @@ end)
 styleActionButton(carLoadBtn, carLoadStroke)
 
 --==================================================================
--- 16.8) Misc Page  ◀️ جديد
+-- 16.9) Misc Page
 --==================================================================
 local miscPage = createPage("misc", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, miscPage)
@@ -2118,16 +2194,12 @@ local miscOrderCounter = 0
 local function miscOrder() miscOrderCounter += 1; return miscOrderCounter end
 
 local miscState = {
-    qualityCaptured = false,
-    qualityOriginal = nil,
+    qualityCaptured = false, qualityOriginal = nil,
     lightingOriginal = nil,
-    zoomActive = false,
-    zoomCaptured = false,
-    zoomOriginalMax = nil,
-    zoomOriginalMin = nil,
+    zoomActive = false, zoomCaptured = false,
+    zoomOriginalMax = nil, zoomOriginalMin = nil,
 }
 
--- ── Misc Header card ──
 local miscHeaderCard = create("Frame", {
     Size = UDim2.new(1, 0, 0, 86),
     BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
@@ -2165,7 +2237,6 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscHeaderCard)
 
--- ── Local-only notice ──
 local miscNotice = create("Frame", {
     Size = UDim2.new(1, 0, 0, 40),
     BackgroundColor3 = Color3.fromRGB(50, 30, 20), BackgroundTransparency = 0.15,
@@ -2180,7 +2251,6 @@ create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscNotice)
 
--- ── Helper: two-button row ──
 local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight)
     local row = create("Frame", {
         Size = UDim2.new(1, 0, 0, 46), BackgroundTransparency = 1,
@@ -2215,7 +2285,6 @@ local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight
     return leftBtn, rightBtn
 end
 
--- ── Helper: full-width button ──
 local function createMiscButton(parent, order, label, color, strokeColor, onClick)
     local btn = create("TextButton", {
         Size = UDim2.new(1, 0, 0, 44),
@@ -2231,7 +2300,6 @@ local function createMiscButton(parent, order, label, color, strokeColor, onClic
     return btn
 end
 
--- ── Quality helpers ──
 local function getUserGameSettings()
     local ok, usFn = pcall(function() return UserSettings end)
     if not ok or not usFn then return nil end
@@ -2267,7 +2335,7 @@ local function getQualityIndex(setting)
     return nil
 end
 
-local qualityStatusLbl  -- forward ref
+local qualityStatusLbl
 
 local function updateQualityStatus()
     if not qualityStatusLbl then return end
@@ -2277,44 +2345,33 @@ local function updateQualityStatus()
         return
     end
     local idx = getQualityIndex(lvl)
-    if idx then
-        qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
-    else
-        qualityStatusLbl.Text = "◈ Current: Automatic"
-    end
+    if idx then qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
+    else qualityStatusLbl.Text = "◈ Current: Automatic" end
 end
 
 local function captureQualityOriginal()
     if miscState.qualityCaptured then return end
     local lvl = getCurrentQualityLevel()
-    if lvl then
-        miscState.qualityOriginal = lvl
-        miscState.qualityCaptured = true
-    end
+    if lvl then miscState.qualityOriginal = lvl; miscState.qualityCaptured = true end
 end
 
 local function increaseQuality()
     captureQualityOriginal()
     local lvl = getCurrentQualityLevel()
     if not lvl then
-        -- Fallback: modify Lighting
         pcall(function()
             Lighting.GlobalShadows = true
             Lighting.ShadowSoftness = 0.2
             Lighting.EnvironmentDiffuseScale = 1
             Lighting.EnvironmentSpecularScale = 1
         end)
-        showToast("◈  Quality boosted (Lighting fallback)")
-        return
+        showToast("◈  Quality boosted (Lighting fallback)"); return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.min(idx + 1, #QUALITY_LEVELS)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus()
-        showToast("◈  Quality: Level " .. idx)
-    else
-        showToast("✕  Cannot change quality in this executor")
-    end
+        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
+    else showToast("✕  Cannot change quality in this executor") end
 end
 
 local function decreaseQuality()
@@ -2327,31 +2384,22 @@ local function decreaseQuality()
             Lighting.EnvironmentDiffuseScale = 0
             Lighting.EnvironmentSpecularScale = 0
         end)
-        showToast("◈  Quality reduced (Lighting fallback)")
-        return
+        showToast("◈  Quality reduced (Lighting fallback)"); return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.max(idx - 1, 1)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus()
-        showToast("◈  Quality: Level " .. idx)
-    else
-        showToast("✕  Cannot change quality in this executor")
-    end
+        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
+    else showToast("✕  Cannot change quality in this executor") end
 end
 
--- ── Lighting helpers ──
 local function captureLightingOriginals()
     if miscState.lightingOriginal then return end
     miscState.lightingOriginal = {
-        ClockTime = Lighting.ClockTime,
-        Brightness = Lighting.Brightness,
-        Ambient = Lighting.Ambient,
-        OutdoorAmbient = Lighting.OutdoorAmbient,
-        ColorShift_Top = Lighting.ColorShift_Top,
-        ColorShift_Bottom = Lighting.ColorShift_Bottom,
-        FogEnd = Lighting.FogEnd,
-        FogStart = Lighting.FogStart,
+        ClockTime = Lighting.ClockTime, Brightness = Lighting.Brightness,
+        Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient,
+        ColorShift_Top = Lighting.ColorShift_Top, ColorShift_Bottom = Lighting.ColorShift_Bottom,
+        FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart,
     }
 end
 
@@ -2385,67 +2433,45 @@ local function applyDay()
     showToast("◈  Day applied (local only)")
 end
 
--- ── Server helpers ──
 local teleportBusy = false
 
 local function showConfirm(titleText, messageText, onConfirm)
     local overlay = create("Frame", {
         Size = UDim2.fromScale(1, 1),
-        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-        BackgroundTransparency = 0.5,
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 0.5,
         BorderSizePixel = 0, ZIndex = 200,
     }, screenGui)
-
     local modal = create("Frame", {
-        Size = UDim2.fromOffset(260, 150),
-        Position = UDim2.new(0.5, -130, 0.5, -75),
-        BackgroundColor3 = THEME.BG_PANEL,
-        BorderSizePixel = 0, ZIndex = 201,
+        Size = UDim2.fromOffset(260, 150), Position = UDim2.new(0.5, -130, 0.5, -75),
+        BackgroundColor3 = THEME.BG_PANEL, BorderSizePixel = 0, ZIndex = 201,
     }, overlay)
-    addCorner(12, modal)
-    addStroke(THEME.P_BRIGHT, 1.5, 0.15, modal)
-
+    addCorner(12, modal); addStroke(THEME.P_BRIGHT, 1.5, 0.15, modal)
     create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 24),
-        Position = UDim2.new(0, 12, 0, 12),
-        BackgroundTransparency = 1,
-        Text = titleText, Font = FONT.Bold, TextSize = 14,
-        TextColor3 = THEME.TX_MAIN,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202,
+        Size = UDim2.new(1, -24, 0, 24), Position = UDim2.new(0, 12, 0, 12),
+        BackgroundTransparency = 1, Text = titleText, Font = FONT.Bold, TextSize = 14,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202,
     }, modal)
-
     create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 48),
-        Position = UDim2.new(0, 12, 0, 40),
-        BackgroundTransparency = 1,
-        Text = messageText, Font = FONT.Regular, TextSize = 10,
-        TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 202,
+        Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 40),
+        BackgroundTransparency = 1, Text = messageText, Font = FONT.Regular, TextSize = 10,
+        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true, ZIndex = 202,
     }, modal)
-
     local cancelBtn = create("TextButton", {
-        Size = UDim2.new(0.5, -18, 0, 34),
-        Position = UDim2.new(0, 12, 1, -46),
-        BackgroundColor3 = THEME.BG_CARD_HI,
-        AutoButtonColor = false, Text = "Cancel",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM,
+        Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0, 12, 1, -46),
+        BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
+        Text = "Cancel", Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM,
         ZIndex = 202,
     }, modal)
     addCorner(8, cancelBtn); addStroke(THEME.BORDER, 1, 0.3, cancelBtn)
-
     local confirmBtn = create("TextButton", {
-        Size = UDim2.new(0.5, -18, 0, 34),
-        Position = UDim2.new(0.5, 6, 1, -46),
-        BackgroundColor3 = THEME.P_MAIN,
-        AutoButtonColor = false, Text = "Confirm",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN,
+        Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0.5, 6, 1, -46),
+        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+        Text = "Confirm", Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN,
         ZIndex = 202,
     }, modal)
     addCorner(8, confirmBtn); addStroke(THEME.P_GLOW, 1.5, 0.2, confirmBtn)
-
-    cancelBtn.MouseButton1Click:Connect(function()
-        pcall(function() overlay:Destroy() end)
-    end)
+    cancelBtn.MouseButton1Click:Connect(function() pcall(function() overlay:Destroy() end) end)
     confirmBtn.MouseButton1Click:Connect(function()
         pcall(function() overlay:Destroy() end)
         if onConfirm then pcall(onConfirm) end
@@ -2454,8 +2480,7 @@ end
 
 local function changeServer()
     if teleportBusy then return end
-    showConfirm(
-        "Change Server",
+    showConfirm("Change Server",
         "You will be teleported to a new server of this game. Session state will be lost.",
         function()
             teleportBusy = true
@@ -2474,8 +2499,7 @@ end
 
 local function rejoinServer()
     if teleportBusy then return end
-    showConfirm(
-        "Rejoin Server",
+    showConfirm("Rejoin Server",
         "You will rejoin this same server. Session state will be lost.",
         function()
             teleportBusy = true
@@ -2496,7 +2520,6 @@ local function rejoinServer()
     )
 end
 
--- ── Infinite Zoom ──
 local function toggleInfiniteZoom(enabled)
     if enabled then
         if not miscState.zoomCaptured then
@@ -2511,9 +2534,7 @@ local function toggleInfiniteZoom(enabled)
         if ok then
             miscState.zoomActive = true
             showToast("◉  Infinite Zoom ON (local only)")
-        else
-            showToast("✕  Camera locked by game")
-        end
+        else showToast("✕  Camera locked by game") end
     else
         pcall(function()
             localPlayer.CameraMaxZoomDistance = miscState.zoomOriginalMax or 400
@@ -2524,11 +2545,6 @@ local function toggleInfiniteZoom(enabled)
     end
 end
 
--- ══════════════════════════════════════════════════════════════════
---  Misc UI — Build sections
--- ══════════════════════════════════════════════════════════════════
-
--- GRAPHICS section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  GRAPHICS", Font = FONT.Bold, TextSize = 12,
@@ -2542,17 +2558,13 @@ createMiscRow(miscPage, miscOrder(),
 )
 
 qualityStatusLbl = create("TextLabel", {
-    Size = UDim2.new(1, 0, 0, 20),
-    BackgroundTransparency = 1,
-    Text = "◈ Current: —",
-    Font = FONT.Medium, TextSize = 10,
-    TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Center,
+    Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1,
+    Text = "◈ Current: —", Font = FONT.Medium, TextSize = 10,
+    TextColor3 = THEME.TX_SUBTLE, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 updateQualityStatus()
 
--- TIME section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  TIME OF DAY", Font = FONT.Bold, TextSize = 12,
@@ -2560,10 +2572,7 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscRow(miscPage, miscOrder(),
-    "☾  Night", "☀  Day",
-    applyNight, applyDay
-)
+createMiscRow(miscPage, miscOrder(), "☾  Night", "☀  Day", applyNight, applyDay)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
@@ -2573,7 +2582,6 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
--- SERVER section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  SERVER", Font = FONT.Bold, TextSize = 12,
@@ -2581,11 +2589,8 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscButton(miscPage, miscOrder(),
-    "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
-
-createMiscButton(miscPage, miscOrder(),
-    "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
+createMiscButton(miscPage, miscOrder(), "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
+createMiscButton(miscPage, miscOrder(), "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
@@ -2595,7 +2600,6 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
--- CAMERA section
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  CAMERA", Font = FONT.Bold, TextSize = 12,
@@ -2604,10 +2608,8 @@ create("TextLabel", {
 }, miscPage)
 
 createPlayerToggle(miscPage, miscOrder(),
-    "◉ Infinite Zoom",
-    "Extends camera max distance (local only)",
-    false,
-    toggleInfiniteZoom
+    "◉ Infinite Zoom", "Extends camera max distance (local only)",
+    false, toggleInfiniteZoom
 )
 
 create("TextLabel", {
@@ -2618,13 +2620,10 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
--- ── Misc cleanup ──
 _G.LYNEX_CLEANUP_MISC = function()
     if miscState.lightingOriginal then
         pcall(function()
-            for k, v in pairs(miscState.lightingOriginal) do
-                Lighting[k] = v
-            end
+            for k, v in pairs(miscState.lightingOriginal) do Lighting[k] = v end
         end)
         miscState.lightingOriginal = nil
     end
@@ -2637,12 +2636,271 @@ _G.LYNEX_CLEANUP_MISC = function()
     end
     if miscState.qualityCaptured and miscState.qualityOriginal then
         local s = getUserGameSettings()
-        if s then
-            pcall(function()
-                s.SavedQualityLevel = miscState.qualityOriginal
-            end)
+        if s then pcall(function() s.SavedQualityLevel = miscState.qualityOriginal end) end
+    end
+end
+
+--==================================================================
+-- 16.10) Anti-strike Page  ◀️ NEW
+--==================================================================
+local ANTI_STRIKE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Anti"
+
+local antiStrikePage = createPage("antistrike", true)
+create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, antiStrikePage)
+create("UIPadding", {
+    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+}, antiStrikePage)
+
+-- Header card
+local asHeaderCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 86),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+}, antiStrikePage)
+addCorner(12, asHeaderCard); addStroke(THEME.BORDER, 1, 0.15, asHeaderCard)
+
+local asIconFrame = create("Frame", {
+    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+}, asHeaderCard)
+addCorner(30, asIconFrame)
+addStroke(THEME.P_GLOW, 1.5, 0.2, asIconFrame)
+addGradient(asIconFrame, {
+    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+}, 45)
+create("TextLabel", {
+    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+    Text = "🛡", Font = FONT.Logo, TextSize = 26,
+    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+}, asIconFrame)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+    BackgroundTransparency = 1, Text = "Anti-strike",
+    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, asHeaderCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+    BackgroundTransparency = 1,
+    Text = "Toggle the external Anti-strike script on demand. Off by default.",
+    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, asHeaderCard)
+
+-- Action card
+local asActionCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 150),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+}, antiStrikePage)
+addCorner(12, asActionCard); addStroke(THEME.BORDER, 1, 0.15, asActionCard)
+
+local asStatus = create("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, asActionCard)
+
+local asBtn = create("TextButton", {
+    Size = UDim2.new(1, -24, 0, 50), Position = UDim2.new(0, 12, 0, 34),
+    BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+    Text = "◈  Enable Anti-strike",
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
+    ZIndex = 5,
+}, asActionCard)
+addCorner(10, asBtn)
+local asBtnStroke = addStroke(THEME.P_GLOW, 2, 0.2, asBtn)
+addGradient(asBtn, {
+    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+    ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+    ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+}, 90)
+
+-- Arabic instructions BELOW the button (centered)
+create("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 22), Position = UDim2.new(0, 12, 0, 94),
+    BackgroundTransparency = 1,
+    Text = "لتفعيل السكربت اضغط على هذا الزر",
+    Font = FONT.Medium, TextSize = 12, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true,
+    ZIndex = 5,
+}, asActionCard)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 14), Position = UDim2.new(0, 12, 0, 124),
+    BackgroundTransparency = 1,
+    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5,
+}, asActionCard)
+
+-- Info card
+local asInfoCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 108),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+}, antiStrikePage)
+addCorner(12, asInfoCard); addStroke(THEME.BORDER, 1, 0.15, asInfoCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+    BackgroundTransparency = 1, Text = "✦  HOW IT WORKS",
+    Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, asInfoCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 72), Position = UDim2.new(0, 12, 0, 32),
+    BackgroundTransparency = 1,
+    Text = "Press Enable to load & run the script. Press again to attempt a clean stop. Some scripts cannot be fully stopped after loading (they may register global hooks) — if issues occur, rejoin the server.",
+    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, asInfoCard)
+
+-- ── Anti-strike state + logic ──
+local antiState = {
+    active = false, busy = false,
+    thread = nil, cleanup = nil,
+}
+
+local function setAntiStatus(text, color)
+    asStatus.Text = text
+    asStatus.TextColor3 = color or THEME.TX_DIM
+end
+
+local function updateAntiButton()
+    if antiState.active then
+        asBtn.Text = "✕  Disable Anti-strike"
+        tween(asBtn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.DANGER })
+        tween(asBtnStroke, TweenInfo.new(0.2), { Color = THEME.DANGER_HI })
+    else
+        asBtn.Text = "◈  Enable Anti-strike"
+        tween(asBtn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.P_MAIN })
+        tween(asBtnStroke, TweenInfo.new(0.2), { Color = THEME.P_GLOW })
+    end
+end
+
+local function stopAntiStrike()
+    if not antiState.active then return true end
+    local stopped = false
+
+    if antiState.cleanup then
+        local ok = pcall(antiState.cleanup)
+        if ok then stopped = true end
+        antiState.cleanup = nil
+    end
+
+    if antiState.thread then
+        pcall(function()
+            if coroutine.status(antiState.thread) ~= "dead" then
+                coroutine.close(antiState.thread)
+            end
+        end)
+        antiState.thread = nil
+        stopped = true
+    end
+
+    pcall(function()
+        for _, key in ipairs({"Anti", "AntiStrike", "Anti_Strike", "AntiStrikeScript"}) do
+            if _G[key] ~= nil then _G[key] = nil; stopped = true end
+        end
+    end)
+
+    pcall(function()
+        local cg = game:GetService("CoreGui")
+        local pg = localPlayer:FindFirstChild("PlayerGui")
+        for _, name in ipairs({"AntiStrike", "Anti", "Anti-Strike"}) do
+            local g1 = cg and cg:FindFirstChild(name)
+            if g1 then g1:Destroy(); stopped = true end
+            local g2 = pg and pg:FindFirstChild(name)
+            if g2 then g2:Destroy(); stopped = true end
+        end
+    end)
+
+    antiState.active = false
+    return stopped
+end
+
+local function startAntiStrike()
+    if typeof(loadstring) ~= "function" then
+        return false, "loadstring unavailable"
+    end
+    local body = fetchUrl(ANTI_STRIKE_URL)
+    if not body or #body < 10 then
+        return false, "Download failed (check HTTP)"
+    end
+    local fn, compileErr = loadstring(body, "AntiStrike")
+    if not fn then
+        return false, "Compile error: " .. tostring(compileErr)
+    end
+    local co = coroutine.create(fn)
+    local ok, result = coroutine.resume(co)
+    if not ok then
+        return false, "Runtime error: " .. tostring(result)
+    end
+    antiState.thread = co
+    antiState.active = true
+
+    if typeof(result) == "function" then
+        antiState.cleanup = result
+    elseif typeof(result) == "table" then
+        if typeof(result.stop) == "function" then
+            antiState.cleanup = function() result:stop() end
+        elseif typeof(result.Destroy) == "function" then
+            antiState.cleanup = function() result:Destroy() end
+        elseif typeof(result.Disable) == "function" then
+            antiState.cleanup = function() result:Disable() end
         end
     end
+    return true
+end
+
+asBtn.MouseButton1Click:Connect(function()
+    if antiState.busy then return end
+    antiState.busy = true
+
+    if antiState.active then
+        setAntiStatus("⏳  Stopping…", THEME.TX_DIM)
+        asBtn.Text = "⏳  Stopping…"
+        task.spawn(function()
+            local stopped = stopAntiStrike()
+            task.wait(0.2)
+            antiState.busy = false
+            updateAntiButton()
+            if stopped then
+                setAntiStatus("⏸  Anti-strike disabled", THEME.TX_DIM)
+                showToast("✕  Anti-strike disabled")
+            else
+                setAntiStatus("⚠  Partial stop — rejoin if issues", Color3.fromRGB(230, 180, 80))
+                showToast("⚠  Partial stop — rejoin if issues")
+            end
+        end)
+    else
+        setAntiStatus("⏳  Loading…", THEME.TX_DIM)
+        asBtn.Text = "⏳  Loading…"
+        task.spawn(function()
+            local ok, err = startAntiStrike()
+            task.wait(0.2)
+            antiState.busy = false
+            if ok then
+                updateAntiButton()
+                setAntiStatus("✓  Anti-strike active", THEME.OK)
+                showToast("✓  Anti-strike enabled")
+            else
+                antiState.active = false
+                updateAntiButton()
+                setAntiStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                showToast("✕  " .. tostring(err))
+            end
+        end)
+    end
+end)
+
+styleActionButton(asBtn, asBtnStroke)
+
+_G.LYNEX_CLEANUP_ANTI = function()
+    if antiState.active then pcall(stopAntiStrike) end
 end
 
 --==================================================================
@@ -2774,7 +3032,7 @@ local function attachPressEffect(btn)
     end)
 end
 
-for _, btn in ipairs({ menuBtn, closeBtn, floatingBtn, resetBtn, discordBtn, spectateStopBtn }) do
+for _, btn in ipairs({ menuBtn, closeBtn, floatingBtn, resetBtn, discordBtn, spectateStopBtn, leftArrow, rightArrow }) do
     attachPressEffect(btn)
 end
 for _, data in pairs(tabButtons) do attachPressEffect(data.btn) end
@@ -2820,23 +3078,21 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --==================================================================
--- 22) Sidebar
+-- 22) Tab Bar Toggle (repurposed from sidebar)
 --==================================================================
-local sidebarOpen = true
-sidebar.Size = UDim2.new(0, sidebarW, 1, 0)
-content.Position = UDim2.new(0, sidebarW, 0, 0)
-content.Size = UDim2.new(1, -sidebarW, 1, 0)
-local function setSidebar(open)
-    if sidebarOpen == open then return end
-    sidebarOpen = open
-    local targetW = open and sidebarW or 0
-    tween(sidebar, EASE.OUT, { Size = UDim2.new(0, targetW, 1, 0) })
+local tabBarOpen = true
+local function setTabBar(open)
+    if tabBarOpen == open then return end
+    tabBarOpen = open
+    local targetH = open and tabBarH or 0
+    tween(tabBar, EASE.OUT, { Size = UDim2.new(1, 0, 0, targetH) })
     tween(content, EASE.OUT, {
-        Position = UDim2.new(0, targetW, 0, 0),
-        Size = UDim2.new(1, -targetW, 1, 0),
+        Position = UDim2.new(0, 0, 0, targetH),
+        Size = UDim2.new(1, 0, 1, -targetH),
     })
+    if open then task.delay(0.26, updateArrowStates) end
 end
-menuBtn.MouseButton1Click:Connect(function() setSidebar(not sidebarOpen) end)
+menuBtn.MouseButton1Click:Connect(function() setTabBar(not tabBarOpen) end)
 
 --==================================================================
 -- 23) Tab System
@@ -2891,6 +3147,8 @@ local function switchTab(id)
         if id == "news" then animateNewsCards() end
         if id == "players" then renderPlayers(searchBox.Text) end
     end
+    -- Ensure active tab is visible in the horizontal scroll
+    if updateArrowStates then task.delay(0.05, updateArrowStates) end
 end
 for id, data in pairs(tabButtons) do
     data.btn.MouseButton1Click:Connect(function() switchTab(id) end)
@@ -2969,7 +3227,7 @@ function applyWindowTransparency(pct)
     end
     setTransp(main, t)
     setTransp(header, math.min(1, t + 0.02))
-    setTransp(sidebar, math.min(1, t + 0.10))
+    setTransp(tabBar, math.min(1, t + 0.10))
 end
 
 function applyGlowState()
@@ -3005,6 +3263,7 @@ local function onViewportChange()
         if posY > vp.Y - 40 then posY = vp.Y - 40 end
         root.Position = UDim2.fromOffset(posX, posY)
     end
+    task.delay(0.05, updateArrowStates)
 end
 local function bindCamera(cam)
     if cam then cam:GetPropertyChangedSignal("ViewportSize"):Connect(onViewportChange) end
@@ -3038,4 +3297,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.1] ✦ Ready — Home + Players + Player + Auto Fish + Car + Misc + News + Settings")
+print("[LYNEX HUB v3.2] ✦ Ready — Home + Players + Player + Auto Fish + Car + Misc + Anti-strike + News + Settings")
