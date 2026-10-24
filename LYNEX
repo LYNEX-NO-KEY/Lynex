@@ -1,8 +1,8 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.2 ✦
+--  ✦ LYNEX HUB v3.3 ✦
 --  Home • Players • Player • Auto Fish • Car • Misc • Anti-strike • News • Settings
---  (Fixed: Anti-strike no longer breaks the entire script)
+--  (Sidebar is now scrollable — Settings always reachable)
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -295,23 +295,35 @@ local closeBtn = create("TextButton", {
 addCorner(8, closeBtn); addStroke(THEME.DANGER, 1, 0.3, closeBtn)
 
 --==================================================================
--- 9) Body / Sidebar / Content
+-- 9) Body / Sidebar (scrollable) / Content
 --==================================================================
 local body = create("Frame", {
     Name = "Body", Size = UDim2.new(1, 0, 1, -headerH),
     Position = UDim2.new(0, 0, 0, headerH),
-    BackgroundTransparency = 1, ZIndex = 3,
+    BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 3,
 }, main)
 
 local sidebarW = 106
-local sidebar = create("Frame", {
+-- ✅ ScrollingFrame بدل Frame: يسمح بالتمرير العمودي عند زيادة عدد التبويبات
+local sidebar = create("ScrollingFrame", {
     Name = "Sidebar", Size = UDim2.new(0, sidebarW, 1, 0),
     BackgroundColor3 = THEME.BG_SIDEBAR, BackgroundTransparency = 0.2,
     BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 3,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollingDirection = Enum.ScrollingDirection.Y,
+    ScrollBarThickness = 3,
+    ScrollBarImageColor3 = THEME.P_BRIGHT,
+    ScrollBarImageTransparency = 0.35,
+    ScrollingEnabled = true,
+    ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
 }, body)
 create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, sidebar)
 create("UIPadding", {
-    PaddingTop = UDim.new(0, 8), PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7),
+    PaddingTop = UDim.new(0, 8),
+    PaddingBottom = UDim.new(0, 8),
+    PaddingLeft = UDim.new(0, 7),
+    PaddingRight = UDim.new(0, 7),
 }, sidebar)
 
 local content = create("Frame", {
@@ -1080,6 +1092,7 @@ local NEWS_DATA = {
     { title = "Car Script Tab", body = "New Car tab added. Load and run the Car Script on demand — mobile friendly with press animations.", date = "2025-03-15" },
     { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
     { title = "Anti-strike Tab", body = "New Anti-strike tab added. Load and run the Anti-strike Script on demand — same design and workflow as Car.", date = "2025-03-29" },
+    { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable. All tabs including Settings are always reachable regardless of screen size.", date = "2025-04-05" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1748,7 +1761,6 @@ local function fetchUrl(url)
         if ok and typeof(res) == "string" and res ~= "" then body = res end
     end
 
-    -- Detect HTML error pages / 404 responses before passing to loadstring
     if body then
         local head = body:sub(1, 200):lower()
         if head:find("404: not found", 1, true)
@@ -2656,7 +2668,7 @@ _G.LYNEX_CLEANUP_MISC = function()
 end
 
 --==================================================================
--- 16.10) Anti-strike Page — DEFENSIVE WRAP (FIX)
+-- 16.10) Anti-strike Page — DEFENSIVE WRAP
 --==================================================================
 print("[LYNEX] Section 16.10 — Anti-strike loading...")
 
@@ -3101,6 +3113,17 @@ local function switchTab(id)
         tween(data.icon, TweenInfo.new(0.2), { TextColor3 = active and THEME.TX_MAIN or THEME.P_GLOW })
         tween(data.label, TweenInfo.new(0.2), { TextColor3 = active and THEME.TX_MAIN or THEME.TX_DIM })
     end
+    -- ✅ تمرير تلقائي للتبويب النشط لضمان ظهوره دائمًا داخل الـ sidebar
+    local activeBtn = tabButtons[id] and tabButtons[id].btn
+    if activeBtn and sidebar:IsA("ScrollingFrame") then
+        local targetY = activeBtn.AbsolutePosition.Y - sidebar.AbsolutePosition.Y
+            + sidebar.CanvasPosition.Y
+        local maxScroll = math.max(0, sidebar.AbsoluteCanvasSize.Y - sidebar.AbsoluteSize.Y)
+        targetY = math.clamp(targetY - 4, 0, maxScroll)
+        tween(sidebar, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            CanvasPosition = Vector2.new(0, targetY),
+        })
+    end
     local page = tabPages[id]
     if page then
         animatePageIn(page, id)
@@ -3254,4 +3277,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.2] ✦ Ready — Anti-strike hardened")
+print("[LYNEX HUB v3.3] ✦ Ready — Sidebar scrollable, all tabs reachable")
