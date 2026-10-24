@@ -1,8 +1,7 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.3 ✦
---  Home • Players • Player • Auto Fish • Car • Misc • Anti-strike • News • Settings
---  (Sidebar is now scrollable — Settings always reachable)
+--  ✦ LYNEX HUB v3.4 ✦
+--  Home • Players • Player • Auto Fish • Car • Misc • Anti-strike • Chat • News • Settings
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -107,7 +106,7 @@ local EASE = {
 }
 
 --==================================================================
--- 3.1) Toast / Copy / OpenURL
+-- 3.1) Toast / OpenURL
 --==================================================================
 local function showToast(message)
     local parentGui = screenGui or playerGui
@@ -304,7 +303,6 @@ local body = create("Frame", {
 }, main)
 
 local sidebarW = 106
--- ✅ ScrollingFrame بدل Frame: يسمح بالتمرير العمودي عند زيادة عدد التبويبات
 local sidebar = create("ScrollingFrame", {
     Name = "Sidebar", Size = UDim2.new(0, sidebarW, 1, 0),
     BackgroundColor3 = THEME.BG_SIDEBAR, BackgroundTransparency = 0.2,
@@ -341,7 +339,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs
+-- 10) Tabs  ← Chat مُضاف هنا
 --==================================================================
 local TABS = {
     { id = "home",       name = "Home",        icon = "⌂"  },
@@ -351,6 +349,7 @@ local TABS = {
     { id = "car",        name = "Car",         icon = "🚗" },
     { id = "misc",       name = "Misc",        icon = "⚒"  },
     { id = "antistrike", name = "Anti-strike", icon = "⛨" },
+    { id = "chat",       name = "Chat",        icon = "✎"  },
     { id = "news",       name = "News",        icon = "✉"  },
     { id = "settings",   name = "Settings",    icon = "⚙"  },
 }
@@ -552,9 +551,7 @@ local function resolveMapName()
     local name = nil
     pcall(function()
         local info = MarketplaceService:GetProductInfo(game.PlaceId)
-        if info and info.Name and info.Name ~= "" then
-            name = info.Name
-        end
+        if info and info.Name and info.Name ~= "" then name = info.Name end
     end)
     if not name or name == "" then
         name = (game.Name and game.Name ~= "") and game.Name or nil
@@ -1093,6 +1090,7 @@ local NEWS_DATA = {
     { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
     { title = "Anti-strike Tab", body = "New Anti-strike tab added. Load and run the Anti-strike Script on demand — same design and workflow as Car.", date = "2025-03-29" },
     { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable. All tabs including Settings are always reachable regardless of screen size.", date = "2025-04-05" },
+    { title = "Chat Tab", body = "New Chat tab added. Load and run the Chat Script on demand — same defensive pattern as Anti-strike.", date = "2025-04-12" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1128,7 +1126,7 @@ for i, item in ipairs(NEWS_DATA) do
 end
 
 --==================================================================
--- 16) Settings helpers
+-- 16) Settings Page
 --==================================================================
 local settingsPage = createPage("settings")
 local settingsScroll = create("ScrollingFrame", {
@@ -1731,7 +1729,7 @@ _G.LYNEX_CLEANUP = function()
 end
 
 --==================================================================
--- 16.6) fetchUrl (IMPROVED — detects HTML/404 responses)
+-- 16.6) fetchUrl (shared)
 --==================================================================
 local function fetchUrl(url)
     local body = nil
@@ -1919,20 +1917,12 @@ afLoadBtn.MouseButton1Click:Connect(function()
 
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(AUTO_FISH_URL)
-            if not body then
-                return false, "Download failed — check URL or executor HTTP"
-            end
-            if typeof(loadstring) ~= "function" then
-                return false, "loadstring unavailable"
-            end
+            if not body then return false, "Download failed — check URL or executor HTTP" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
             local fn, compileErr = loadstring(body)
-            if not fn then
-                return false, "Compile error: " .. tostring(compileErr)
-            end
+            if not fn then return false, "Compile error: " .. tostring(compileErr) end
             local runOk, runErr = pcall(fn)
-            if not runOk then
-                return false, "Runtime error: " .. tostring(runErr)
-            end
+            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
             return true
         end)
 
@@ -2104,20 +2094,12 @@ carLoadBtn.MouseButton1Click:Connect(function()
 
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(CAR_URL)
-            if not body then
-                return false, "Download failed — check URL or executor HTTP"
-            end
-            if typeof(loadstring) ~= "function" then
-                return false, "loadstring unavailable"
-            end
+            if not body then return false, "Download failed — check URL or executor HTTP" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
             local fn, compileErr = loadstring(body)
-            if not fn then
-                return false, "Compile error: " .. tostring(compileErr)
-            end
+            if not fn then return false, "Compile error: " .. tostring(compileErr) end
             local runOk, runErr = pcall(fn)
-            if not runOk then
-                return false, "Runtime error: " .. tostring(runErr)
-            end
+            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
             return true
         end)
 
@@ -2475,9 +2457,7 @@ local function showConfirm(titleText, messageText, onConfirm)
     }, modal)
     addCorner(8, confirmBtn); addStroke(THEME.P_GLOW, 1.5, 0.2, confirmBtn)
 
-    cancelBtn.MouseButton1Click:Connect(function()
-        pcall(function() overlay:Destroy() end)
-    end)
+    cancelBtn.MouseButton1Click:Connect(function() pcall(function() overlay:Destroy() end) end)
     confirmBtn.MouseButton1Click:Connect(function()
         pcall(function() overlay:Destroy() end)
         if onConfirm then pcall(onConfirm) end
@@ -2660,9 +2640,7 @@ _G.LYNEX_CLEANUP_MISC = function()
     if miscState.qualityCaptured and miscState.qualityOriginal then
         local s = getUserGameSettings()
         if s then
-            pcall(function()
-                s.SavedQualityLevel = miscState.qualityOriginal
-            end)
+            pcall(function() s.SavedQualityLevel = miscState.qualityOriginal end)
         end
     end
 end
@@ -2801,10 +2779,8 @@ local okAntiStrike, errAntiStrike = pcall(function()
     asLoadBtn.MouseButton1Click:Connect(function()
         if asLoadBusy then return end
         asLoadBusy = true
-
         local origText = "◈  Show Anti-strike Script"
         local origBg = THEME.P_MAIN
-
         asLoadBtn.Text = "⏳  Loading…"
         asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
         setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
@@ -2812,37 +2788,25 @@ local okAntiStrike, errAntiStrike = pcall(function()
         task.spawn(function()
             local success = false
             local errMsg = nil
-
             local ok, ret1, ret2 = pcall(function()
                 local body = fetchUrl(ANTI_STRIKE_URL)
-                if not body then
-                    return false, "Download failed — check URL or executor HTTP"
-                end
-                if typeof(loadstring) ~= "function" then
-                    return false, "loadstring unavailable"
-                end
+                if not body then return false, "Download failed — check URL or executor HTTP" end
+                if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
                 local fn, compileErr = loadstring(body)
-                if not fn then
-                    return false, "Compile error: " .. tostring(compileErr)
-                end
+                if not fn then return false, "Compile error: " .. tostring(compileErr) end
                 local runOk, runErr = pcall(fn)
-                if not runOk then
-                    return false, "Runtime error: " .. tostring(runErr)
-                end
+                if not runOk then return false, "Runtime error: " .. tostring(runErr) end
                 return true
             end)
-
             if ok then
                 if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
             else
                 errMsg = tostring(ret1)
             end
-
             task.wait(0.25)
             asLoadBusy = false
             asLoadBtn.Text = origText
             asLoadBtn.BackgroundColor3 = origBg
-
             if success then
                 setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
                 showToast("✓  Anti-strike Script loaded")
@@ -2870,6 +2834,198 @@ else
             Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
             TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
         }, antiStrikePage)
+    end
+end
+
+--==================================================================
+-- 16.11) Chat Page — DEFENSIVE WRAP (جديد)
+--==================================================================
+print("[LYNEX] Section 16.11 — Chat loading...")
+
+local chatPage
+local okChat, errChat = pcall(function()
+    local CHAT_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Chat"
+
+    chatPage = createPage("chat", true)
+    create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, chatPage)
+    create("UIPadding", {
+        PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+    }, chatPage)
+
+    local chHeaderCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 86),
+        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+    }, chatPage)
+    addCorner(12, chHeaderCard); addStroke(THEME.BORDER, 1, 0.15, chHeaderCard)
+
+    local chIconFrame = create("Frame", {
+        Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+        BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+    }, chHeaderCard)
+    addCorner(30, chIconFrame)
+    addStroke(THEME.P_GLOW, 1.5, 0.2, chIconFrame)
+    addGradient(chIconFrame, {
+        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+        ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+    }, 45)
+    create("TextLabel", {
+        Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+        Text = "✎", Font = FONT.Logo, TextSize = 26,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+    }, chIconFrame)
+
+    create("TextLabel", {
+        Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+        BackgroundTransparency = 1, Text = "Chat Script",
+        Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, chHeaderCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+        BackgroundTransparency = 1,
+        Text = "Show and run the Chat Script in supported games. Load the external script to activate.",
+        Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, chHeaderCard)
+
+    local chActionCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 114),
+        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+    }, chatPage)
+    addCorner(12, chActionCard); addStroke(THEME.BORDER, 1, 0.15, chActionCard)
+
+    local chStatus = create("TextLabel", {
+        Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+        BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+        Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, chActionCard)
+
+    local chLoadBtn = create("TextButton", {
+        Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+        Text = "◈  Show Chat Script",
+        Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
+        TextScaled = false, ZIndex = 5,
+    }, chActionCard)
+    addCorner(10, chLoadBtn)
+    local chLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, chLoadBtn)
+    addGradient(chLoadBtn, {
+        ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+        ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+        ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+    }, 90)
+
+    create("TextLabel", {
+        Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+        BackgroundTransparency = 1,
+        Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, chActionCard)
+
+    local chInstrCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 146),
+        BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+        BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+    }, chatPage)
+    addCorner(12, chInstrCard); addStroke(THEME.BORDER, 1, 0.15, chInstrCard)
+
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+        BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+    }, chInstrCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+        BackgroundTransparency = 1,
+        Text = "Press the button above to show and run the Chat Script.",
+        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, chInstrCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+        BackgroundTransparency = 1,
+        Text = "لتفعيل السكربت اضغط على هذا الزر",
+        Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, chInstrCard)
+    create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+        BackgroundTransparency = 1,
+        Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+        Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    }, chInstrCard)
+
+    local chLoadBusy = false
+
+    local function setChStatus(text, color)
+        chStatus.Text = text
+        chStatus.TextColor3 = color or THEME.TX_DIM
+    end
+
+    chLoadBtn.MouseButton1Click:Connect(function()
+        if chLoadBusy then return end
+        chLoadBusy = true
+        local origText = "◈  Show Chat Script"
+        local origBg = THEME.P_MAIN
+        chLoadBtn.Text = "⏳  Loading…"
+        chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+        setChStatus("⏳  Fetching script…", THEME.TX_DIM)
+
+        task.spawn(function()
+            local success = false
+            local errMsg = nil
+            local ok, ret1, ret2 = pcall(function()
+                local body = fetchUrl(CHAT_URL)
+                if not body then return false, "Download failed — check URL or executor HTTP" end
+                if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+                local fn, compileErr = loadstring(body)
+                if not fn then return false, "Compile error: " .. tostring(compileErr) end
+                local runOk, runErr = pcall(fn)
+                if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+                return true
+            end)
+            if ok then
+                if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+            else
+                errMsg = tostring(ret1)
+            end
+            task.wait(0.25)
+            chLoadBusy = false
+            chLoadBtn.Text = origText
+            chLoadBtn.BackgroundColor3 = origBg
+            if success then
+                setChStatus("✓  Chat Script executed successfully", THEME.OK)
+                showToast("✓  Chat Script loaded")
+            else
+                warn("[LYNEX Chat] Failed:", errMsg)
+                setChStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+                showToast("✕  " .. (errMsg or "Unknown error"))
+            end
+        end)
+    end)
+
+    styleActionButton(chLoadBtn, chLoadStroke)
+end)
+
+if okChat then
+    print("[LYNEX] ✓ Chat section loaded OK")
+else
+    warn("[LYNEX] ✗ Chat section FAILED:", errChat)
+    if not chatPage then
+        chatPage = createPage("chat", true)
+        create("TextLabel", {
+            Size = UDim2.new(1, 0, 0, 80),
+            BackgroundTransparency = 1,
+            Text = "⚠ تعذّر تحميل تبويب Chat:\n\n" .. tostring(errChat),
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+            TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+        }, chatPage)
     end
 end
 
@@ -3048,7 +3204,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --==================================================================
--- 22) Sidebar
+-- 22) Sidebar toggle
 --==================================================================
 local sidebarOpen = true
 sidebar.Size = UDim2.new(0, sidebarW, 1, 0)
@@ -3113,7 +3269,7 @@ local function switchTab(id)
         tween(data.icon, TweenInfo.new(0.2), { TextColor3 = active and THEME.TX_MAIN or THEME.P_GLOW })
         tween(data.label, TweenInfo.new(0.2), { TextColor3 = active and THEME.TX_MAIN or THEME.TX_DIM })
     end
-    -- ✅ تمرير تلقائي للتبويب النشط لضمان ظهوره دائمًا داخل الـ sidebar
+    -- ✅ تمرير تلقائي للتبويب النشط داخل sidebar
     local activeBtn = tabButtons[id] and tabButtons[id].btn
     if activeBtn and sidebar:IsA("ScrollingFrame") then
         local targetY = activeBtn.AbsolutePosition.Y - sidebar.AbsolutePosition.Y
@@ -3277,4 +3433,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.3] ✦ Ready — Sidebar scrollable, all tabs reachable")
+print("[LYNEX HUB v3.4] ✦ Ready — Chat tab added")
