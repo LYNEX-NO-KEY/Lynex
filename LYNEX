@@ -337,7 +337,7 @@ local TABS = {
     { id = "autofish",   name = "Auto Fish",   icon = "≋"  },
     { id = "car",        name = "Car",         icon = "🚗" },
     { id = "misc",       name = "Misc",        icon = "⚒"  },
-    { id = "antistrike", name = "Anti-strike", icon = "🛡" },  -- ✨ جديد
+    { id = "antistrike", name = "Anti-strike", icon = "🛡" },
     { id = "news",       name = "News",        icon = "✉"  },
     { id = "settings",   name = "Settings",    icon = "⚙"  },
 }
@@ -1717,9 +1717,37 @@ _G.LYNEX_CLEANUP = function()
 end
 
 --==================================================================
--- 16.6) Auto Fish Page
+-- 16.6) Auto Fish Page + fetchUrl (المُحدّث)
 --==================================================================
 local AUTO_FISH_URL = "https://raw.githubusercontent.com/coronavip100-max/Auto-fish/refs/heads/main/Auto%20fish"
+
+-- ✅ دالة fetchUrl المصححة (تُستخدم من Auto Fish و Car و Anti-strike)
+local function fetchUrl(url)
+    -- 1) المحاولة عبر HttpGet (الأكثر توافقًا مع Delta)
+    if typeof(game.HttpGet) == "function" then
+        local ok, body = pcall(function() return game:HttpGet(url) end)
+        if ok and body and body ~= "" then return body end
+    end
+
+    -- 2) المحاولة عبر request (Fluxus / Synapse / Delta)
+    local reqFunc = (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
+        or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
+        or (typeof(http_request) == "function" and http_request)
+        or (typeof(request) == "function" and request)
+
+    if reqFunc then
+        local ok, resp = pcall(reqFunc, { Url = url, Method = "GET" })
+        if ok and resp and resp.Body then return resp.Body end
+    end
+
+    -- 3) المحاولة الأخيرة عبر HttpService
+    local ok, body = pcall(function()
+        return game:GetService("HttpService"):GetAsync(url)
+    end)
+    if ok and body then return body end
+
+    return nil
+end
 
 local autoFishPage = createPage("autofish", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, autoFishPage)
@@ -1838,30 +1866,6 @@ create("TextLabel", {
 
 local loadBusy = false
 
-local function fetchUrl(url)
-    if typeof(fluxus) == "table" and typeof(fluxus.request) == "function" then
-        local ok, resp = pcall(fluxus.request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    if typeof(syn) == "table" and typeof(syn.request) == "function" then
-        local ok, resp = pcall(syn.request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    if typeof(http_request) == "function" then
-        local ok, resp = pcall(http_request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    if typeof(request) == "function" then
-        local ok, resp = pcall(request, { Url = url, Method = "GET" })
-        if ok and resp and resp.Body then return resp.Body end
-    end
-    local ok, body = pcall(function()
-        return game:GetService("HttpService"):GetAsync(url)
-    end)
-    if ok and body then return body end
-    return nil
-end
-
 local function loadAutoFishScript()
     local body = fetchUrl(AUTO_FISH_URL)
     if not body then
@@ -1910,6 +1914,7 @@ afLoadBtn.MouseButton1Click:Connect(function()
             showToast("✓  Auto Fish loaded")
         else
             local reason = (errMsg == false) and "Unknown error" or tostring(errMsg)
+            warn("[LYNEX Auto Fish] Failed:", reason)
             setAfStatus("✕  " .. reason, THEME.DANGER_HI)
             showToast("✕  " .. reason)
         end
@@ -2099,6 +2104,7 @@ carLoadBtn.MouseButton1Click:Connect(function()
             setCarStatus("✓  Car Script executed successfully", THEME.OK)
             showToast("✓  Car Script loaded")
         else
+            warn("[LYNEX Car] Failed:", errMsg)
             setCarStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
             showToast("✕  " .. (errMsg or "Unknown error"))
         end
@@ -2643,7 +2649,7 @@ _G.LYNEX_CLEANUP_MISC = function()
 end
 
 --==================================================================
--- 16.9) Anti-strike Page  ✨ جديد
+-- 16.9) Anti-strike Page ✨ (النسخة المصححة)
 --==================================================================
 local ANTI_STRIKE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Anti"
 
@@ -2787,7 +2793,7 @@ asLoadBtn.MouseButton1Click:Connect(function()
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(ANTI_STRIKE_URL)
             if not body then
-                return false, "Download failed (no HTTP executor)"
+                return false, "Download failed (no HTTP executor returned a body)"
             end
             if typeof(loadstring) ~= "function" then
                 return false, "loadstring unavailable"
@@ -2823,6 +2829,7 @@ asLoadBtn.MouseButton1Click:Connect(function()
             setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
             showToast("✓  Anti-strike Script loaded")
         else
+            warn("[LYNEX Anti-strike] Failed:", errMsg)
             setAsStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
             showToast("✕  " .. (errMsg or "Unknown error"))
         end
