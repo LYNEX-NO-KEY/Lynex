@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.4 ✦  — FIXED (fetchUrl + Mazrouk)
+--  ✦ LYNEX HUB v3.4 ✦  — MOBILE FIX (Forced PlayerGui + Instant Visibility)
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -25,12 +25,7 @@ local screenGui, blurObj
 -- 1) Root resolver
 --==================================================================
 local function resolveGuiParent()
-    if typeof(gethui) == "function" then
-        local ok, hui = pcall(gethui)
-        if ok and hui then return hui end
-    end
-    local ok, cg = pcall(function() return game:GetService("CoreGui") end)
-    if ok and cg then return cg end
+    -- 📱 Mobile/Delta Fix: إجبار الواجهة على الظهور في PlayerGui
     return playerGui
 end
 
@@ -198,8 +193,8 @@ local function getViewport()
 end
 local function computeWindowSize()
     local vp = getViewport()
-    local w = math.clamp(vp.X * 0.80, 280, 400)
-    local h = math.clamp(vp.Y * 0.70, 340, 500)
+    local w = math.clamp(vp.X * 0.85, 280, 400)
+    local h = math.clamp(vp.Y * 0.75, 340, 500)
     return math.floor(w), math.floor(h)
 end
 local function centerPosition(w, h)
@@ -1092,7 +1087,7 @@ local NEWS_DATA = {
     { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable.", date = "2025-04-05" },
     { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
     { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
-    { title = "fetchUrl Fix (Delta)", body = "Critical fix: removed broken typeof(game.HttpGet) check. All external scripts now load reliably.", date = "2025-04-26" },
+    { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2120,159 +2115,166 @@ end)
 styleActionButton(carLoadBtn, carLoadStroke)
 
 --==================================================================
--- 16.8b) Uncle Mazrouk Page (DIRECT loadstring approach — confirmed working)
+-- 16.8b) Uncle Mazrouk Page
 --==================================================================
-local UNCLE_MAZROUK_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Uncle%20Mazrouk"
+print("[LYNEX] Section 16.8b — Uncle Mazrouk loading...")
 
-local unclePage = createPage("unclemazrouk", true)
-create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, unclePage)
-create("UIPadding", {
-    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
-}, unclePage)
+do
+    local UNCLE_MAZROUK_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Uncle%20Mazrouk"
+    local unclePage
+    local okMaz, errMaz = pcall(function()
+        unclePage = createPage("unclemazrouk", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, unclePage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, unclePage)
 
-local umHeaderCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 86),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
-}, unclePage)
-addCorner(12, umHeaderCard); addStroke(THEME.BORDER, 1, 0.15, umHeaderCard)
+        local umHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, unclePage)
+        addCorner(12, umHeaderCard); addStroke(THEME.BORDER, 1, 0.15, umHeaderCard)
 
-local umIconFrame = create("Frame", {
-    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
-    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-}, umHeaderCard)
-addCorner(30, umIconFrame)
-addStroke(THEME.P_GLOW, 1.5, 0.2, umIconFrame)
-addGradient(umIconFrame, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
-}, 45)
-create("TextLabel", {
-    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-    Text = "✦", Font = FONT.Logo, TextSize = 28,
-    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-}, umIconFrame)
+        local umIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, umHeaderCard)
+        addCorner(30, umIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, umIconFrame)
+        addGradient(umIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "✦", Font = FONT.Logo, TextSize = 28,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, umIconFrame)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Uncle Mazrouk",
-    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umHeaderCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-    BackgroundTransparency = 1,
-    Text = "Uncle Mazrouk Script — click load to run.",
-    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Uncle Mazrouk",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, umHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Uncle Mazrouk Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, umHeaderCard)
 
-local umActionCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 114),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
-}, unclePage)
-addCorner(12, umActionCard); addStroke(THEME.BORDER, 1, 0.15, umActionCard)
+        local umActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, unclePage)
+        addCorner(12, umActionCard); addStroke(THEME.BORDER, 1, 0.15, umActionCard)
 
-local umStatus = create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
-    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umActionCard)
+        local umStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, umActionCard)
 
-local umLoadBtn = create("TextButton", {
-    Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  Load Uncle Mazrouk Script",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
-}, umActionCard)
-addCorner(10, umLoadBtn)
-local umLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, umLoadBtn)
-addGradient(umLoadBtn, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
-    ColorSequenceKeypoint.new(1, THEME.P_MAIN),
-}, 90)
+        local umLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Uncle Mazrouk Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, umActionCard)
+        addCorner(10, umLoadBtn)
+        local umLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, umLoadBtn)
+        addGradient(umLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-    BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umActionCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, umActionCard)
 
-local umInstrCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 146),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
-}, unclePage)
-addCorner(12, umInstrCard); addStroke(THEME.BORDER, 1, 0.15, umInstrCard)
+        local umInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, unclePage)
+        addCorner(12, umInstrCard); addStroke(THEME.BORDER, 1, 0.15, umInstrCard)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
-    Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundTransparency = 1,
-    Text = "Press the button above to load and run the Uncle Mazrouk script.",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-    BackgroundTransparency = 1,
-    Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت أبو مزورق.",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-    BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, umInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Uncle Mazrouk script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, umInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت أبو مزورق.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, umInstrCard)
 
-local umLoadBusy = false
-local function setUmStatus(text, color)
-    umStatus.Text = text
-    umStatus.TextColor3 = color or THEME.TX_DIM
-end
-
-umLoadBtn.MouseButton1Click:Connect(function()
-    if umLoadBusy then return end
-    umLoadBusy = true
-    local origText = "◈  Load Uncle Mazrouk Script"
-    local origBg = THEME.P_MAIN
-    umLoadBtn.Text = "⏳  Loading…"
-    umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setUmStatus("⏳  Loading script…", THEME.TX_DIM)
-
-    task.spawn(function()
-        -- ⚡ استدعاء مباشر — نفس الأمر اللي أثبتّ إنه شغال
-        local ok, err = pcall(function()
-            loadstring(game:HttpGet(UNCLE_MAZROUK_URL))()
-        end)
-        task.wait(0.3)
-        umLoadBusy = false
-        umLoadBtn.Text = origText
-        umLoadBtn.BackgroundColor3 = origBg
-        if ok then
-            setUmStatus("✓  Uncle Mazrouk Script executed successfully", THEME.OK)
-            showToast("✓  Uncle Mazrouk loaded")
-        else
-            warn("[LYNEX Uncle Mazrouk] Failed:", err)
-            setUmStatus("✕  " .. tostring(err), THEME.DANGER_HI)
-            showToast("✕  " .. tostring(err))
+        local umLoadBusy = false
+        local function setUmStatus(text, color)
+            umStatus.Text = text
+            umStatus.TextColor3 = color or THEME.TX_DIM
         end
+
+        umLoadBtn.MouseButton1Click:Connect(function()
+            if umLoadBusy then return end
+            umLoadBusy = true
+            local origText = "◈  Load Uncle Mazrouk Script"
+            local origBg = THEME.P_MAIN
+            umLoadBtn.Text = "⏳  Loading…"
+            umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setUmStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(UNCLE_MAZROUK_URL))()
+                end)
+                task.wait(0.3)
+                umLoadBusy = false
+                umLoadBtn.Text = origText
+                umLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setUmStatus("✓  Uncle Mazrouk Script executed successfully", THEME.OK)
+                    showToast("✓  Uncle Mazrouk loaded")
+                else
+                    warn("[LYNEX Uncle Mazrouk] Failed:", err)
+                    setUmStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(umLoadBtn, umLoadStroke)
     end)
-end)
-styleActionButton(umLoadBtn, umLoadStroke)
+
+    if okMaz then
+        print("[LYNEX] ✓ Uncle Mazrouk section loaded OK")
+    else
+        warn("[LYNEX] ✗ Uncle Mazrouk section FAILED:", errMaz)
+        if not unclePage then
+            unclePage = createPage("unclemazrouk", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Mazrouk tab:\n\n" .. tostring(errMaz),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, unclePage)
+        end
+    end
+end
 
 --==================================================================
 -- 16.9) Misc Page
@@ -3423,27 +3425,27 @@ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 end)
 
 --==================================================================
--- 28) Startup
+-- 28) Startup (MOBILE FIX: Skip fade animation)
 --==================================================================
 switchTab("home")
 applyBlur()
 
 do
-    setAllTransparency(1)
-    mainStroke.Transparency = 1
-    outerGlow.BackgroundTransparency = 1
-    local origPos = root.Position
-    root.Position = UDim2.new(origPos.X.Scale, origPos.X.Offset, origPos.Y.Scale, origPos.Y.Offset + 16)
-    task.wait(0.05)
-    TweenService:Create(root, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = origPos,
-    }):Play()
-    fadeTo("orig", 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, function()
-        mainStroke.Transparency = 0.15
-    end)
-    if settings.animations then
-        TweenService:Create(outerGlow, TweenInfo.new(0.5), { BackgroundTransparency = 0.85 }):Play()
+    -- إجبار الواجهة على الظهور فوراً (بدون أنيميشن)
+    root.Visible = true
+    main.Visible = true
+    main.BackgroundTransparency = 0.08
+    mainStroke.Transparency = 0.15
+    outerGlow.BackgroundTransparency = 0.85
+    
+    -- استعادة الشفافية الطبيعية لكل العناصر
+    for obj, snap in pairs(origTransparency) do
+        if obj and obj.Parent then
+            for k, v in pairs(snap) do
+                obj[k] = v
+            end
+        end
     end
 end
 
-print("[LYNEX HUB v3.4] ✦ Ready — fetchUrl FIXED for Delta")
+print("[LYNEX HUB v3.4] ✦ Ready — FORCED VISIBILITY (Mobile Fix)")
