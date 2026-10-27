@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.4 ✦  — نسخة عربية / MOBILE FIX
+--  ✦ LYNEX HUB v3.4 ✦  — MOBILE FIX (Forced PlayerGui + Instant Visibility)
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -21,7 +21,11 @@ local settings = { animations = true, transparency = 15, glow = true }
 local windowHidden = false
 local screenGui, blurObj
 
+--==================================================================
+-- 1) Root resolver
+--==================================================================
 local function resolveGuiParent()
+    -- 📱 Mobile/Delta Fix: إجبار الواجهة على الظهور في PlayerGui
     return playerGui
 end
 
@@ -53,8 +57,6 @@ local FONT = {
     Regular = Enum.Font.Gotham,
 }
 
-local RTL = Enum.TextDirection.RightToLeft
-
 --==================================================================
 -- 3) Helpers
 --==================================================================
@@ -79,7 +81,7 @@ end
 
 local function addGradient(parent, stops, rotation)
     return create("UIGradient", {
-        ColorSequence = ColorSequence.new(stops), Rotation = rotation or 0,
+        Color = ColorSequence.new(stops), Rotation = rotation or 0,
     }, parent)
 end
 
@@ -114,7 +116,6 @@ local function showToast(message)
         Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
         Text = message, Font = FONT.Bold, TextSize = 12,
         TextColor3 = THEME.TX_MAIN, TextTransparency = 1,
-        TextDirection = RTL,
         TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 101,
     }, toast)
     tween(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -136,11 +137,11 @@ end
 local function openURL(url)
     if typeof(openbrowser) == "function" then
         local ok = pcall(openbrowser, url)
-        if ok then showToast("◈ جارٍ فتح ديسكورد…"); return end
+        if ok then showToast("◈ Opening Discord…"); return end
     end
     if typeof(setclipboard) == "function" then
         local ok = pcall(setclipboard, url)
-        if ok then showToast("◈ تم نسخ الرابط — الصقه في المتصفح"); return end
+        if ok then showToast("◈ Link copied — paste in browser"); return end
     end
     showToast("◈ " .. url)
 end
@@ -202,7 +203,7 @@ local function centerPosition(w, h)
 end
 
 --==================================================================
--- 6) ScreenGui + Root (Fixed with CanvasGroup)
+-- 6) ScreenGui + Root
 --==================================================================
 screenGui = create("ScreenGui", {
     Name = "LYNEX_HUB", ResetOnSpawn = false, IgnoreGuiInset = true,
@@ -211,13 +212,10 @@ screenGui = create("ScreenGui", {
 if screenGui.Destroying then screenGui.Destroying:Connect(removeBlur) end
 
 local winW, winH = computeWindowSize()
-
--- استخدام CanvasGroup لحل مشكلة الشفافية نهائياً
-local root = create("CanvasGroup", {
+local root = create("Frame", {
     Name = "Root", Size = UDim2.fromOffset(winW, winH),
     Position = centerPosition(winW, winH),
     BackgroundTransparency = 1, ClipsDescendants = false, ZIndex = 2,
-    GroupTransparency = 0,
 }, screenGui)
 
 local outerGlow = create("Frame", {
@@ -290,7 +288,7 @@ local closeBtn = create("TextButton", {
 addCorner(8, closeBtn); addStroke(THEME.DANGER, 1, 0.3, closeBtn)
 
 --==================================================================
--- 9) Body / Sidebar / Content
+-- 9) Body / Sidebar (scrollable) / Content
 --==================================================================
 local body = create("Frame", {
     Name = "Body", Size = UDim2.new(1, 0, 1, -headerH),
@@ -338,17 +336,17 @@ local pagesContainer = create("Frame", {
 -- 10) Tabs
 --==================================================================
 local TABS = {
-    { id = "home",         name = "الرئيسية",       icon = "⌂"  },
-    { id = "players",      name = "اللاعبون",       icon = "◉"  },
-    { id = "player",       name = "اللاعب",          icon = "●"  },
-    { id = "autofish",     name = "صيد تلقائي",      icon = "≋"  },
-    { id = "car",          name = "السيارات",        icon = "🚗" },
-    { id = "unclemazrouk", name = "العم مرزوق",      icon = "✦"  },
-    { id = "misc",         name = "متنوع",           icon = "⚒"  },
-    { id = "antistrike",   name = "مضادات",          icon = "⛨" },
-    { id = "chat",         name = "الدردشة",         icon = "✎"  },
-    { id = "news",         name = "الأخبار",         icon = "✉"  },
-    { id = "settings",     name = "الإعدادات",       icon = "⚙"  },
+    { id = "home",         name = "Home",         icon = "⌂"  },
+    { id = "players",      name = "Players",      icon = "◉"  },
+    { id = "player",       name = "Player",       icon = "●"  },
+    { id = "autofish",     name = "Auto Fish",    icon = "≋"  },
+    { id = "car",          name = "Car",          icon = "🚗" },
+    { id = "unclemazrouk", name = "Abu Marzouk",      icon = "✦"  },
+    { id = "misc",         name = "Misc",         icon = "⚒"  },
+    { id = "antistrike",   name = "Anti",  icon = "⛨" },
+    { id = "chat",         name = "Chat",         icon = "✎"  },
+    { id = "news",         name = "News",         icon = "✉"  },
+    { id = "settings",     name = "Settings",     icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -376,7 +374,6 @@ local function createTabButton(tab, order)
         Size = UDim2.new(1, -36, 1, 0), Position = UDim2.new(0, 32, 0, 0),
         BackgroundTransparency = 1, Text = tab.name, Font = FONT.Medium, TextSize = 11,
         TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL,
         TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, btn)
     tabButtons[tab.id] = { btn = btn, stroke = stroke, indicator = indicator, icon = icon, label = label }
@@ -433,9 +430,8 @@ addGradient(logo, {
 create("UITextSizeConstraint", { MaxTextSize = 26, MinTextSize = 18 }, logo)
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 0, 0, 44),
-    BackgroundTransparency = 1, Text = "بريميوم  ·  واجهة",
+    BackgroundTransparency = 1, Text = "PREMIUM  ·  INTERFACE",
     Font = FONT.Medium, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextDirection = RTL,
     TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5,
 }, hero)
 
@@ -460,14 +456,13 @@ local avatarImg = create("ImageLabel", {
 local infoX = 88
 local displayNameLbl = create("TextLabel", {
     Size = UDim2.new(1, -infoX - 8, 0, 20), Position = UDim2.new(0, infoX, 0, 10),
-    BackgroundTransparency = 1, Text = "جارٍ التحميل…", Font = FONT.Bold, TextSize = 14,
+    BackgroundTransparency = 1, Text = "Loading…", Font = FONT.Bold, TextSize = 14,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-    TextDirection = RTL,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
 }, profileCard)
 local usernameLbl = create("TextLabel", {
     Size = UDim2.new(1, -infoX - 8, 0, 14), Position = UDim2.new(0, infoX, 0, 30),
-    BackgroundTransparency = 1, Text = "@جارٍ التحميل", Font = FONT.Regular, TextSize = 11,
+    BackgroundTransparency = 1, Text = "@loading", Font = FONT.Regular, TextSize = 11,
     TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
 }, profileCard)
@@ -494,11 +489,11 @@ local uidLbl = smallInfo(infoX, 95, "#", "—")
 local ageLbl = smallInfo(infoX + 100, 95, "◷", "—")
 
 local SERVER_ROWS = {
-    { key = "players",  icon = "◉", label = "اللاعبون"      },
-    { key = "gameName", icon = "✦", label = "اسم اللعبة"    },
-    { key = "mapName",  icon = "▣", label = "اسم الخريطة"   },
-    { key = "serverId", icon = "◆", label = "معرف السيرفر"  },
-    { key = "placeId",  icon = "◈", label = "معرف المكان"   },
+    { key = "players",  icon = "◉", label = "Players"   },
+    { key = "gameName", icon = "✦", label = "Game Name" },
+    { key = "mapName",  icon = "▣", label = "Map Name"  },
+    { key = "serverId", icon = "◆", label = "Server ID" },
+    { key = "placeId",  icon = "◈", label = "Place ID"  },
 }
 
 local serverCardHeight = 34 + (#SERVER_ROWS * 22) + 10
@@ -511,9 +506,8 @@ addCorner(12, serverCard); addStroke(THEME.BORDER, 1, 0.15, serverCard)
 
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  معلومات السيرفر",
+    BackgroundTransparency = 1, Text = "✦  SERVER INFORMATION",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-    TextDirection = RTL,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, serverCard)
 
@@ -531,8 +525,7 @@ local function makeServerInfoRow(order, iconText, labelText)
     create("TextLabel", {
         Size = UDim2.new(0, 105, 1, 0), Position = UDim2.new(0, 18, 0, 0),
         BackgroundTransparency = 1, Text = labelText, Font = FONT.Medium, TextSize = 10,
-        TextColor3 = THEME.TX_SUBTLE, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL, ZIndex = 6,
+        TextColor3 = THEME.TX_SUBTLE, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6,
     }, row)
     local valueLbl = create("TextLabel", {
         Size = UDim2.new(1, -128, 1, 0), Position = UDim2.new(0, 123, 0, 0),
@@ -567,14 +560,14 @@ local function updateServerInfo()
         serverInfoLabels.players.Text = #Players:GetPlayers() .. " / " .. Players.MaxPlayers
     end
     if serverInfoLabels.gameName then
-        serverInfoLabels.gameName.Text = (game.Name and game.Name ~= "") and game.Name or "غير متوفر"
+        serverInfoLabels.gameName.Text = (game.Name and game.Name ~= "") and game.Name or "N/A"
     end
     if serverInfoLabels.mapName then
-        serverInfoLabels.mapName.Text = resolveMapName() or "غير متوفر"
+        serverInfoLabels.mapName.Text = resolveMapName() or "N/A"
     end
     if serverInfoLabels.serverId then
         local ok, jobId = pcall(function() return game.JobId end)
-        serverInfoLabels.serverId.Text = (ok and jobId and jobId ~= "") and jobId or "غير متوفر"
+        serverInfoLabels.serverId.Text = (ok and jobId and jobId ~= "") and jobId or "N/A"
     end
     if serverInfoLabels.placeId then
         serverInfoLabels.placeId.Text = tostring(game.PlaceId)
@@ -600,9 +593,9 @@ addGradient(discordBtn, {
 }, 90)
 create("TextLabel", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-    Text = "◈   انضم إلى ديسكورد", Font = FONT.Bold, TextSize = 15,
+    Text = "◈   JOIN OUR DISCORD", Font = FONT.Bold, TextSize = 15,
     TextColor3 = THEME.TX_MAIN, TextStrokeColor3 = Color3.fromRGB(40, 20, 80),
-    TextStrokeTransparency = 0.7, TextDirection = RTL, ZIndex = 5,
+    TextStrokeTransparency = 0.7, ZIndex = 5,
 }, discordBtn)
 discordBtn.MouseButton1Click:Connect(function() openURL(DISCORD_URL) end)
 if UserInputService.MouseEnabled then
@@ -628,9 +621,8 @@ addStroke(THEME.P_BRIGHT, 1.5, 0.2, spectateIndicator)
 
 local spectateIndicatorLabel = create("TextLabel", {
     Size = UDim2.new(1, -34, 1, 0), BackgroundTransparency = 1,
-    Text = "◉  مراقبة", Font = FONT.Bold, TextSize = 12,
-    TextColor3 = THEME.TX_MAIN, TextDirection = RTL,
-    TextXAlignment = Enum.TextXAlignment.Center,
+    Text = "◉  Spectating", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Center,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 101,
 }, spectateIndicator)
 
@@ -661,7 +653,7 @@ local function refreshSpectateButtons()
     for player, refs in pairs(spectateButtons) do
         if refs and refs.btn and refs.btn.Parent then
             local isTarget = (spectate.active and spectate.target == player)
-            refs.btn.Text = isTarget and "◉  إيقاف" or "◉  مراقبة"
+            refs.btn.Text = isTarget and "◉  Stop" or "◉  Spectate"
             tween(refs.btn, TweenInfo.new(0.2), {
                 BackgroundColor3 = isTarget and THEME.DANGER or THEME.P_MAIN,
             })
@@ -678,7 +670,7 @@ local function updateSpectateIndicator()
     local shouldShow = spectate.active and spectate.target
         and spectate.target.Parent and not windowHidden
     if shouldShow then
-        spectateIndicatorLabel.Text = "◉  تراقب: " .. displayNameOf(spectate.target)
+        spectateIndicatorLabel.Text = "◉  Spectating: " .. displayNameOf(spectate.target)
         if not spectateIndicator.Visible then
             spectateIndicator.Visible = true
             spectateIndicator.BackgroundTransparency = 1
@@ -754,8 +746,8 @@ end
 
 local function startSpectating(targetPlayer)
     if not targetPlayer then return end
-    if targetPlayer == localPlayer then showToast("◉  لا يمكنك مراقبة نفسك"); return end
-    if not targetPlayer.Parent then showToast("◉  اللاعب غير متاح"); return end
+    if targetPlayer == localPlayer then showToast("◉  Cannot spectate yourself"); return end
+    if not targetPlayer.Parent then showToast("◉  Player unavailable"); return end
     if spectate.active and spectate.target == targetPlayer then stopSpectating(); return end
     if spectate.connection then
         pcall(function() spectate.connection:Disconnect() end)
@@ -776,13 +768,13 @@ local function startSpectating(targetPlayer)
     end)
     updateSpectateIndicator(); refreshSpectateButtons()
     local disp = displayNameOf(targetPlayer)
-    if hum then showToast("◉  تراقب " .. disp)
-    else showToast("◉  بانتظار " .. disp .. "…") end
+    if hum then showToast("◉  Spectating " .. disp)
+    else showToast("◉  Waiting for " .. disp .. "…") end
 end
 
 Players.PlayerRemoving:Connect(function(p)
     if spectate.active and spectate.target and spectate.target.UserId == p.UserId then
-        stopSpectating("غادر الهدف — تم استرجاع الكاميرا")
+        stopSpectating("Target left — camera restored")
     end
 end)
 localPlayer.CharacterAdded:Connect(function()
@@ -811,9 +803,9 @@ local TELEPORT_COOLDOWN = 1.0
 local lastTeleportTime = 0
 local function teleportToPlayer(targetPlayer, button)
     if not targetPlayer or not targetPlayer.Parent then
-        showToast("➤  اللاعب غير متاح"); return
+        showToast("➤  Player unavailable"); return
     end
-    if targetPlayer == localPlayer then showToast("➤  لا يمكنك الانتقال إلى نفسك"); return end
+    if targetPlayer == localPlayer then showToast("➤  Cannot teleport to yourself"); return end
     local now = os.clock()
     if now - lastTeleportTime < TELEPORT_COOLDOWN then return end
     lastTeleportTime = now
@@ -821,22 +813,22 @@ local function teleportToPlayer(targetPlayer, button)
     local myHum  = myChar and myChar:FindFirstChildOfClass("Humanoid")
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
     if not (myChar and myHum and myRoot) then
-        showToast("➤  شخصيتك غير جاهزة"); return
+        showToast("➤  Your character is not ready"); return
     end
-    if myHum.Health <= 0 then showToast("➤  أنت ميت"); return end
+    if myHum.Health <= 0 then showToast("➤  You are dead"); return end
     local targetChar = targetPlayer.Character
     local targetHum  = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
     local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
     if not (targetChar and targetHum and targetRoot) then
-        showToast("➤  " .. displayNameOf(targetPlayer) .. " لا يملك شخصية"); return
+        showToast("➤  " .. displayNameOf(targetPlayer) .. " has no character"); return
     end
     if targetHum.Health <= 0 then
-        showToast("➤  " .. displayNameOf(targetPlayer) .. " ميت"); return
+        showToast("➤  " .. displayNameOf(targetPlayer) .. " is dead"); return
     end
     local destination = targetRoot.CFrame * CFrame.new(0, 0, 4)
     local ok = pcall(function() myChar:PivotTo(destination) end)
     if not ok then pcall(function() myRoot.CFrame = destination end) end
-    showToast("➤  انتقلت إلى " .. displayNameOf(targetPlayer))
+    showToast("➤  Teleported to " .. displayNameOf(targetPlayer))
     if button and button.Parent then
         local origText, origBG = button.Text, button.BackgroundColor3
         button.Text = "➤  …"; button.BackgroundColor3 = THEME.BG_CARD_HI
@@ -868,10 +860,9 @@ create("TextLabel", {
 local searchBox = create("TextBox", {
     Name = "SearchBox", Size = UDim2.new(1, -72, 1, 0),
     Position = UDim2.new(0, 30, 0, 0), BackgroundTransparency = 1, Text = "",
-    PlaceholderText = "ابحث باسم المستخدم أو الاسم الظاهر…",
+    PlaceholderText = "Search username or display name…",
     PlaceholderColor3 = THEME.TX_SUBTLE, Font = FONT.Medium, TextSize = 12,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-    TextDirection = RTL,
     ClearTextOnFocus = false, MultiLine = false, TextEditable = true, ZIndex = 5,
 }, searchContainer)
 
@@ -960,7 +951,7 @@ local function buildPlayerCard(player, order)
 
     local okAge, accountAge = pcall(function() return player.AccountAge end)
     local ageText = (okAge and typeof(accountAge) == "number")
-        and (tostring(accountAge) .. " يوم") or "غير متوفر"
+        and (tostring(accountAge) .. " days") or "N/A"
 
     create("TextLabel", {
         Size = UDim2.new(0, 100, 0, 14), Position = UDim2.new(0, iX, 0, 46),
@@ -972,7 +963,7 @@ local function buildPlayerCard(player, order)
         Size = UDim2.new(1, -iX - 8, 0, 14), Position = UDim2.new(0, iX, 0, 46),
         BackgroundTransparency = 1, Text = "◷  " .. ageText,
         Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_SUBTLE,
-        TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL, ZIndex = 6,
+        TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 6,
     }, card)
 
     local specBtn = create("TextButton", {
@@ -980,9 +971,8 @@ local function buildPlayerCard(player, order)
         Position = UDim2.new(0, 10, 1, -38),
         BackgroundColor3 = isSpectating and THEME.DANGER or THEME.P_MAIN,
         BackgroundTransparency = 0.05, AutoButtonColor = false,
-        Text = isSpectating and "◉  إيقاف" or "◉  مراقبة",
+        Text = isSpectating and "◉  Stop" or "◉  Spectate",
         Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
-        TextDirection = RTL,
         TextScaled = true, TextWrapped = false, ZIndex = 7,
     }, card)
     addCorner(8, specBtn)
@@ -1001,9 +991,8 @@ local function buildPlayerCard(player, order)
         Name = "TeleportBtn", Size = UDim2.new(0.5, -13, 0, 28),
         Position = UDim2.new(0.5, 3, 1, -38),
         BackgroundColor3 = THEME.P_MAIN, BackgroundTransparency = 0.05,
-        AutoButtonColor = false, Text = "➤  انتقال",
+        AutoButtonColor = false, Text = "➤  Teleport",
         Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
-        TextDirection = RTL,
         TextScaled = true, TextWrapped = false, ZIndex = 7,
     }, card)
     addCorner(8, tpBtn)
@@ -1035,10 +1024,9 @@ local function renderPlayers(filter)
     if order == 0 then
         create("TextLabel", {
             Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1,
-            Text = "◌  لا يوجد لاعبون مطابقون لبحثك",
+            Text = "◌  No players match your search",
             Font = FONT.Medium, TextSize = 12, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Center, TextYAlignment = Enum.TextYAlignment.Center,
-            TextDirection = RTL,
             LayoutOrder = 0, ZIndex = 5,
         }, playersList)
     end
@@ -1073,9 +1061,8 @@ local newsScroll = create("ScrollingFrame", {
 create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, newsScroll)
 local newsHeader = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1,
-    Text = "✦  آخر الأخبار", Font = FONT.Bold, TextSize = 14,
-    TextColor3 = THEME.TX_MAIN, TextDirection = RTL,
-    TextXAlignment = Enum.TextXAlignment.Left,
+    Text = "✦  LATEST NEWS", Font = FONT.Bold, TextSize = 14,
+    TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = 0, ZIndex = 5,
 }, newsScroll)
 addGradient(newsHeader, {
@@ -1084,23 +1071,23 @@ addGradient(newsHeader, {
 }, 0)
 
 local NEWS_DATA = {
-    { title = "إطلاق LYNEX HUB", body = "أول إصدار عام من LYNEX HUB متاح الآن.", date = "2025-01-15" },
-    { title = "تحسين الموبايل", body = "تحكم مناسب للمس وتصميم متجاوب.", date = "2025-01-20" },
-    { title = "بطاقة الملف الشخصي", body = "الرئيسية تعرض الآن صورة الأفاتار الحقيقية.", date = "2025-01-24" },
-    { title = "الإعدادات والتخصيص", body = "تفعيل/تعطيل الحركات، تعديل الشفافية، تفعيل التوهج.", date = "2025-01-26" },
-    { title = "تبويب اللاعبين والضبابية", body = "تبويب لاعبين جديد مع بحث مباشر وبطاقات.", date = "2025-02-01" },
-    { title = "نظام المراقبة", body = "ميزة مراقبة جديدة في تبويب اللاعبين.", date = "2025-02-08" },
-    { title = "إصلاح استمرارية المراقبة", body = "المراقبة تستمر الآن بعد إخفاء الواجهة.", date = "2025-02-15" },
-    { title = "زر الانتقال", body = "زر انتقال جديد بجانب المراقبة.", date = "2025-02-22" },
-    { title = "تبويب اللاعب", body = "تبويب لاعب جديد مع الحركة، الحركة الخاصة، والمرئيات.", date = "2025-03-01" },
-    { title = "معلومات السيرفر + صيد تلقائي", body = "الرئيسية تعرض الآن معلومات السيرفر الحية.", date = "2025-03-08" },
-    { title = "تبويب السيارات", body = "تبويب سيارات جديد.", date = "2025-03-15" },
-    { title = "تبويب متنوع", body = "تبويب متنوع جديد: رسومات، إضاءة، سيرفر، تقريب.", date = "2025-03-22" },
-    { title = "تبويب مضادات", body = "تبويب مضادات جديد.", date = "2025-03-29" },
-    { title = "إصلاح تمرير الشريط الجانبي", body = "الشريط الجانبي أصبح قابلاً للتمرير.", date = "2025-04-05" },
-    { title = "تبويب الدردشة", body = "تبويب دردشة جديد.", date = "2025-04-12" },
-    { title = "تبويب العم مرزوق", body = "تبويب العم مرزوق جديد.", date = "2025-04-19" },
-    { title = "إصلاحات الموبايل و fetchUrl", body = "الواجهة مفروضة على PlayerGui و fetchUrl تم إصلاحها لـ Delta Mobile.", date = "2025-04-26" },
+    { title = "LYNEX HUB Launch", body = "The first public release of LYNEX HUB is live.", date = "2025-01-15" },
+    { title = "Mobile Optimization", body = "Touch-friendly controls and responsive layout.", date = "2025-01-20" },
+    { title = "Player Profile Card", body = "Home tab now displays your real Roblox avatar.", date = "2025-01-24" },
+    { title = "Settings & Customization", body = "Toggle animations, adjust transparency, enable glow.", date = "2025-01-26" },
+    { title = "Players Tab & Blur", body = "New Players tab with live search and player cards.", date = "2025-02-01" },
+    { title = "Spectate System", body = "New Spectate feature on Players tab.", date = "2025-02-08" },
+    { title = "Persistent Spectate Fix", body = "Spectate now persists after hiding the UI.", date = "2025-02-15" },
+    { title = "Teleport Button", body = "New Teleport button next to Spectate.", date = "2025-02-22" },
+    { title = "Player Tab", body = "New Player tab with Movement, Special Movement and Visuals.", date = "2025-03-01" },
+    { title = "Server Info + Auto Fish", body = "Home now shows live Server Information.", date = "2025-03-08" },
+    { title = "Car Script Tab", body = "New Car tab added.", date = "2025-03-15" },
+    { title = "Misc Tab", body = "New Misc tab: Graphics, Lighting, Server, Zoom.", date = "2025-03-22" },
+    { title = "Anti-strike Tab", body = "New Anti-strike tab added.", date = "2025-03-29" },
+    { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable.", date = "2025-04-05" },
+    { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
+    { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
+    { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1119,14 +1106,12 @@ for i, item in ipairs(NEWS_DATA) do
         Size = UDim2.new(1, -22, 0, 18), Position = UDim2.new(0, 12, 0, 7),
         BackgroundTransparency = 1, Text = item.title, Font = FONT.Bold, TextSize = 12,
         TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL,
         TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, card)
     create("TextLabel", {
         Size = UDim2.new(1, -22, 0, 40), Position = UDim2.new(0, 12, 0, 27),
         BackgroundTransparency = 1, Text = item.body, Font = FONT.Regular, TextSize = 11,
-        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Right,
-        TextDirection = RTL,
+        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, ZIndex = 5,
     }, card)
     create("TextLabel", {
@@ -1151,9 +1136,8 @@ create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.La
 
 local settingsHeader = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1,
-    Text = "✦  الإعدادات", Font = FONT.Bold, TextSize = 14,
-    TextColor3 = THEME.TX_MAIN, TextDirection = RTL,
-    TextXAlignment = Enum.TextXAlignment.Left,
+    Text = "✦  SETTINGS", Font = FONT.Bold, TextSize = 14,
+    TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = 0, ZIndex = 5,
 }, settingsScroll)
 addGradient(settingsHeader, {
@@ -1171,8 +1155,7 @@ local function createToggleRow(parent, order, labelText, initialValue, onChange)
     create("TextLabel", {
         Size = UDim2.new(1, -76, 1, 0), Position = UDim2.new(0, 12, 0, 0),
         BackgroundTransparency = 1, Text = labelText, Font = FONT.Medium, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
     }, row)
     local toggle = create("TextButton", {
         Size = UDim2.fromOffset(44, 22), Position = UDim2.new(1, -56, 0.5, -11),
@@ -1209,8 +1192,7 @@ local function createSliderRow(parent, order, labelText, initialValue, onChange)
     create("TextLabel", {
         Size = UDim2.new(1, -56, 0, 18), Position = UDim2.new(0, 12, 0, 7),
         BackgroundTransparency = 1, Text = labelText, Font = FONT.Medium, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
     }, row)
     local valueLbl = create("TextLabel", {
         Size = UDim2.fromOffset(42, 18), Position = UDim2.new(1, -50, 0, 7),
@@ -1269,20 +1251,19 @@ local function createSliderRow(parent, order, labelText, initialValue, onChange)
     return { setValue = function(v) apply(v, false) end, get = function() return current end }
 end
 
-local animRow = createToggleRow(settingsScroll, 1, "الحركات", settings.animations, function(v)
+local animRow = createToggleRow(settingsScroll, 1, "Animations", settings.animations, function(v)
     settings.animations = v
 end)
-local glowRow = createToggleRow(settingsScroll, 2, "توهج بنفسجي", settings.glow, function(v)
+local glowRow = createToggleRow(settingsScroll, 2, "Purple Glow", settings.glow, function(v)
     settings.glow = v; applyGlowState()
 end)
-local transRow = createSliderRow(settingsScroll, 3, "شفافية النافذة", settings.transparency, function(v)
+local transRow = createSliderRow(settingsScroll, 3, "Window Transparency", settings.transparency, function(v)
     applyWindowTransparency(v)
 end)
 local resetBtn = create("TextButton", {
     Size = UDim2.new(1, 0, 0, 42), BackgroundColor3 = THEME.BG_CARD,
-    AutoButtonColor = false, Text = "↻  إعادة تعيين الافتراضيات",
+    AutoButtonColor = false, Text = "↻  RESET TO DEFAULTS",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.DANGER_HI,
-    TextDirection = RTL,
     LayoutOrder = 4, ZIndex = 4,
 }, settingsScroll)
 addCorner(10, resetBtn); addStroke(THEME.DANGER, 1.2, 0.15, resetBtn)
@@ -1318,8 +1299,7 @@ local function createRangeSlider(parent, order, labelText, minV, maxV, initialVa
     create("TextLabel", {
         Size = UDim2.new(1, -70, 0, 18), Position = UDim2.new(0, 12, 0, 7),
         BackgroundTransparency = 1, Text = labelText, Font = FONT.Medium, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
     }, row)
     local valueLbl = create("TextLabel", {
         Size = UDim2.fromOffset(56, 18), Position = UDim2.new(1, -60, 0, 7),
@@ -1391,15 +1371,13 @@ local function createPlayerToggle(parent, order, titleText, subtitleText, initia
     create("TextLabel", {
         Size = UDim2.new(1, -76, 0, 20), Position = UDim2.new(0, 12, 0, 8),
         BackgroundTransparency = 1, Text = titleText, Font = FONT.Bold, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
     }, card)
     if subtitleText and subtitleText ~= "" then
         create("TextLabel", {
             Size = UDim2.new(1, -76, 0, 14), Position = UDim2.new(0, 12, 0, 28),
             BackgroundTransparency = 1, Text = subtitleText, Font = FONT.Regular, TextSize = 10,
             TextColor3 = THEME.TX_SUBTLE, TextXAlignment = Enum.TextXAlignment.Left,
-            TextDirection = RTL,
             TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
         }, card)
     end
@@ -1437,7 +1415,7 @@ local function createActionButtons(parent, order, applyLabel, applyColor, onAppl
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0, 0, 0, 0),
         BackgroundColor3 = applyColor, AutoButtonColor = false,
         Text = applyLabel, Font = FONT.Bold, TextSize = 11,
-        TextColor3 = THEME.TX_MAIN, TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 5,
     }, row)
     addCorner(8, applyBtn)
     local applyStroke = addStroke(THEME.P_GLOW, 1, 0.3, applyBtn)
@@ -1446,8 +1424,8 @@ local function createActionButtons(parent, order, applyLabel, applyColor, onAppl
     local resetB = create("TextButton", {
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0.5, 4, 0, 0),
         BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
-        Text = "↻  إعادة", Font = FONT.Bold, TextSize = 11,
-        TextColor3 = THEME.DANGER_HI, TextDirection = RTL, ZIndex = 5,
+        Text = "↻  Reset", Font = FONT.Bold, TextSize = 11,
+        TextColor3 = THEME.DANGER_HI, ZIndex = 5,
     }, row)
     addCorner(8, resetB)
     local resetStroke = addStroke(THEME.DANGER, 1, 0.3, resetB)
@@ -1460,7 +1438,6 @@ local function addSectionHeader(text, order)
         Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
         Text = "✦  " .. text, Font = FONT.Bold, TextSize = 12,
         TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL,
         LayoutOrder = order, ZIndex = 5,
     }, playerPage)
 end
@@ -1468,60 +1445,60 @@ end
 local uiOrder = 0
 local function nextOrder() uiOrder += 1; return uiOrder end
 
-addSectionHeader("الحركة", nextOrder())
+addSectionHeader("MOVEMENT", nextOrder())
 
-local speedSlider = createRangeSlider(playerPage, nextOrder(), "◉ السرعة", 16, 500, playerState.speed.value, function(v)
+local speedSlider = createRangeSlider(playerPage, nextOrder(), "◉ Speed", 16, 500, playerState.speed.value, function(v)
     playerState.speed.value = v
     if playerState.speed.applied then
         local hum = getHumanoid(localPlayer)
         if hum then hum.WalkSpeed = v end
     end
 end)
-createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
     local hum = getHumanoid(localPlayer)
     if hum then
         hum.WalkSpeed = playerState.speed.value
         playerState.speed.applied = true
-        showToast("◉  تم تطبيق السرعة: " .. playerState.speed.value)
-    else showToast("◉  الشخصية غير جاهزة") end
+        showToast("◉  Speed applied: " .. playerState.speed.value)
+    else showToast("◉  Character not ready") end
 end, function()
     playerState.speed.value = playerState.speed.original
     speedSlider.setValue(playerState.speed.original)
     local hum = getHumanoid(localPlayer)
     if hum then hum.WalkSpeed = playerState.speed.original end
     playerState.speed.applied = false
-    showToast("↻  تم إعادة تعيين السرعة")
+    showToast("↻  Speed reset")
 end)
 
-local jumpSlider = createRangeSlider(playerPage, nextOrder(), "◈ قوة القفز", 50, 500, playerState.jump.value, function(v)
+local jumpSlider = createRangeSlider(playerPage, nextOrder(), "◈ Jump Power", 50, 500, playerState.jump.value, function(v)
     playerState.jump.value = v
     if playerState.jump.applied then
         local hum = getHumanoid(localPlayer)
         if hum then hum.UseJumpPower = true; hum.JumpPower = v end
     end
 end)
-createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
     local hum = getHumanoid(localPlayer)
     if hum then
         hum.UseJumpPower = true
         hum.JumpPower = playerState.jump.value
         playerState.jump.applied = true
-        showToast("◈  تم تطبيق القفز: " .. playerState.jump.value)
-    else showToast("◈  الشخصية غير جاهزة") end
+        showToast("◈  Jump applied: " .. playerState.jump.value)
+    else showToast("◈  Character not ready") end
 end, function()
     playerState.jump.value = playerState.jump.original
     jumpSlider.setValue(playerState.jump.original)
     local hum = getHumanoid(localPlayer)
     if hum then hum.UseJumpPower = true; hum.JumpPower = playerState.jump.original end
     playerState.jump.applied = false
-    showToast("↻  تم إعادة تعيين القفز")
+    showToast("↻  Jump reset")
 end)
 
-local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ طيران", "تحليق باتجاه نظر الكاميرا", false, function(v)
+local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "Hover & fly toward camera look", false, function(v)
     playerState.flight.active = v
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  الشخصية غير جاهزة"); return end
+        if not char then showToast("◈  Character not ready"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
@@ -1544,39 +1521,39 @@ local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ طيران
                 bv.Velocity = Vector3.zero
             end
         end)
-        showToast("◈  الطيران مفعّل — حرّك الجويستيك للطيران")
+        showToast("◈  Flight ON — move joystick to fly")
     else
         if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end); playerState.flight.conn = nil end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end); playerState.flight.bodyVel = nil end
-        showToast("◈  الطيران معطّل")
+        showToast("◈  Flight OFF")
     end
 end)
-createRangeSlider(playerPage, nextOrder(), "↝ سرعة الطيران", 10, 300, playerState.flight.speed, function(v)
+createRangeSlider(playerPage, nextOrder(), "↝ Flight Speed", 10, 300, playerState.flight.speed, function(v)
     playerState.flight.speed = v
 end)
 
-local gravitySlider = createRangeSlider(playerPage, nextOrder(), "◉ الجاذبية", 0, 196, math.floor(playerState.gravity.original), function(v)
+local gravitySlider = createRangeSlider(playerPage, nextOrder(), "◉ Gravity", 0, 196, math.floor(playerState.gravity.original), function(v)
     playerState.gravity.value = v; playerState.gravity.applied = true
     workspace.Gravity = v
 end)
-createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
     workspace.Gravity = playerState.gravity.value
     playerState.gravity.applied = true
-    showToast("◉  الجاذبية: " .. playerState.gravity.value)
+    showToast("◉  Gravity: " .. playerState.gravity.value)
 end, function()
     playerState.gravity.value = playerState.gravity.original
     workspace.Gravity = playerState.gravity.original
     gravitySlider.setValue(math.floor(playerState.gravity.original))
     playerState.gravity.applied = false
-    showToast("↻  تم إعادة تعيين الجاذبية")
+    showToast("↻  Gravity reset")
 end)
 
-local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ الدوران", "تدوير شخصيتك في مكانها", false, function(v)
+local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Rotation", "Spin your character in place", false, function(v)
     playerState.rotation.active = v
     if playerState.rotation.bodyAV then pcall(function() playerState.rotation.bodyAV:Destroy() end); playerState.rotation.bodyAV = nil end
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  الشخصية غير جاهزة"); return end
+        if not char then showToast("◈  Character not ready"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         local av = Instance.new("BodyAngularVelocity")
@@ -1585,19 +1562,19 @@ local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ الدو
         av.AngularVelocity = Vector3.new(0, playerState.rotation.speed, 0)
         av.Parent = root
         playerState.rotation.bodyAV = av
-        showToast("◈  الدوران مفعّل")
-    else showToast("◈  الدوران معطّل") end
+        showToast("◈  Rotation ON")
+    else showToast("◈  Rotation OFF") end
 end)
-createRangeSlider(playerPage, nextOrder(), "↻ سرعة الدوران", 1, 50, playerState.rotation.speed, function(v)
+createRangeSlider(playerPage, nextOrder(), "↻ Rotation Speed", 1, 50, playerState.rotation.speed, function(v)
     playerState.rotation.speed = v
     if playerState.rotation.bodyAV and playerState.rotation.bodyAV.Parent then
         playerState.rotation.bodyAV.AngularVelocity = Vector3.new(0, v, 0)
     end
 end)
 
-addSectionHeader("حركة خاصة", nextOrder())
+addSectionHeader("SPECIAL MOVEMENT", nextOrder())
 
-createPlayerToggle(playerPage, nextOrder(), "◈ قفز لا نهائي", "اقفز بشكل متكرر أثناء الضغط على المسافة", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedly while holding space", false, function(v)
     playerState.infiniteJump.active = v
     if v then
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end) end
@@ -1606,19 +1583,19 @@ createPlayerToggle(playerPage, nextOrder(), "◈ قفز لا نهائي", "اق�
             local hum = getHumanoid(localPlayer)
             if hum and hum.Health > 0 then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
         end)
-        showToast("◈  القفز اللانهائي مفعّل")
+        showToast("◈  Infinite Jump ON")
     else
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end); playerState.infiniteJump.conn = nil end
-        showToast("◈  القفز اللانهائي معطّل")
+        showToast("◈  Infinite Jump OFF")
     end
 end)
 
-createPlayerToggle(playerPage, nextOrder(), "◈ سباحة", "التحليق في الهواء (محلي فقط)", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ Swimming", "Float in the air (local only)", false, function(v)
     playerState.swimming.active = v
     if playerState.swimming.bodyForce then pcall(function() playerState.swimming.bodyForce:Destroy() end); playerState.swimming.bodyForce = nil end
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  الشخصية غير جاهزة"); return end
+        if not char then showToast("◈  Character not ready"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         local bf = Instance.new("BodyForce")
@@ -1626,27 +1603,27 @@ createPlayerToggle(playerPage, nextOrder(), "◈ سباحة", "التحليق ف
         bf.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity, 0)
         bf.Parent = root
         playerState.swimming.bodyForce = bf
-        showToast("◈  السباحة مفعّلة")
-    else showToast("◈  السباحة معطّلة") end
+        showToast("◈  Swimming ON")
+    else showToast("◈  Swimming OFF") end
 end)
 
-addSectionHeader("المرئيات", nextOrder())
+addSectionHeader("VISUALS", nextOrder())
 
-createPlayerToggle(playerPage, nextOrder(), "▣ عرض آيباد", "زاوية رؤية أوسع (محلي فقط)", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "▣ iPad View", "Wider camera FOV (local only)", false, function(v)
     playerState.ipadView.active = v
     local cam = workspace.CurrentCamera
     if not cam then return end
     if v then
         playerState.ipadView.originalFov = cam.FieldOfView
         cam.FieldOfView = 80
-        showToast("▣  عرض آيباد مفعّل (زاوية 80)")
+        showToast("▣  iPad View ON (FOV 80)")
     else
         cam.FieldOfView = playerState.ipadView.originalFov or 70
-        showToast("▣  عرض آيباد معطّل")
+        showToast("▣  iPad View OFF")
     end
 end)
 
-createPlayerToggle(playerPage, nextOrder(), "◈ خفي", "محلي فقط — الآخرون يرونك", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ Invisible", "Local only — others still see you", false, function(v)
     playerState.invisible.active = v
     local char = localPlayer.Character
     if not char then return end
@@ -1658,22 +1635,21 @@ createPlayerToggle(playerPage, nextOrder(), "◈ خفي", "محلي فقط — �
                 part.Transparency = 1
             end
         end
-        showToast("◈  الخفي مفعّل (محلي فقط)")
+        showToast("◈  Invisible ON (local only)")
     else
         for part, orig in pairs(playerState.invisible.originals) do
             if part and part.Parent then part.Transparency = orig end
         end
         playerState.invisible.originals = {}
-        showToast("◈  الخفي معطّل")
+        showToast("◈  Invisible OFF")
     end
 end)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 34), BackgroundTransparency = 1,
-    Text = "⚠ الخفي وعرض آيباد تؤثر على عميلك المحلي فقط، وليس على اللاعبين الآخرين أو السيرفر.",
+    Text = "⚠ Invisible & iPad View affect only your local client, not other players or the server.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-    TextDirection = RTL,
     LayoutOrder = nextOrder(), ZIndex = 4,
 }, playerPage)
 
@@ -1755,11 +1731,13 @@ end
 local function fetchUrl(url)
     local body = nil
 
+    -- ⚡ Primary: direct game:HttpGet (works in Delta)
     local ok, res = pcall(function() return game:HttpGet(url) end)
     if ok and typeof(res) == "string" and #res > 0 then
         body = res
     end
 
+    -- Fallback: request / http_request with timeout (prevents Delta hang)
     if not body then
         local reqFunc = (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
             or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
@@ -1780,6 +1758,7 @@ local function fetchUrl(url)
         end
     end
 
+    -- Fallback: HttpService
     if not body then
         local ok2, res2 = pcall(function()
             return game:GetService("HttpService"):GetAsync(url)
@@ -1837,17 +1816,16 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "صيد تلقائي",
+    BackgroundTransparency = 1, Text = "Auto Fish",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afHeaderCard)
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "يصطاد تلقائياً نيابةً عنك في الألعاب المدعومة.",
+    Text = "Automatically fish for you in supported games.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afHeaderCard)
 
 local afActionCard = create("Frame", {
@@ -1859,17 +1837,16 @@ addCorner(12, afActionCard); addStroke(THEME.BORDER, 1, 0.15, afActionCard)
 
 local afStatus = create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
+    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
     Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afActionCard)
 
 local afLoadBtn = create("TextButton", {
     Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  تحميل سكربت الصيد التلقائي",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-    TextDirection = RTL, ZIndex = 5,
+    Text = "◈  Load Auto Fish Script",
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
 }, afActionCard)
 addCorner(10, afLoadBtn)
 local afLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, afLoadBtn)
@@ -1882,9 +1859,9 @@ addGradient(afLoadBtn, {
 create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
     BackgroundTransparency = 1,
-    Text = "⚠ يتطلب HTTP + loadstring",
+    Text = "⚠ Requires HTTP + loadstring",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afActionCard)
 
 local afInstrCard = create("Frame", {
@@ -1896,25 +1873,30 @@ addCorner(12, afInstrCard); addStroke(THEME.BORDER, 1, 0.15, afInstrCard)
 
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  التعليمات",
+    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
     BackgroundTransparency = 1,
-    Text = "اضغط على الزر أعلاه لتحميل سكربت الصيد التلقائي.",
+    Text = "Press the button above to load the Auto Fish script.",
     Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, afInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+    BackgroundTransparency = 1,
+    Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت الصيد التلقائي.",
+    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
     BackgroundTransparency = 1,
-    Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled.",
+    Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afInstrCard)
 
 local loadBusy = false
@@ -1926,26 +1908,26 @@ end
 afLoadBtn.MouseButton1Click:Connect(function()
     if loadBusy then return end
     loadBusy = true
-    local origText = "◈  تحميل سكربت الصيد التلقائي"
+    local origText = "◈  Load Auto Fish Script"
     local origBg = THEME.P_MAIN
-    afLoadBtn.Text = "⏳  جارٍ التحميل…"
+    afLoadBtn.Text = "⏳  Loading…"
     afLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setAfStatus("⏳  جارٍ جلب السكربت…", THEME.TX_DIM)
+    setAfStatus("⏳  Fetching script…", THEME.TX_DIM)
 
     task.spawn(function()
         local success, errMsg = false, nil
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(AUTO_FISH_URL)
-            if not body then return false, "فشل التنزيل" end
-            if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
+            if not body then return false, "Download failed" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
             local fn, compileErr = loadstring(body)
-            if not fn then return false, "خطأ ترجمة: " .. tostring(compileErr) end
+            if not fn then return false, "Compile error: " .. tostring(compileErr) end
             local runOk, runErr = pcall(fn)
-            if not runOk then return false, "خطأ تنفيذ: " .. tostring(runErr) end
+            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
             return true
         end)
         if ok then
-            if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
+            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
         else
             errMsg = tostring(ret1)
         end
@@ -1954,12 +1936,12 @@ afLoadBtn.MouseButton1Click:Connect(function()
         afLoadBtn.Text = origText
         afLoadBtn.BackgroundColor3 = origBg
         if success then
-            setAfStatus("✓  تم تنفيذ السكربت بنجاح", THEME.OK)
-            showToast("✓  تم تحميل سكربت الصيد")
+            setAfStatus("✓  Script executed successfully", THEME.OK)
+            showToast("✓  Auto Fish loaded")
         else
             warn("[LYNEX Auto Fish] Failed:", errMsg)
-            setAfStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "خطأ غير معروف"))
+            setAfStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+            showToast("✕  " .. (errMsg or "Unknown error"))
         end
     end)
 end)
@@ -2001,17 +1983,16 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "سكربت السيارات",
+    BackgroundTransparency = 1, Text = "Car Script",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carHeaderCard)
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "عرض وتشغيل سكربت السيارات في الألعاب المدعومة.",
+    Text = "Show and run the Car Script in supported games.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carHeaderCard)
 
 local carActionCard = create("Frame", {
@@ -2023,17 +2004,16 @@ addCorner(12, carActionCard); addStroke(THEME.BORDER, 1, 0.15, carActionCard)
 
 local carStatus = create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
+    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
     Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carActionCard)
 
 local carLoadBtn = create("TextButton", {
     Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  إظهار سكربت السيارات",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-    TextDirection = RTL, ZIndex = 5,
+    Text = "◈  Show Car Script",
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
 }, carActionCard)
 addCorner(10, carLoadBtn)
 local carLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, carLoadBtn)
@@ -2046,9 +2026,9 @@ addGradient(carLoadBtn, {
 create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
     BackgroundTransparency = 1,
-    Text = "⚠ يتطلب HTTP + loadstring",
+    Text = "⚠ Requires HTTP + loadstring",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carActionCard)
 
 local carInstrCard = create("Frame", {
@@ -2060,25 +2040,30 @@ addCorner(12, carInstrCard); addStroke(THEME.BORDER, 1, 0.15, carInstrCard)
 
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  التعليمات",
+    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
     BackgroundTransparency = 1,
+    Text = "Press the button above to show and run the Car Script.",
+    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, carInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+    BackgroundTransparency = 1,
     Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت السيارات.",
     Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
     BackgroundTransparency = 1,
-    Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled.",
+    Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carInstrCard)
 
 local carLoadBusy = false
@@ -2090,26 +2075,26 @@ end
 carLoadBtn.MouseButton1Click:Connect(function()
     if carLoadBusy then return end
     carLoadBusy = true
-    local origText = "◈  إظهار سكربت السيارات"
+    local origText = "◈  Show Car Script"
     local origBg = THEME.P_MAIN
-    carLoadBtn.Text = "⏳  جارٍ التحميل…"
+    carLoadBtn.Text = "⏳  Loading…"
     carLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setCarStatus("⏳  جارٍ جلب السكربت…", THEME.TX_DIM)
+    setCarStatus("⏳  Fetching script…", THEME.TX_DIM)
 
     task.spawn(function()
         local success, errMsg = false, nil
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(CAR_URL)
-            if not body then return false, "فشل التنزيل" end
-            if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
+            if not body then return false, "Download failed" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
             local fn, compileErr = loadstring(body)
-            if not fn then return false, "خطأ ترجمة: " .. tostring(compileErr) end
+            if not fn then return false, "Compile error: " .. tostring(compileErr) end
             local runOk, runErr = pcall(fn)
-            if not runOk then return false, "خطأ تنفيذ: " .. tostring(runErr) end
+            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
             return true
         end)
         if ok then
-            if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
+            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
         else
             errMsg = tostring(ret1)
         end
@@ -2118,12 +2103,12 @@ carLoadBtn.MouseButton1Click:Connect(function()
         carLoadBtn.Text = origText
         carLoadBtn.BackgroundColor3 = origBg
         if success then
-            setCarStatus("✓  تم تنفيذ سكربت السيارات بنجاح", THEME.OK)
-            showToast("✓  تم تحميل سكربت السيارات")
+            setCarStatus("✓  Car Script executed successfully", THEME.OK)
+            showToast("✓  Car Script loaded")
         else
             warn("[LYNEX Car] Failed:", errMsg)
-            setCarStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "خطأ غير معروف"))
+            setCarStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+            showToast("✕  " .. (errMsg or "Unknown error"))
         end
     end)
 end)
@@ -2168,16 +2153,15 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-            BackgroundTransparency = 1, Text = "العم مرزوق",
+            BackgroundTransparency = 1, Text = "Uncle Mazrouk",
             Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, umHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-            BackgroundTransparency = 1, Text = "سكربت العم مرزوق — اضغط تحميل للتشغيل.",
+            BackgroundTransparency = 1, Text = "Uncle Mazrouk Script — click load to run.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, umHeaderCard)
 
         local umActionCard = create("Frame", {
@@ -2189,17 +2173,16 @@ do
 
         local umStatus = create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-            BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
             Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, umActionCard)
 
         local umLoadBtn = create("TextButton", {
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-            Text = "◈  تحميل سكربت العم مرزوق",
-            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-            TextDirection = RTL, ZIndex = 5,
+            Text = "◈  Load Uncle Mazrouk Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
         }, umActionCard)
         addCorner(10, umLoadBtn)
         local umLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, umLoadBtn)
@@ -2211,9 +2194,9 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-            BackgroundTransparency = 1, Text = "⚠ يتطلب HTTP + loadstring",
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, umActionCard)
 
         local umInstrCard = create("Frame", {
@@ -2225,16 +2208,21 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-            BackgroundTransparency = 1, Text = "✦  التعليمات",
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
             Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, umInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت العم مرزوق.",
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Uncle Mazrouk script.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, umInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت أبو مزورق.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, umInstrCard)
 
         local umLoadBusy = false
@@ -2246,11 +2234,11 @@ do
         umLoadBtn.MouseButton1Click:Connect(function()
             if umLoadBusy then return end
             umLoadBusy = true
-            local origText = "◈  تحميل سكربت العم مرزوق"
+            local origText = "◈  Load Uncle Mazrouk Script"
             local origBg = THEME.P_MAIN
-            umLoadBtn.Text = "⏳  جارٍ التحميل…"
+            umLoadBtn.Text = "⏳  Loading…"
             umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-            setUmStatus("⏳  جارٍ تحميل السكربت…", THEME.TX_DIM)
+            setUmStatus("⏳  Loading script…", THEME.TX_DIM)
             task.spawn(function()
                 local ok, err = pcall(function()
                     loadstring(game:HttpGet(UNCLE_MAZROUK_URL))()
@@ -2260,8 +2248,8 @@ do
                 umLoadBtn.Text = origText
                 umLoadBtn.BackgroundColor3 = origBg
                 if ok then
-                    setUmStatus("✓  تم تنفيذ سكربت العم مرزوق بنجاح", THEME.OK)
-                    showToast("✓  تم تحميل العم مرزوق")
+                    setUmStatus("✓  Uncle Mazrouk Script executed successfully", THEME.OK)
+                    showToast("✓  Uncle Mazrouk loaded")
                 else
                     warn("[LYNEX Uncle Mazrouk] Failed:", err)
                     setUmStatus("✕  " .. tostring(err), THEME.DANGER_HI)
@@ -2280,10 +2268,9 @@ do
             unclePage = createPage("unclemazrouk", true)
             create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
-                Text = "⚠ فشل تحميل تبويب العم مرزوق:\n\n" .. tostring(errMaz),
+                Text = "⚠ Failed to load Mazrouk tab:\n\n" .. tostring(errMaz),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-                TextDirection = RTL,
             }, unclePage)
         end
     end
@@ -2333,17 +2320,16 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "أدوات متنوعة",
+    BackgroundTransparency = 1, Text = "Misc Utilities",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, miscHeaderCard)
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "تعديلات من جهة العميل: الرسومات، الوقت، السيرفر، الكاميرا.",
+    Text = "Client-side tweaks: Graphics, Time, Server, Camera.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscHeaderCard)
 
 local miscNotice = create("Frame", {
@@ -2355,10 +2341,9 @@ addCorner(8, miscNotice); addStroke(Color3.fromRGB(200, 140, 60), 1, 0.3, miscNo
 create("TextLabel", {
     Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0),
     BackgroundTransparency = 1,
-    Text = "⚠  تغييرات الرسومات والوقت والتقريب من جهة العميل فقط.",
+    Text = "⚠  Graphics, Time & Zoom changes are CLIENT-SIDE only.",
     Font = FONT.Medium, TextSize = 9, TextColor3 = Color3.fromRGB(255, 210, 150),
-    TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL,
-    TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscNotice)
 
 local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight)
@@ -2370,7 +2355,7 @@ local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0, 0, 0, 0),
         BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
         Text = leftText, Font = FONT.Bold, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 5,
     }, row)
     addCorner(10, leftBtn)
     local leftStroke = addStroke(THEME.P_GLOW, 1.5, 0.2, leftBtn)
@@ -2385,7 +2370,7 @@ local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0.5, 4, 0, 0),
         BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
         Text = rightText, Font = FONT.Bold, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 5,
     }, row)
     addCorner(10, rightBtn)
     local rightStroke = addStroke(THEME.P_GLOW, 1.5, 0.3, rightBtn)
@@ -2398,7 +2383,7 @@ local function createMiscButton(parent, order, label, color, strokeColor, onClic
         Size = UDim2.new(1, 0, 0, 44),
         BackgroundColor3 = color, AutoButtonColor = false,
         Text = label, Font = FONT.Bold, TextSize = 13,
-        TextColor3 = THEME.TX_MAIN, TextDirection = RTL, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 5,
         LayoutOrder = order,
     }, parent)
     addCorner(10, btn)
@@ -2443,10 +2428,10 @@ local qualityStatusLbl
 local function updateQualityStatus()
     if not qualityStatusLbl then return end
     local lvl = getCurrentQualityLevel()
-    if not lvl then qualityStatusLbl.Text = "◈ الحالي: غير معروف / تلقائي"; return end
+    if not lvl then qualityStatusLbl.Text = "◈ Current: Unknown / Automatic"; return end
     local idx = getQualityIndex(lvl)
-    if idx then qualityStatusLbl.Text = "◈ الحالي: مستوى " .. idx .. " / 10"
-    else qualityStatusLbl.Text = "◈ الحالي: تلقائي" end
+    if idx then qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
+    else qualityStatusLbl.Text = "◈ Current: Automatic" end
 end
 
 local function captureQualityOriginal()
@@ -2465,14 +2450,14 @@ local function increaseQuality()
             Lighting.EnvironmentDiffuseScale = 1
             Lighting.EnvironmentSpecularScale = 1
         end)
-        showToast("◈  تم رفع الجودة (بديل الإضاءة)")
+        showToast("◈  Quality boosted (Lighting fallback)")
         return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.min(idx + 1, #QUALITY_LEVELS)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus(); showToast("◈  الجودة: مستوى " .. idx)
-    else showToast("✕  لا يمكن تغيير الجودة") end
+        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
+    else showToast("✕  Cannot change quality") end
 end
 
 local function decreaseQuality()
@@ -2485,14 +2470,14 @@ local function decreaseQuality()
             Lighting.EnvironmentDiffuseScale = 0
             Lighting.EnvironmentSpecularScale = 0
         end)
-        showToast("◈  تم تقليل الجودة (بديل الإضاءة)")
+        showToast("◈  Quality reduced (Lighting fallback)")
         return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.max(idx - 1, 1)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus(); showToast("◈  الجودة: مستوى " .. idx)
-    else showToast("✕  لا يمكن تغيير الجودة") end
+        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
+    else showToast("✕  Cannot change quality") end
 end
 
 local function captureLightingOriginals()
@@ -2515,7 +2500,7 @@ local function applyNight()
         Lighting.ColorShift_Bottom = Color3.fromRGB(10, 10, 20)
         Lighting.FogEnd = 500; Lighting.FogStart = 50
     end)
-    showToast("◈  تم تطبيق الليل (محلي فقط)")
+    showToast("◈  Night applied (local only)")
 end
 
 local function applyDay()
@@ -2528,7 +2513,7 @@ local function applyDay()
         Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
         Lighting.FogEnd = 10000; Lighting.FogStart = 0
     end)
-    showToast("◈  تم تطبيق النهار (محلي فقط)")
+    showToast("◈  Day applied (local only)")
 end
 
 local teleportBusy = false
@@ -2547,26 +2532,24 @@ local function showConfirm(titleText, messageText, onConfirm)
     create("TextLabel", {
         Size = UDim2.new(1, -24, 0, 24), Position = UDim2.new(0, 12, 0, 12),
         BackgroundTransparency = 1, Text = titleText, Font = FONT.Bold, TextSize = 14,
-        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
-        TextDirection = RTL, ZIndex = 202,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202,
     }, modal)
     create("TextLabel", {
         Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 40),
         BackgroundTransparency = 1, Text = messageText, Font = FONT.Regular, TextSize = 10,
-        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Right,
-        TextDirection = RTL,
+        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
         TextWrapped = true, ZIndex = 202,
     }, modal)
     local cancelBtn = create("TextButton", {
         Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0, 12, 1, -46),
-        BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false, Text = "إلغاء",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM, TextDirection = RTL, ZIndex = 202,
+        BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false, Text = "Cancel",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM, ZIndex = 202,
     }, modal)
     addCorner(8, cancelBtn); addStroke(THEME.BORDER, 1, 0.3, cancelBtn)
     local confirmBtn = create("TextButton", {
         Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0.5, 6, 1, -46),
-        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false, Text = "تأكيد",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN, TextDirection = RTL, ZIndex = 202,
+        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false, Text = "Confirm",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN, ZIndex = 202,
     }, modal)
     addCorner(8, confirmBtn); addStroke(THEME.P_GLOW, 1.5, 0.2, confirmBtn)
     cancelBtn.MouseButton1Click:Connect(function() pcall(function() overlay:Destroy() end) end)
@@ -2578,9 +2561,9 @@ end
 
 local function changeServer()
     if teleportBusy then return end
-    showConfirm("تغيير السيرفر", "سيتم نقلك إلى سيرفر جديد.",
+    showConfirm("Change Server", "You will be teleported to a new server.",
         function()
-            teleportBusy = true; showToast("◈  جارٍ البحث عن سيرفر جديد…")
+            teleportBusy = true; showToast("◈  Finding new server…")
             local ok, err = pcall(function() TeleportService:Teleport(game.PlaceId, localPlayer) end)
             if not ok then showToast("✕  " .. tostring(err)); teleportBusy = false end
             task.delay(3, function() teleportBusy = false end)
@@ -2589,9 +2572,9 @@ end
 
 local function rejoinServer()
     if teleportBusy then return end
-    showConfirm("إعادة الانضمام للسيرفر", "ستعيد الانضمام لنفس السيرفر.",
+    showConfirm("Rejoin Server", "You will rejoin this same server.",
         function()
-            teleportBusy = true; showToast("◈  جارٍ إعادة الانضمام…")
+            teleportBusy = true; showToast("◈  Rejoining server…")
             local ok, err = pcall(function()
                 if game.JobId and game.JobId ~= "" then
                     TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
@@ -2613,92 +2596,84 @@ local function toggleInfiniteZoom(enabled)
             localPlayer.CameraMaxZoomDistance = 10000
             localPlayer.CameraMinZoomDistance = 0.1
         end)
-        if ok then miscState.zoomActive = true; showToast("◉  التقريب اللانهائي مفعّل")
-        else showToast("✕  الكاميرا مقفلة") end
+        if ok then miscState.zoomActive = true; showToast("◉  Infinite Zoom ON")
+        else showToast("✕  Camera locked") end
     else
         pcall(function()
             localPlayer.CameraMaxZoomDistance = miscState.zoomOriginalMax or 400
             localPlayer.CameraMinZoomDistance = miscState.zoomOriginalMin or 0.5
         end)
-        miscState.zoomActive = false; showToast("◉  التقريب اللانهائي معطّل")
+        miscState.zoomActive = false; showToast("◉  Infinite Zoom OFF")
     end
 end
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  الرسومات", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  GRAPHICS", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscRow(miscPage, miscOrder(), "▲  زيادة الجودة", "▼  تقليل الجودة", increaseQuality, decreaseQuality)
+createMiscRow(miscPage, miscOrder(), "▲  Increase Quality", "▼  Decrease Quality", increaseQuality, decreaseQuality)
 
 qualityStatusLbl = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1,
-    Text = "◈ الحالي: —", Font = FONT.Medium, TextSize = 10,
+    Text = "◈ Current: —", Font = FONT.Medium, TextSize = 10,
     TextColor3 = THEME.TX_SUBTLE, TextXAlignment = Enum.TextXAlignment.Center,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 updateQualityStatus()
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  وقت اليوم", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  TIME OF DAY", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscRow(miscPage, miscOrder(), "☾  ليل", "☀  نهار", applyNight, applyDay)
+createMiscRow(miscPage, miscOrder(), "☾  Night", "☀  Day", applyNight, applyDay)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ تغييرات الإضاءة محلية فقط.",
+    Text = "⚠ Lighting changes are local-only.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  السيرفر", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  SERVER", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscButton(miscPage, miscOrder(), "◈  تغيير السيرفر", THEME.P_MAIN, THEME.P_GLOW, changeServer)
-createMiscButton(miscPage, miscOrder(), "↻  إعادة الانضمام للسيرفر", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
+createMiscButton(miscPage, miscOrder(), "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
+createMiscButton(miscPage, miscOrder(), "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ الانتقال سيفصلك عن اللعبة.",
+    Text = "⚠ Teleporting will disconnect you.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  الكاميرا", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  CAMERA", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
 createPlayerToggle(miscPage, miscOrder(),
-    "◉ تقريب لا نهائي", "يمدّد أقصى مسافة للكاميرا", false, toggleInfiniteZoom)
+    "◉ Infinite Zoom", "Extends camera max distance", false, toggleInfiniteZoom)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ بعض الألعاب تقيّد مسافة التقريب.",
+    Text = "⚠ Some games clamp zoom distance.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-    TextDirection = RTL,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
@@ -2723,7 +2698,7 @@ _G.LYNEX_CLEANUP_MISC = function()
 end
 
 --==================================================================
--- 16.10) مضادات Page
+-- 16.10) Anti-strike Page
 --==================================================================
 print("[LYNEX] Section 16.10 — Anti-strike loading...")
 
@@ -2761,16 +2736,15 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-            BackgroundTransparency = 1, Text = "سكربت المضادات",
+            BackgroundTransparency = 1, Text = "Anti-strike Script",
             Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-            BackgroundTransparency = 1, Text = "عرض وتشغيل سكربت المضادات.",
+            BackgroundTransparency = 1, Text = "Show and run the Anti-strike Script.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asHeaderCard)
 
         local asActionCard = create("Frame", {
@@ -2781,17 +2755,16 @@ do
 
         local asStatus = create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-            BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
             Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asActionCard)
 
         local asLoadBtn = create("TextButton", {
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-            Text = "◈  إظهار سكربت المضادات",
-            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-            TextDirection = RTL, ZIndex = 5,
+            Text = "◈  Show Anti-strike Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
         }, asActionCard)
         addCorner(10, asLoadBtn)
         local asLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, asLoadBtn)
@@ -2803,9 +2776,9 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-            BackgroundTransparency = 1, Text = "⚠ يتطلب HTTP + loadstring",
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asActionCard)
 
         local asInstrCard = create("Frame", {
@@ -2816,23 +2789,27 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-            BackgroundTransparency = 1, Text = "✦  التعليمات",
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
             Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت المضادات.",
+            BackgroundTransparency = 1, Text = "Press the button above to show and run the Anti-strike Script.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, asInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "لتفعيل السكربت اضغط على هذا الزر",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1, Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled.",
+            BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
 
         local asLoadBusy = false
@@ -2844,53 +2821,52 @@ do
         asLoadBtn.MouseButton1Click:Connect(function()
             if asLoadBusy then return end
             asLoadBusy = true
-            local origText, origBg = "◈  إظهار سكربت المضادات", THEME.P_MAIN
-            asLoadBtn.Text = "⏳  جارٍ التحميل…"
+            local origText, origBg = "◈  Show Anti-strike Script", THEME.P_MAIN
+            asLoadBtn.Text = "⏳  Loading…"
             asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-            setAsStatus("⏳  جارٍ جلب السكربت…", THEME.TX_DIM)
+            setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
             task.spawn(function()
                 local success, errMsg = false, nil
                 local ok, ret1, ret2 = pcall(function()
                     local body = fetchUrl(ANTI_STRIKE_URL)
-                    if not body then return false, "فشل التنزيل" end
-                    if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
+                    if not body then return false, "Download failed" end
+                    if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
                     local fn, compileErr = loadstring(body)
-                    if not fn then return false, "خطأ ترجمة: " .. tostring(compileErr) end
+                    if not fn then return false, "Compile error: " .. tostring(compileErr) end
                     local runOk, runErr = pcall(fn)
-                    if not runOk then return false, "خطأ تنفيذ: " .. tostring(runErr) end
+                    if not runOk then return false, "Runtime error: " .. tostring(runErr) end
                     return true
                 end)
                 if ok then
-                    if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
+                    if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
                 else errMsg = tostring(ret1) end
                 task.wait(0.25)
                 asLoadBusy = false
                 asLoadBtn.Text = origText
                 asLoadBtn.BackgroundColor3 = origBg
                 if success then
-                    setAsStatus("✓  تم تنفيذ سكربت المضادات بنجاح", THEME.OK)
-                    showToast("✓  تم تحميل سكربت المضادات")
+                    setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
+                    showToast("✓  Anti-strike Script loaded")
                 else
                     warn("[LYNEX Anti-strike] Failed:", errMsg)
-                    setAsStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
-                    showToast("✕  " .. (errMsg or "خطأ غير معروف"))
+                    setAsStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+                    showToast("✕  " .. (errMsg or "Unknown error"))
                 end
             end)
         end)
         styleActionButton(asLoadBtn, asLoadStroke)
     end)
 
-    if okAntiStrike then print("[LYNEX] ✓ Anti-strike (مضادات) section loaded OK")
+    if okAntiStrike then print("[LYNEX] ✓ Anti-strike section loaded OK")
     else
         warn("[LYNEX] ✗ Anti-strike section FAILED:", errAntiStrike)
         if not antiStrikePage then
             antiStrikePage = createPage("antistrike", true)
             create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
-                Text = "⚠ فشل تحميل تبويب المضادات:\n\n" .. tostring(errAntiStrike),
+                Text = "⚠ Failed to load Anti-strike tab:\n\n" .. tostring(errAntiStrike),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-                TextDirection = RTL,
             }, antiStrikePage)
         end
     end
@@ -2935,16 +2911,15 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-            BackgroundTransparency = 1, Text = "سكربت الدردشة",
+            BackgroundTransparency = 1, Text = "Chat Script",
             Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-            BackgroundTransparency = 1, Text = "عرض وتشغيل سكربت الدردشة.",
+            BackgroundTransparency = 1, Text = "Show and run the Chat Script.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chHeaderCard)
 
         local chActionCard = create("Frame", {
@@ -2955,17 +2930,16 @@ do
 
         local chStatus = create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-            BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
             Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chActionCard)
 
         local chLoadBtn = create("TextButton", {
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-            Text = "◈  إظهار سكربت الدردشة",
-            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-            TextDirection = RTL, ZIndex = 5,
+            Text = "◈  Show Chat Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
         }, chActionCard)
         addCorner(10, chLoadBtn)
         local chLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, chLoadBtn)
@@ -2977,9 +2951,9 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-            BackgroundTransparency = 1, Text = "⚠ يتطلب HTTP + loadstring",
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chActionCard)
 
         local chInstrCard = create("Frame", {
@@ -2990,23 +2964,27 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-            BackgroundTransparency = 1, Text = "✦  التعليمات",
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
             Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت الدردشة.",
+            BackgroundTransparency = 1, Text = "Press the button above to show and run the Chat Script.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "لتفعيل السكربت اضغط على هذا الزر",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1, Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled.",
+            BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL,
-            TextWrapped = true, ZIndex = 5,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
 
         local chLoadBusy = false
@@ -3018,36 +2996,36 @@ do
         chLoadBtn.MouseButton1Click:Connect(function()
             if chLoadBusy then return end
             chLoadBusy = true
-            local origText, origBg = "◈  إظهار سكربت الدردشة", THEME.P_MAIN
-            chLoadBtn.Text = "⏳  جارٍ التحميل…"
+            local origText, origBg = "◈  Show Chat Script", THEME.P_MAIN
+            chLoadBtn.Text = "⏳  Loading…"
             chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-            setChStatus("⏳  جارٍ جلب السكربت…", THEME.TX_DIM)
+            setChStatus("⏳  Fetching script…", THEME.TX_DIM)
             task.spawn(function()
                 local success, errMsg = false, nil
                 local ok, ret1, ret2 = pcall(function()
                     local body = fetchUrl(CHAT_URL)
-                    if not body then return false, "فشل التنزيل" end
-                    if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
+                    if not body then return false, "Download failed" end
+                    if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
                     local fn, compileErr = loadstring(body)
-                    if not fn then return false, "خطأ ترجمة: " .. tostring(compileErr) end
+                    if not fn then return false, "Compile error: " .. tostring(compileErr) end
                     local runOk, runErr = pcall(fn)
-                    if not runOk then return false, "خطأ تنفيذ: " .. tostring(runErr) end
+                    if not runOk then return false, "Runtime error: " .. tostring(runErr) end
                     return true
                 end)
                 if ok then
-                    if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
+                    if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
                 else errMsg = tostring(ret1) end
                 task.wait(0.25)
                 chLoadBusy = false
                 chLoadBtn.Text = origText
                 chLoadBtn.BackgroundColor3 = origBg
                 if success then
-                    setChStatus("✓  تم تنفيذ سكربت الدردشة بنجاح", THEME.OK)
-                    showToast("✓  تم تحميل سكربت الدردشة")
+                    setChStatus("✓  Chat Script executed successfully", THEME.OK)
+                    showToast("✓  Chat Script loaded")
                 else
                     warn("[LYNEX Chat] Failed:", errMsg)
-                    setChStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
-                    showToast("✕  " .. (errMsg or "خطأ غير معروف"))
+                    setChStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+                    showToast("✕  " .. (errMsg or "Unknown error"))
                 end
             end)
         end)
@@ -3061,10 +3039,9 @@ do
             chatPage = createPage("chat", true)
             create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
-                Text = "⚠ فشل تحميل تبويب الدردشة:\n\n" .. tostring(errChat),
+                Text = "⚠ Failed to load Chat tab:\n\n" .. tostring(errChat),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
-                TextDirection = RTL,
             }, chatPage)
         end
     end
@@ -3096,7 +3073,64 @@ floatingBadge = create("Frame", {
 addCorner(5, floatingBadge); addStroke(THEME.BG_PANEL, 1.5, 0, floatingBadge)
 
 --==================================================================
--- 18) Glow
+-- 18) Fade
+--==================================================================
+local origTransparency = {}
+local function scanTransparency(obj)
+    if obj:IsA("GuiObject") then
+        local snap = {}
+        if obj:IsA("Frame") or obj:IsA("ScrollingFrame")
+           or obj:IsA("TextButton") or obj:IsA("ImageButton") then
+            snap.BackgroundTransparency = obj.BackgroundTransparency
+        end
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            snap.TextTransparency = obj.TextTransparency
+            snap.TextStrokeTransparency = obj.TextStrokeTransparency
+        end
+        if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+            snap.ImageTransparency = obj.ImageTransparency
+        end
+        if obj:IsA("TextBox") then snap.TextTransparency = obj.TextTransparency end
+        if next(snap) then origTransparency[obj] = snap end
+    end
+    for _, c in ipairs(obj:GetChildren()) do scanTransparency(c) end
+end
+scanTransparency(root)
+
+local function setAllTransparency(value)
+    for obj, snap in pairs(origTransparency) do
+        if obj and obj.Parent then
+            for k in pairs(snap) do obj[k] = value end
+        end
+    end
+end
+
+local function fadeTo(value, duration, style, direction, onDone)
+    if not settings.animations then duration = 0; style = Enum.EasingStyle.Linear end
+    local inf = TweenInfo.new(duration, style, direction)
+    local tweens, remaining = {}, 0
+    for obj, snap in pairs(origTransparency) do
+        if obj and obj.Parent then
+            local target = {}
+            for k in pairs(snap) do
+                target[k] = (value == "orig") and snap[k] or value
+            end
+            table.insert(tweens, TweenService:Create(obj, inf, target))
+            remaining += 1
+        end
+    end
+    if remaining == 0 then if onDone then onDone() end; return end
+    for _, t in ipairs(tweens) do
+        t.Completed:Once(function()
+            remaining -= 1
+            if remaining <= 0 and onDone then onDone() end
+        end)
+        t:Play()
+    end
+end
+
+--==================================================================
+-- 19) Glow
 --==================================================================
 task.spawn(function()
     while screenGui and screenGui.Parent do
@@ -3117,7 +3151,7 @@ task.spawn(function()
 end)
 
 --==================================================================
--- 19) Press & Hover
+-- 20) Press & Hover
 --==================================================================
 local function attachPressEffect(btn)
     local baseSize = btn.Size
@@ -3161,7 +3195,7 @@ if UserInputService.MouseEnabled then
 end
 
 --==================================================================
--- 20) Drag
+-- 21) Drag
 --==================================================================
 local dragging, dragStart, startPos = false, nil, nil
 header.InputBegan:Connect(function(input)
@@ -3188,7 +3222,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --==================================================================
--- 21) Sidebar toggle
+-- 22) Sidebar toggle
 --==================================================================
 local sidebarOpen = true
 sidebar.Size = UDim2.new(0, sidebarW, 1, 0)
@@ -3207,7 +3241,7 @@ end
 menuBtn.MouseButton1Click:Connect(function() setSidebar(not sidebarOpen) end)
 
 --==================================================================
--- 22) Tab System
+-- 23) Tab System
 --==================================================================
 local pageTweens, pageOrigPos = {}, {}
 for id, page in pairs(tabPages) do pageOrigPos[id] = page.Position end
@@ -3275,7 +3309,7 @@ for id, data in pairs(tabButtons) do
 end
 
 --==================================================================
--- 23) Show/Hide
+-- 24) Show/Hide
 --==================================================================
 local function hideWindow()
     windowHidden = true; removeBlur()
@@ -3289,14 +3323,11 @@ local function hideWindow()
     end
     tween(outerGlow, TweenInfo.new(0.25), { BackgroundTransparency = 1 })
     mainStroke.Enabled = false
-    tween(root, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { GroupTransparency = 1 })
-    task.delay(0.28, function()
-        if windowHidden then
-            root.Visible = false
-            floatingBtn.Visible = true
-            floatingBtn.Size = UDim2.fromOffset(0, 0)
-            tween(floatingBtn, EASE.BACK, { Size = UDim2.fromOffset(48, 48) })
-        end
+    fadeTo(1, 0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.In, function()
+        root.Visible = false
+        floatingBtn.Visible = true
+        floatingBtn.Size = UDim2.fromOffset(0, 0)
+        tween(floatingBtn, EASE.BACK, { Size = UDim2.fromOffset(48, 48) })
     end)
 end
 
@@ -3304,14 +3335,14 @@ local function showWindow()
     windowHidden = false
     floatingBtn.Visible = false
     root.Visible = true
-    root.GroupTransparency = 1
     applyBlur()
-    tween(root, TweenInfo.new(0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { GroupTransparency = 0 })
-    mainStroke.Enabled = true
-    if settings.glow then
-        outerGlow.BackgroundTransparency = 1
-        tween(outerGlow, TweenInfo.new(0.3), { BackgroundTransparency = 0.85 })
-    end
+    setAllTransparency(1)
+    fadeTo("orig", 0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, function()
+        mainStroke.Enabled = true
+        if settings.glow then
+            tween(outerGlow, TweenInfo.new(0.3), { BackgroundTransparency = 0.85 })
+        end
+    end)
     if spectate.active then updateSpectateIndicator() end
     updateServerInfo()
 end
@@ -3319,7 +3350,7 @@ closeBtn.MouseButton1Click:Connect(hideWindow)
 floatingBtn.MouseButton1Click:Connect(showWindow)
 
 --==================================================================
--- 24) Profile
+-- 25) Profile
 --==================================================================
 local function loadPlayerProfile()
     pcall(function()
@@ -3331,20 +3362,24 @@ local function loadPlayerProfile()
     usernameLbl.Text = "@" .. username
     uidLbl.Text = tostring(userId)
     if okAge and typeof(accountAge) == "number" then
-        ageLbl.Text = tostring(accountAge) .. " يوم"
-    else ageLbl.Text = "غير متوفر" end
+        ageLbl.Text = tostring(accountAge) .. " days"
+    else ageLbl.Text = "N/A" end
 end
 loadPlayerProfile()
 
 --==================================================================
--- 25) Settings functions
+-- 26) Settings functions
 --==================================================================
 function applyWindowTransparency(pct)
     settings.transparency = math.clamp(pct, 0, 90)
     local t = settings.transparency / 100
-    main.BackgroundTransparency = t
-    header.BackgroundTransparency = math.min(1, t + 0.02)
-    sidebar.BackgroundTransparency = math.min(1, t + 0.10)
+    local function setTransp(obj, val)
+        if origTransparency[obj] then origTransparency[obj].BackgroundTransparency = val end
+        if not windowHidden then obj.BackgroundTransparency = val end
+    end
+    setTransp(main, t)
+    setTransp(header, math.min(1, t + 0.02))
+    setTransp(sidebar, math.min(1, t + 0.10))
 end
 
 function applyGlowState()
@@ -3361,11 +3396,11 @@ resetBtn.MouseButton1Click:Connect(function()
     settings.animations = true; settings.transparency = 15; settings.glow = true
     animRow.setOn(true); glowRow.setOn(true); transRow.setValue(15)
     applyWindowTransparency(15); applyGlowState()
-    showToast("↻  تم استعادة الإعدادات")
+    showToast("↻  Settings restored")
 end)
 
 --==================================================================
--- 26) Viewport
+-- 27) Viewport
 --==================================================================
 local function onViewportChange()
     local w, h = computeWindowSize()
@@ -3390,18 +3425,27 @@ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 end)
 
 --==================================================================
--- 27) Startup
+-- 28) Startup (MOBILE FIX: Skip fade animation)
 --==================================================================
 switchTab("home")
 applyBlur()
 
 do
+    -- إجبار الواجهة على الظهور فوراً (بدون أنيميشن)
     root.Visible = true
-    root.GroupTransparency = 0
     main.Visible = true
     main.BackgroundTransparency = 0.08
     mainStroke.Transparency = 0.15
     outerGlow.BackgroundTransparency = 0.85
+    
+    -- استعادة الشفافية الطبيعية لكل العناصر
+    for obj, snap in pairs(origTransparency) do
+        if obj and obj.Parent then
+            for k, v in pairs(snap) do
+                obj[k] = v
+            end
+        end
+    end
 end
 
-print("[LYNEX HUB v3.4] ✦ جاهز — نسخة عربية مع إصلاح الموبايل")
+print("[LYNEX HUB v3.4] ✦ Ready — FORCED VISIBILITY (Mobile Fix)")
