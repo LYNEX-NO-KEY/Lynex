@@ -202,7 +202,7 @@ local function centerPosition(w, h)
 end
 
 --==================================================================
--- 6) ScreenGui + Root
+-- 6) ScreenGui + Root (Fixed with CanvasGroup)
 --==================================================================
 screenGui = create("ScreenGui", {
     Name = "LYNEX_HUB", ResetOnSpawn = false, IgnoreGuiInset = true,
@@ -211,10 +211,13 @@ screenGui = create("ScreenGui", {
 if screenGui.Destroying then screenGui.Destroying:Connect(removeBlur) end
 
 local winW, winH = computeWindowSize()
-local root = create("Frame", {
+
+-- استخدام CanvasGroup لحل مشكلة الشفافية نهائياً
+local root = create("CanvasGroup", {
     Name = "Root", Size = UDim2.fromOffset(winW, winH),
     Position = centerPosition(winW, winH),
     BackgroundTransparency = 1, ClipsDescendants = false, ZIndex = 2,
+    GroupTransparency = 0,
 }, screenGui)
 
 local outerGlow = create("Frame", {
@@ -340,8 +343,8 @@ local TABS = {
     { id = "player",       name = "اللاعب",          icon = "●"  },
     { id = "autofish",     name = "صيد تلقائي",      icon = "≋"  },
     { id = "car",          name = "السيارات",        icon = "🚗" },
-    { id = "unclemazrouk", name = "العم مرزوق",           icon = "✦"  },
-    { id = "misc",         name = "متنوع",         icon = "⚒"  },
+    { id = "unclemazrouk", name = "العم مرزوق",      icon = "✦"  },
+    { id = "misc",         name = "متنوع",           icon = "⚒"  },
     { id = "antistrike",   name = "مضادات",          icon = "⛨" },
     { id = "chat",         name = "الدردشة",         icon = "✎"  },
     { id = "news",         name = "الأخبار",         icon = "✉"  },
@@ -1092,11 +1095,11 @@ local NEWS_DATA = {
     { title = "تبويب اللاعب", body = "تبويب لاعب جديد مع الحركة، الحركة الخاصة، والمرئيات.", date = "2025-03-01" },
     { title = "معلومات السيرفر + صيد تلقائي", body = "الرئيسية تعرض الآن معلومات السيرفر الحية.", date = "2025-03-08" },
     { title = "تبويب السيارات", body = "تبويب سيارات جديد.", date = "2025-03-15" },
-    { title = "تبويب متفرقات", body = "تبويب متفرقات جديد: رسومات، إضاءة، سيرفر، تقريب.", date = "2025-03-22" },
+    { title = "تبويب متنوع", body = "تبويب متنوع جديد: رسومات، إضاءة، سيرفر، تقريب.", date = "2025-03-22" },
     { title = "تبويب مضادات", body = "تبويب مضادات جديد.", date = "2025-03-29" },
     { title = "إصلاح تمرير الشريط الجانبي", body = "الشريط الجانبي أصبح قابلاً للتمرير.", date = "2025-04-05" },
     { title = "تبويب الدردشة", body = "تبويب دردشة جديد.", date = "2025-04-12" },
-    { title = "تبويب مزروق", body = "تبويب مزروق جديد.", date = "2025-04-19" },
+    { title = "تبويب العم مرزوق", body = "تبويب العم مرزوق جديد.", date = "2025-04-19" },
     { title = "إصلاحات الموبايل و fetchUrl", body = "الواجهة مفروضة على PlayerGui و fetchUrl تم إصلاحها لـ Delta Mobile.", date = "2025-04-26" },
 }
 local newsCards = {}
@@ -2165,13 +2168,13 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-            BackgroundTransparency = 1, Text = "أبو مزروق",
+            BackgroundTransparency = 1, Text = "العم مرزوق",
             Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
             TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
         }, umHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-            BackgroundTransparency = 1, Text = "سكربت أبو مزروق — اضغط تحميل للتشغيل.",
+            BackgroundTransparency = 1, Text = "سكربت العم مرزوق — اضغط تحميل للتشغيل.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
             TextWrapped = true, ZIndex = 5,
@@ -2194,7 +2197,7 @@ do
         local umLoadBtn = create("TextButton", {
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-            Text = "◈  تحميل سكربت أبو مزروق",
+            Text = "◈  تحميل سكربت العم مرزوق",
             Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
             TextDirection = RTL, ZIndex = 5,
         }, umActionCard)
@@ -2228,7 +2231,7 @@ do
         }, umInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت أبو مزروق.",
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت العم مرزوق.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Right, TextDirection = RTL,
             TextWrapped = true, ZIndex = 5,
@@ -2243,7 +2246,7 @@ do
         umLoadBtn.MouseButton1Click:Connect(function()
             if umLoadBusy then return end
             umLoadBusy = true
-            local origText = "◈  تحميل سكربت أبو مزروق"
+            local origText = "◈  تحميل سكربت العم مرزوق"
             local origBg = THEME.P_MAIN
             umLoadBtn.Text = "⏳  جارٍ التحميل…"
             umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
@@ -2257,8 +2260,8 @@ do
                 umLoadBtn.Text = origText
                 umLoadBtn.BackgroundColor3 = origBg
                 if ok then
-                    setUmStatus("✓  تم تنفيذ سكربت أبو مزروق بنجاح", THEME.OK)
-                    showToast("✓  تم تحميل أبو مزروق")
+                    setUmStatus("✓  تم تنفيذ سكربت العم مرزوق بنجاح", THEME.OK)
+                    showToast("✓  تم تحميل العم مرزوق")
                 else
                     warn("[LYNEX Uncle Mazrouk] Failed:", err)
                     setUmStatus("✕  " .. tostring(err), THEME.DANGER_HI)
@@ -2277,7 +2280,7 @@ do
             unclePage = createPage("unclemazrouk", true)
             create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
-                Text = "⚠ فشل تحميل تبويب أبو مزروق:\n\n" .. tostring(errMaz),
+                Text = "⚠ فشل تحميل تبويب العم مرزوق:\n\n" .. tostring(errMaz),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
                 TextDirection = RTL,
@@ -2330,7 +2333,7 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "أدوات متفرقة",
+    BackgroundTransparency = 1, Text = "أدوات متنوعة",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
     TextXAlignment = Enum.TextXAlignment.Left, TextDirection = RTL, ZIndex = 5,
 }, miscHeaderCard)
@@ -2720,7 +2723,7 @@ _G.LYNEX_CLEANUP_MISC = function()
 end
 
 --==================================================================
--- 16.10) مضادات Page  (سابقًا Anti-strike)
+-- 16.10) مضادات Page
 --==================================================================
 print("[LYNEX] Section 16.10 — Anti-strike loading...")
 
@@ -3093,64 +3096,7 @@ floatingBadge = create("Frame", {
 addCorner(5, floatingBadge); addStroke(THEME.BG_PANEL, 1.5, 0, floatingBadge)
 
 --==================================================================
--- 18) Fade
---==================================================================
-local origTransparency = {}
-local function scanTransparency(obj)
-    if obj:IsA("GuiObject") then
-        local snap = {}
-        if obj:IsA("Frame") or obj:IsA("ScrollingFrame")
-           or obj:IsA("TextButton") or obj:IsA("ImageButton") then
-            snap.BackgroundTransparency = obj.BackgroundTransparency
-        end
-        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-            snap.TextTransparency = obj.TextTransparency
-            snap.TextStrokeTransparency = obj.TextStrokeTransparency
-        end
-        if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
-            snap.ImageTransparency = obj.ImageTransparency
-        end
-        if obj:IsA("TextBox") then snap.TextTransparency = obj.TextTransparency end
-        if next(snap) then origTransparency[obj] = snap end
-    end
-    for _, c in ipairs(obj:GetChildren()) do scanTransparency(c) end
-end
-scanTransparency(root)
-
-local function setAllTransparency(value)
-    for obj, snap in pairs(origTransparency) do
-        if obj and obj.Parent then
-            for k in pairs(snap) do obj[k] = value end
-        end
-    end
-end
-
-local function fadeTo(value, duration, style, direction, onDone)
-    if not settings.animations then duration = 0; style = Enum.EasingStyle.Linear end
-    local inf = TweenInfo.new(duration, style, direction)
-    local tweens, remaining = {}, 0
-    for obj, snap in pairs(origTransparency) do
-        if obj and obj.Parent then
-            local target = {}
-            for k in pairs(snap) do
-                target[k] = (value == "orig") and snap[k] or value
-            end
-            table.insert(tweens, TweenService:Create(obj, inf, target))
-            remaining += 1
-        end
-    end
-    if remaining == 0 then if onDone then onDone() end; return end
-    for _, t in ipairs(tweens) do
-        t.Completed:Once(function()
-            remaining -= 1
-            if remaining <= 0 and onDone then onDone() end
-        end)
-        t:Play()
-    end
-end
-
---==================================================================
--- 19) Glow
+-- 18) Glow
 --==================================================================
 task.spawn(function()
     while screenGui and screenGui.Parent do
@@ -3171,7 +3117,7 @@ task.spawn(function()
 end)
 
 --==================================================================
--- 20) Press & Hover
+-- 19) Press & Hover
 --==================================================================
 local function attachPressEffect(btn)
     local baseSize = btn.Size
@@ -3215,7 +3161,7 @@ if UserInputService.MouseEnabled then
 end
 
 --==================================================================
--- 21) Drag
+-- 20) Drag
 --==================================================================
 local dragging, dragStart, startPos = false, nil, nil
 header.InputBegan:Connect(function(input)
@@ -3242,7 +3188,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --==================================================================
--- 22) Sidebar toggle
+-- 21) Sidebar toggle
 --==================================================================
 local sidebarOpen = true
 sidebar.Size = UDim2.new(0, sidebarW, 1, 0)
@@ -3261,7 +3207,7 @@ end
 menuBtn.MouseButton1Click:Connect(function() setSidebar(not sidebarOpen) end)
 
 --==================================================================
--- 23) Tab System
+-- 22) Tab System
 --==================================================================
 local pageTweens, pageOrigPos = {}, {}
 for id, page in pairs(tabPages) do pageOrigPos[id] = page.Position end
@@ -3329,7 +3275,7 @@ for id, data in pairs(tabButtons) do
 end
 
 --==================================================================
--- 24) Show/Hide
+-- 23) Show/Hide
 --==================================================================
 local function hideWindow()
     windowHidden = true; removeBlur()
@@ -3343,11 +3289,14 @@ local function hideWindow()
     end
     tween(outerGlow, TweenInfo.new(0.25), { BackgroundTransparency = 1 })
     mainStroke.Enabled = false
-    fadeTo(1, 0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.In, function()
-        root.Visible = false
-        floatingBtn.Visible = true
-        floatingBtn.Size = UDim2.fromOffset(0, 0)
-        tween(floatingBtn, EASE.BACK, { Size = UDim2.fromOffset(48, 48) })
+    tween(root, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { GroupTransparency = 1 })
+    task.delay(0.28, function()
+        if windowHidden then
+            root.Visible = false
+            floatingBtn.Visible = true
+            floatingBtn.Size = UDim2.fromOffset(0, 0)
+            tween(floatingBtn, EASE.BACK, { Size = UDim2.fromOffset(48, 48) })
+        end
     end)
 end
 
@@ -3355,14 +3304,14 @@ local function showWindow()
     windowHidden = false
     floatingBtn.Visible = false
     root.Visible = true
+    root.GroupTransparency = 1
     applyBlur()
-    setAllTransparency(1)
-    fadeTo("orig", 0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, function()
-        mainStroke.Enabled = true
-        if settings.glow then
-            tween(outerGlow, TweenInfo.new(0.3), { BackgroundTransparency = 0.85 })
-        end
-    end)
+    tween(root, TweenInfo.new(0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { GroupTransparency = 0 })
+    mainStroke.Enabled = true
+    if settings.glow then
+        outerGlow.BackgroundTransparency = 1
+        tween(outerGlow, TweenInfo.new(0.3), { BackgroundTransparency = 0.85 })
+    end
     if spectate.active then updateSpectateIndicator() end
     updateServerInfo()
 end
@@ -3370,7 +3319,7 @@ closeBtn.MouseButton1Click:Connect(hideWindow)
 floatingBtn.MouseButton1Click:Connect(showWindow)
 
 --==================================================================
--- 25) Profile
+-- 24) Profile
 --==================================================================
 local function loadPlayerProfile()
     pcall(function()
@@ -3388,18 +3337,14 @@ end
 loadPlayerProfile()
 
 --==================================================================
--- 26) Settings functions
+-- 25) Settings functions
 --==================================================================
 function applyWindowTransparency(pct)
     settings.transparency = math.clamp(pct, 0, 90)
     local t = settings.transparency / 100
-    local function setTransp(obj, val)
-        if origTransparency[obj] then origTransparency[obj].BackgroundTransparency = val end
-        if not windowHidden then obj.BackgroundTransparency = val end
-    end
-    setTransp(main, t)
-    setTransp(header, math.min(1, t + 0.02))
-    setTransp(sidebar, math.min(1, t + 0.10))
+    main.BackgroundTransparency = t
+    header.BackgroundTransparency = math.min(1, t + 0.02)
+    sidebar.BackgroundTransparency = math.min(1, t + 0.10)
 end
 
 function applyGlowState()
@@ -3420,7 +3365,7 @@ resetBtn.MouseButton1Click:Connect(function()
 end)
 
 --==================================================================
--- 27) Viewport
+-- 26) Viewport
 --==================================================================
 local function onViewportChange()
     local w, h = computeWindowSize()
@@ -3445,25 +3390,18 @@ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 end)
 
 --==================================================================
--- 28) Startup
+-- 27) Startup
 --==================================================================
 switchTab("home")
 applyBlur()
 
 do
     root.Visible = true
+    root.GroupTransparency = 0
     main.Visible = true
     main.BackgroundTransparency = 0.08
     mainStroke.Transparency = 0.15
     outerGlow.BackgroundTransparency = 0.85
-
-    for obj, snap in pairs(origTransparency) do
-        if obj and obj.Parent then
-            for k, v in pairs(snap) do
-                obj[k] = v
-            end
-        end
-    end
 end
 
 print("[LYNEX HUB v3.4] ✦ جاهز — نسخة عربية مع إصلاح الموبايل")
