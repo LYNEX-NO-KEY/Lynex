@@ -1,7 +1,7 @@
 --!nonstrict
 --==================================================================
 --  ✦ LYNEX HUB v3.4 ✦
---  Home • Players • Player • Auto Fish • Car • Misc • Anti-strike • Chat • News • Settings
+--  الرئيسية • اللاعبون • اللاعب • صيد تلقائي • السيارة • متنوع • مضاد الحظر • الدردشة • الأخبار • الإعدادات
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -16,14 +16,14 @@ local localPlayer = Players.LocalPlayer
 local playerGui   = localPlayer:WaitForChild("PlayerGui")
 
 --==================================================================
--- 0) State
+-- 0) الحالة
 --==================================================================
 local settings = { animations = true, transparency = 15, glow = true }
 local windowHidden = false
 local screenGui, blurObj
 
 --==================================================================
--- 1) Root resolver
+-- 1) محدد الجذر
 --==================================================================
 local function resolveGuiParent()
     if typeof(gethui) == "function" then
@@ -36,7 +36,7 @@ local function resolveGuiParent()
 end
 
 --==================================================================
--- 2) Theme
+-- 2) المظهر
 --==================================================================
 local THEME = {
     BG_PANEL = Color3.fromRGB(16,10,28), BG_HEADER = Color3.fromRGB(22,14,38),
@@ -64,7 +64,7 @@ local FONT = {
 }
 
 --==================================================================
--- 3) Helpers
+-- 3) أدوات مساعدة
 --==================================================================
 local function create(class, props, parent)
     local obj = Instance.new(class)
@@ -106,7 +106,7 @@ local EASE = {
 }
 
 --==================================================================
--- 3.1) Toast / OpenURL
+-- 3.1) التنبيه / فتح الرابط
 --==================================================================
 local function showToast(message)
     local parentGui = screenGui or playerGui
@@ -143,17 +143,17 @@ end
 local function openURL(url)
     if typeof(openbrowser) == "function" then
         local ok = pcall(openbrowser, url)
-        if ok then showToast("◈ Opening Discord…"); return end
+        if ok then showToast("◈ جاري فتح ديسكورد…"); return end
     end
     if typeof(setclipboard) == "function" then
         local ok = pcall(setclipboard, url)
-        if ok then showToast("◈ Link copied — paste in browser"); return end
+        if ok then showToast("◈ تم نسخ الرابط — الصقه في المتصفح"); return end
     end
     showToast("◈ " .. url)
 end
 
 --==================================================================
--- 3.2) Blur
+-- 3.2) التمويه (Blur)
 --==================================================================
 local BLUR_SIZE = 20
 local function applyBlur()
@@ -175,7 +175,7 @@ local function removeBlur()
 end
 
 --==================================================================
--- 4) Cleanup
+-- 4) التنظيف
 --==================================================================
 if _G.LYNEX_CLEANUP then pcall(_G.LYNEX_CLEANUP) end
 local guiParent = resolveGuiParent()
@@ -191,7 +191,7 @@ do
 end
 
 --==================================================================
--- 5) Viewport
+-- 5) منفذ العرض
 --==================================================================
 local function getViewport()
     local cam = workspace.CurrentCamera
@@ -209,7 +209,7 @@ local function centerPosition(w, h)
 end
 
 --==================================================================
--- 6) ScreenGui + Root
+-- 6) ScreenGui + الجذر
 --==================================================================
 screenGui = create("ScreenGui", {
     Name = "LYNEX_HUB", ResetOnSpawn = false, IgnoreGuiInset = true,
@@ -233,7 +233,7 @@ local outerGlow = create("Frame", {
 addCorner(18, outerGlow)
 
 --==================================================================
--- 7) Main
+-- 7) الإطار الرئيسي
 --==================================================================
 local main = create("Frame", {
     Name = "Main", Size = UDim2.fromScale(1, 1),
@@ -249,7 +249,7 @@ addGradient(main, {
 }, 135)
 
 --==================================================================
--- 8) Header
+-- 8) الرأس
 --==================================================================
 local headerH = 42
 local header = create("Frame", {
@@ -294,7 +294,7 @@ local closeBtn = create("TextButton", {
 addCorner(8, closeBtn); addStroke(THEME.DANGER, 1, 0.3, closeBtn)
 
 --==================================================================
--- 9) Body / Sidebar (scrollable) / Content
+-- 9) الجسم / الشريط الجانبي (قابل للتمرير) / المحتوى
 --==================================================================
 local body = create("Frame", {
     Name = "Body", Size = UDim2.new(1, 0, 1, -headerH),
@@ -339,19 +339,19 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs  ← Chat مُضاف هنا
+-- 10) التبويبات
 --==================================================================
 local TABS = {
-    { id = "home",       name = "Home",        icon = "⌂"  },
-    { id = "players",    name = "Players",     icon = "◉"  },
-    { id = "player",     name = "Player",      icon = "●"  },
-    { id = "autofish",   name = "Auto Fish",   icon = "≋"  },
-    { id = "car",        name = "Car",         icon = "🚗" },
-    { id = "misc",       name = "Misc",        icon = "⚒"  },
-    { id = "antistrike", name = "Anti-strike", icon = "⛨" },
-    { id = "chat",       name = "Chat",        icon = "✎"  },
-    { id = "news",       name = "News",        icon = "✉"  },
-    { id = "settings",   name = "Settings",    icon = "⚙"  },
+    { id = "home",       name = "الرئيسية",    icon = "⌂"  },
+    { id = "players",    name = "اللاعبون",    icon = "◉"  },
+    { id = "player",     name = "اللاعب",      icon = "●"  },
+    { id = "autofish",   name = "صيد تلقائي",  icon = "≋"  },
+    { id = "car",        name = "السيارة",     icon = "🚗" },
+    { id = "misc",       name = "متنوع",       icon = "⚒"  },
+    { id = "antistrike", name = "مضاد الحظر",  icon = "⛨" },
+    { id = "chat",       name = "الدردشة",     icon = "✎"  },
+    { id = "news",       name = "الأخبار",     icon = "✉"  },
+    { id = "settings",   name = "الإعدادات",   icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -388,7 +388,7 @@ end
 for i, tab in ipairs(TABS) do createTabButton(tab, i) end
 
 --==================================================================
--- 11) Pages
+-- 11) الصفحات
 --==================================================================
 local function createPage(id, scrolling)
     local class = scrolling and "ScrollingFrame" or "Frame"
@@ -409,7 +409,7 @@ local function createPage(id, scrolling)
 end
 
 --==================================================================
--- 12) Home
+-- 12) الرئيسية
 --==================================================================
 local homePage = createPage("home", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, homePage)
@@ -435,7 +435,7 @@ addGradient(logo, {
 create("UITextSizeConstraint", { MaxTextSize = 26, MinTextSize = 18 }, logo)
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 0, 0, 44),
-    BackgroundTransparency = 1, Text = "PREMIUM  ·  INTERFACE",
+    BackgroundTransparency = 1, Text = "بريميوم  ·  واجهة",
     Font = FONT.Medium, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5,
 }, hero)
@@ -461,13 +461,13 @@ local avatarImg = create("ImageLabel", {
 local infoX = 88
 local displayNameLbl = create("TextLabel", {
     Size = UDim2.new(1, -infoX - 8, 0, 20), Position = UDim2.new(0, infoX, 0, 10),
-    BackgroundTransparency = 1, Text = "Loading…", Font = FONT.Bold, TextSize = 14,
+    BackgroundTransparency = 1, Text = "جاري التحميل…", Font = FONT.Bold, TextSize = 14,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
 }, profileCard)
 local usernameLbl = create("TextLabel", {
     Size = UDim2.new(1, -infoX - 8, 0, 14), Position = UDim2.new(0, infoX, 0, 30),
-    BackgroundTransparency = 1, Text = "@loading", Font = FONT.Regular, TextSize = 11,
+    BackgroundTransparency = 1, Text = "@جاري", Font = FONT.Regular, TextSize = 11,
     TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
 }, profileCard)
@@ -494,11 +494,11 @@ local uidLbl = smallInfo(infoX, 95, "#", "—")
 local ageLbl = smallInfo(infoX + 100, 95, "◷", "—")
 
 local SERVER_ROWS = {
-    { key = "players",  icon = "◉", label = "Players"   },
-    { key = "gameName", icon = "✦", label = "Game Name" },
-    { key = "mapName",  icon = "▣", label = "Map Name"  },
-    { key = "serverId", icon = "◆", label = "Server ID" },
-    { key = "placeId",  icon = "◈", label = "Place ID"  },
+    { key = "players",  icon = "◉", label = "اللاعبون"     },
+    { key = "gameName", icon = "✦", label = "اسم اللعبة"   },
+    { key = "mapName",  icon = "▣", label = "اسم الخريطة"  },
+    { key = "serverId", icon = "◆", label = "معرف السيرفر" },
+    { key = "placeId",  icon = "◈", label = "معرف المكان"  },
 }
 
 local serverCardHeight = 34 + (#SERVER_ROWS * 22) + 10
@@ -511,7 +511,7 @@ addCorner(12, serverCard); addStroke(THEME.BORDER, 1, 0.15, serverCard)
 
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  SERVER INFORMATION",
+    BackgroundTransparency = 1, Text = "✦  معلومات السيرفر",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, serverCard)
@@ -565,14 +565,14 @@ local function updateServerInfo()
         serverInfoLabels.players.Text = #Players:GetPlayers() .. " / " .. Players.MaxPlayers
     end
     if serverInfoLabels.gameName then
-        serverInfoLabels.gameName.Text = (game.Name and game.Name ~= "") and game.Name or "N/A"
+        serverInfoLabels.gameName.Text = (game.Name and game.Name ~= "") and game.Name or "غير متاح"
     end
     if serverInfoLabels.mapName then
-        serverInfoLabels.mapName.Text = resolveMapName() or "N/A"
+        serverInfoLabels.mapName.Text = resolveMapName() or "غير متاح"
     end
     if serverInfoLabels.serverId then
         local ok, jobId = pcall(function() return game.JobId end)
-        serverInfoLabels.serverId.Text = (ok and jobId and jobId ~= "") and jobId or "N/A"
+        serverInfoLabels.serverId.Text = (ok and jobId and jobId ~= "") and jobId or "غير متاح"
     end
     if serverInfoLabels.placeId then
         serverInfoLabels.placeId.Text = tostring(game.PlaceId)
@@ -598,7 +598,7 @@ addGradient(discordBtn, {
 }, 90)
 create("TextLabel", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-    Text = "◈   JOIN OUR DISCORD", Font = FONT.Bold, TextSize = 15,
+    Text = "◈   انضم إلى ديسكورد", Font = FONT.Bold, TextSize = 15,
     TextColor3 = THEME.TX_MAIN, TextStrokeColor3 = Color3.fromRGB(40, 20, 80),
     TextStrokeTransparency = 0.7, ZIndex = 5,
 }, discordBtn)
@@ -609,7 +609,7 @@ if UserInputService.MouseEnabled then
 end
 
 --==================================================================
--- 13) Spectate System
+-- 13) نظام المشاهدة (Spectate)
 --==================================================================
 local spectate = { active = false, target = nil, connection = nil }
 local spectateButtons = {}
@@ -626,7 +626,7 @@ addStroke(THEME.P_BRIGHT, 1.5, 0.2, spectateIndicator)
 
 local spectateIndicatorLabel = create("TextLabel", {
     Size = UDim2.new(1, -34, 1, 0), BackgroundTransparency = 1,
-    Text = "◉  Spectating", Font = FONT.Bold, TextSize = 12,
+    Text = "◉  جاري المشاهدة", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Center,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 101,
 }, spectateIndicator)
@@ -658,7 +658,7 @@ local function refreshSpectateButtons()
     for player, refs in pairs(spectateButtons) do
         if refs and refs.btn and refs.btn.Parent then
             local isTarget = (spectate.active and spectate.target == player)
-            refs.btn.Text = isTarget and "◉  Stop" or "◉  Spectate"
+            refs.btn.Text = isTarget and "◉  إيقاف" or "◉  مشاهدة"
             tween(refs.btn, TweenInfo.new(0.2), {
                 BackgroundColor3 = isTarget and THEME.DANGER or THEME.P_MAIN,
             })
@@ -675,7 +675,7 @@ local function updateSpectateIndicator()
     local shouldShow = spectate.active and spectate.target
         and spectate.target.Parent and not windowHidden
     if shouldShow then
-        spectateIndicatorLabel.Text = "◉  Spectating: " .. displayNameOf(spectate.target)
+        spectateIndicatorLabel.Text = "◉  يشاهد: " .. displayNameOf(spectate.target)
         if not spectateIndicator.Visible then
             spectateIndicator.Visible = true
             spectateIndicator.BackgroundTransparency = 1
@@ -751,8 +751,8 @@ end
 
 local function startSpectating(targetPlayer)
     if not targetPlayer then return end
-    if targetPlayer == localPlayer then showToast("◉  Cannot spectate yourself"); return end
-    if not targetPlayer.Parent then showToast("◉  Player unavailable"); return end
+    if targetPlayer == localPlayer then showToast("◉  لا يمكنك مشاهدة نفسك"); return end
+    if not targetPlayer.Parent then showToast("◉  اللاعب غير متوفر"); return end
     if spectate.active and spectate.target == targetPlayer then stopSpectating(); return end
     if spectate.connection then
         pcall(function() spectate.connection:Disconnect() end)
@@ -773,13 +773,13 @@ local function startSpectating(targetPlayer)
     end)
     updateSpectateIndicator(); refreshSpectateButtons()
     local disp = displayNameOf(targetPlayer)
-    if hum then showToast("◉  Spectating " .. disp)
-    else showToast("◉  Waiting for " .. disp .. "…") end
+    if hum then showToast("◉  تشاهد " .. disp)
+    else showToast("◉  في انتظار " .. disp .. "…") end
 end
 
 Players.PlayerRemoving:Connect(function(p)
     if spectate.active and spectate.target and spectate.target.UserId == p.UserId then
-        stopSpectating("Target left — camera restored")
+        stopSpectating("غادر الهدف — تم استعادة الكاميرا")
     end
 end)
 localPlayer.CharacterAdded:Connect(function()
@@ -802,15 +802,15 @@ if UserInputService.MouseEnabled then
 end
 
 --==================================================================
--- 13.6) Teleport
+-- 13.6) الانتقال (Teleport)
 --==================================================================
 local TELEPORT_COOLDOWN = 1.0
 local lastTeleportTime = 0
 local function teleportToPlayer(targetPlayer, button)
     if not targetPlayer or not targetPlayer.Parent then
-        showToast("➤  Player unavailable"); return
+        showToast("➤  اللاعب غير متوفر"); return
     end
-    if targetPlayer == localPlayer then showToast("➤  Cannot teleport to yourself"); return end
+    if targetPlayer == localPlayer then showToast("➤  لا يمكنك الانتقال إلى نفسك"); return end
     local now = os.clock()
     if now - lastTeleportTime < TELEPORT_COOLDOWN then return end
     lastTeleportTime = now
@@ -818,22 +818,22 @@ local function teleportToPlayer(targetPlayer, button)
     local myHum  = myChar and myChar:FindFirstChildOfClass("Humanoid")
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
     if not (myChar and myHum and myRoot) then
-        showToast("➤  Your character is not ready"); return
+        showToast("➤  شخصيتك غير جاهزة"); return
     end
-    if myHum.Health <= 0 then showToast("➤  You are dead"); return end
+    if myHum.Health <= 0 then showToast("➤  أنت ميت"); return end
     local targetChar = targetPlayer.Character
     local targetHum  = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
     local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
     if not (targetChar and targetHum and targetRoot) then
-        showToast("➤  " .. displayNameOf(targetPlayer) .. " has no character"); return
+        showToast("➤  " .. displayNameOf(targetPlayer) .. " ليس لديه شخصية"); return
     end
     if targetHum.Health <= 0 then
-        showToast("➤  " .. displayNameOf(targetPlayer) .. " is dead"); return
+        showToast("➤  " .. displayNameOf(targetPlayer) .. " ميت"); return
     end
     local destination = targetRoot.CFrame * CFrame.new(0, 0, 4)
     local ok = pcall(function() myChar:PivotTo(destination) end)
     if not ok then pcall(function() myRoot.CFrame = destination end) end
-    showToast("➤  Teleported to " .. displayNameOf(targetPlayer))
+    showToast("➤  تم الانتقال إلى " .. displayNameOf(targetPlayer))
     if button and button.Parent then
         local origText, origBG = button.Text, button.BackgroundColor3
         button.Text = "➤  …"; button.BackgroundColor3 = THEME.BG_CARD_HI
@@ -846,7 +846,7 @@ local function teleportToPlayer(targetPlayer, button)
 end
 
 --==================================================================
--- 14) Players Page
+-- 14) صفحة اللاعبين
 --==================================================================
 local playersPage = createPage("players")
 
@@ -865,7 +865,7 @@ create("TextLabel", {
 local searchBox = create("TextBox", {
     Name = "SearchBox", Size = UDim2.new(1, -72, 1, 0),
     Position = UDim2.new(0, 30, 0, 0), BackgroundTransparency = 1, Text = "",
-    PlaceholderText = "Search username or display name…",
+    PlaceholderText = "ابحث باسم المستخدم أو الاسم الظاهر…",
     PlaceholderColor3 = THEME.TX_SUBTLE, Font = FONT.Medium, TextSize = 12,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     ClearTextOnFocus = false, MultiLine = false, TextEditable = true, ZIndex = 5,
@@ -956,7 +956,7 @@ local function buildPlayerCard(player, order)
 
     local okAge, accountAge = pcall(function() return player.AccountAge end)
     local ageText = (okAge and typeof(accountAge) == "number")
-        and (tostring(accountAge) .. " days") or "N/A"
+        and (tostring(accountAge) .. " يوم") or "غير متاح"
 
     create("TextLabel", {
         Size = UDim2.new(0, 100, 0, 14), Position = UDim2.new(0, iX, 0, 46),
@@ -976,7 +976,7 @@ local function buildPlayerCard(player, order)
         Position = UDim2.new(0, 10, 1, -38),
         BackgroundColor3 = isSpectating and THEME.DANGER or THEME.P_MAIN,
         BackgroundTransparency = 0.05, AutoButtonColor = false,
-        Text = isSpectating and "◉  Stop" or "◉  Spectate",
+        Text = isSpectating and "◉  إيقاف" or "◉  مشاهدة",
         Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
         TextScaled = true, TextWrapped = false, ZIndex = 7,
     }, card)
@@ -996,7 +996,7 @@ local function buildPlayerCard(player, order)
         Name = "TeleportBtn", Size = UDim2.new(0.5, -13, 0, 28),
         Position = UDim2.new(0.5, 3, 1, -38),
         BackgroundColor3 = THEME.P_MAIN, BackgroundTransparency = 0.05,
-        AutoButtonColor = false, Text = "➤  Teleport",
+        AutoButtonColor = false, Text = "➤  انتقال",
         Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
         TextScaled = true, TextWrapped = false, ZIndex = 7,
     }, card)
@@ -1029,7 +1029,7 @@ local function renderPlayers(filter)
     if order == 0 then
         create("TextLabel", {
             Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1,
-            Text = "◌  No players match your search",
+            Text = "◌  لا يوجد لاعبون مطابقون للبحث",
             Font = FONT.Medium, TextSize = 12, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Center, TextYAlignment = Enum.TextYAlignment.Center,
             LayoutOrder = 0, ZIndex = 5,
@@ -1054,7 +1054,7 @@ Players.PlayerRemoving:Connect(function()
 end)
 
 --==================================================================
--- 15) News
+-- 15) الأخبار
 --==================================================================
 local newsPage = createPage("news")
 local newsScroll = create("ScrollingFrame", {
@@ -1066,7 +1066,7 @@ local newsScroll = create("ScrollingFrame", {
 create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, newsScroll)
 local newsHeader = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1,
-    Text = "✦  LATEST NEWS", Font = FONT.Bold, TextSize = 14,
+    Text = "✦  آخر الأخبار", Font = FONT.Bold, TextSize = 14,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = 0, ZIndex = 5,
 }, newsScroll)
@@ -1076,21 +1076,21 @@ addGradient(newsHeader, {
 }, 0)
 
 local NEWS_DATA = {
-    { title = "LYNEX HUB Launch", body = "The first public release of LYNEX HUB is live. Enjoy the brand-new premium interface optimized for mobile.", date = "2025-01-15" },
-    { title = "Mobile Optimization", body = "Touch-friendly controls, responsive layout, and smooth animations tuned for phones of all sizes.", date = "2025-01-20" },
-    { title = "Player Profile Card", body = "Home tab now displays your real Roblox avatar, display name, user id and account age.", date = "2025-01-24" },
-    { title = "Settings & Customization", body = "You can now toggle animations, adjust window transparency, and enable or disable the purple glow.", date = "2025-01-26" },
-    { title = "Players Tab & Blur", body = "New Players tab with live search and player cards. A subtle blur effect now enhances the UI focus.", date = "2025-02-01" },
-    { title = "Spectate System", body = "New Spectate feature on Players tab lets you watch any player using the Roblox camera in real time.", date = "2025-02-08" },
-    { title = "Persistent Spectate Fix", body = "Spectate now persists after hiding the UI, supports all players, and handles respawns and disconnects reliably.", date = "2025-02-15" },
-    { title = "Teleport Button", body = "New Teleport button next to Spectate lets you travel to any player — compliant with in-game movement rules.", date = "2025-02-22" },
-    { title = "Player Tab", body = "New Player tab with Movement, Special Movement and Visuals — speed, jump, flight, gravity, rotation, infinite jump, swimming, iPad view, invisible.", date = "2025-03-01" },
-    { title = "Server Info + Auto Fish", body = "Home now shows live Server Information. New Auto Fish tab loads the fishing script on demand.", date = "2025-03-08" },
-    { title = "Car Script Tab", body = "New Car tab added. Load and run the Car Script on demand — mobile friendly with press animations.", date = "2025-03-15" },
-    { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
-    { title = "Anti-strike Tab", body = "New Anti-strike tab added. Load and run the Anti-strike Script on demand — same design and workflow as Car.", date = "2025-03-29" },
-    { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable. All tabs including Settings are always reachable regardless of screen size.", date = "2025-04-05" },
-    { title = "Chat Tab", body = "New Chat tab added. Load and run the Chat Script on demand — same defensive pattern as Anti-strike.", date = "2025-04-12" },
+    { title = "إطلاق LYNEX HUB", body = "تم إصدار النسخة العامة الأولى من LYNEX HUB. استمتع بالواجهة الاحترافية الجديدة المُحسَّنة للهواتف.", date = "2025-01-15" },
+    { title = "تحسين للأجهزة المحمولة", body = "عناصر تحكم صديقة للمس، تخطيط متجاوب، وحركات سلسة مضبوطة على الهواتف بجميع أحجامها.", date = "2025-01-20" },
+    { title = "بطاقة ملف اللاعب", body = "يعرض تبويب الرئيسية الآن صورة الأفاتار الحقيقية الخاصة بك، والاسم الظاهر، ومعرف المستخدم، وعمر الحساب.", date = "2025-01-24" },
+    { title = "الإعدادات والتخصيص", body = "يمكنك الآن تفعيل/تعطيل الحركات، وضبط شفافية النافذة، وتشغيل/إيقاف التوهج البنفسجي.", date = "2025-01-26" },
+    { title = "تبويب اللاعبين والتمويه", body = "تبويب جديد للاعبين مع بحث مباشر وبطاقات لكل لاعب. تأثير تمويه خفيف يعزز تركيز الواجهة.", date = "2025-02-01" },
+    { title = "نظام المشاهدة", body = "ميزة المشاهدة الجديدة في تبويب اللاعبين تسمح لك بمتابعة أي لاعب عبر كاميرا Roblox في الوقت الفعلي.", date = "2025-02-08" },
+    { title = "إصلاح المشاهدة المستمرة", body = "المشاهدة تستمر الآن بعد إخفاء الواجهة، وتدعم جميع اللاعبين، وتتعامل مع إعادة الظهور والانقطاع بشكل موثوق.", date = "2025-02-15" },
+    { title = "زر الانتقال", body = "زر انتقال جديد بجانب مشاهدة يتيح لك الانتقال إلى أي لاعب — متوافق مع قواعد الحركة داخل اللعبة.", date = "2025-02-22" },
+    { title = "تبويب اللاعب", body = "تبويب لاعب جديد مع الحركة، الحركة الخاصة، والمرئيات — السرعة، القفز، الطيران، الجاذبية، الدوران، القفز اللانهائي، السباحة، عرض الآيباد، غير مرئي.", date = "2025-03-01" },
+    { title = "معلومات السيرفر + صيد تلقائي", body = "الرئيسية تعرض الآن معلومات السيرفر المباشرة. تبويب صيد تلقائي جديد يحمّل سكربت الصيد عند الطلب.", date = "2025-03-08" },
+    { title = "تبويب سكربت السيارة", body = "تمت إضافة تبويب السيارة. تحميل وتشغيل سكربت السيارة عند الطلب — صديق للهواتف مع حركات ضغط.", date = "2025-03-15" },
+    { title = "تبويب متنوع", body = "تبويب متنوع جديد: جودة الرسومات، ليل/نهار، تغيير/إعادة الانضمام للسيرفر، وتكبير لانهائي — كلها محلية.", date = "2025-03-22" },
+    { title = "تبويب مضاد الحظر", body = "تمت إضافة تبويب مضاد الحظر. تحميل وتشغيل سكربت مضاد الحظر عند الطلب — نفس التصميم وسير العمل كالسيارة.", date = "2025-03-29" },
+    { title = "إصلاح تمرير الشريط الجانبي", body = "الشريط الجانبي الآن قابل للتمرير. جميع التبويبات بما فيها الإعدادات متاحة دائمًا بغض النظر عن حجم الشاشة.", date = "2025-04-05" },
+    { title = "تبويب الدردشة", body = "تمت إضافة تبويب الدردشة. تحميل وتشغيل سكربت الدردشة عند الطلب — نفس النمط الدفاعي كمضاد الحظر.", date = "2025-04-12" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1108,25 +1108,25 @@ for i, item in ipairs(NEWS_DATA) do
     create("TextLabel", {
         Size = UDim2.new(1, -22, 0, 18), Position = UDim2.new(0, 12, 0, 7),
         BackgroundTransparency = 1, Text = item.title, Font = FONT.Bold, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right,
         TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, card)
     create("TextLabel", {
         Size = UDim2.new(1, -22, 0, 40), Position = UDim2.new(0, 12, 0, 27),
         BackgroundTransparency = 1, Text = item.body, Font = FONT.Regular, TextSize = 11,
-        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Right,
         TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, ZIndex = 5,
     }, card)
     create("TextLabel", {
         Size = UDim2.new(1, -22, 0, 14), Position = UDim2.new(0, 12, 1, -18),
         BackgroundTransparency = 1, Text = "◷  " .. item.date, Font = FONT.Medium, TextSize = 10,
-        TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
     }, card)
     table.insert(newsCards, card)
 end
 
 --==================================================================
--- 16) Settings Page
+-- 16) صفحة الإعدادات
 --==================================================================
 local settingsPage = createPage("settings")
 local settingsScroll = create("ScrollingFrame", {
@@ -1139,7 +1139,7 @@ create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.La
 
 local settingsHeader = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1,
-    Text = "✦  SETTINGS", Font = FONT.Bold, TextSize = 14,
+    Text = "✦  الإعدادات", Font = FONT.Bold, TextSize = 14,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = 0, ZIndex = 5,
 }, settingsScroll)
@@ -1254,25 +1254,25 @@ local function createSliderRow(parent, order, labelText, initialValue, onChange)
     return { setValue = function(v) apply(v, false) end, get = function() return current end }
 end
 
-local animRow = createToggleRow(settingsScroll, 1, "Animations", settings.animations, function(v)
+local animRow = createToggleRow(settingsScroll, 1, "الحركات", settings.animations, function(v)
     settings.animations = v
 end)
-local glowRow = createToggleRow(settingsScroll, 2, "Purple Glow", settings.glow, function(v)
+local glowRow = createToggleRow(settingsScroll, 2, "التوهج البنفسجي", settings.glow, function(v)
     settings.glow = v; applyGlowState()
 end)
-local transRow = createSliderRow(settingsScroll, 3, "Window Transparency", settings.transparency, function(v)
+local transRow = createSliderRow(settingsScroll, 3, "شفافية النافذة", settings.transparency, function(v)
     applyWindowTransparency(v)
 end)
 local resetBtn = create("TextButton", {
     Size = UDim2.new(1, 0, 0, 42), BackgroundColor3 = THEME.BG_CARD,
-    AutoButtonColor = false, Text = "↻  RESET TO DEFAULTS",
+    AutoButtonColor = false, Text = "↻  إعادة إلى الافتراضي",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.DANGER_HI,
     LayoutOrder = 4, ZIndex = 4,
 }, settingsScroll)
 addCorner(10, resetBtn); addStroke(THEME.DANGER, 1.2, 0.15, resetBtn)
 
 --==================================================================
--- 16.5) Player Page
+-- 16.5) صفحة اللاعب
 --==================================================================
 local playerPage = createPage("player", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, playerPage)
@@ -1427,7 +1427,7 @@ local function createActionButtons(parent, order, applyLabel, applyColor, onAppl
     local resetB = create("TextButton", {
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0.5, 4, 0, 0),
         BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
-        Text = "↻  Reset", Font = FONT.Bold, TextSize = 11,
+        Text = "↻  إعادة تعيين", Font = FONT.Bold, TextSize = 11,
         TextColor3 = THEME.DANGER_HI, ZIndex = 5,
     }, row)
     addCorner(8, resetB)
@@ -1448,60 +1448,60 @@ end
 local uiOrder = 0
 local function nextOrder() uiOrder += 1; return uiOrder end
 
-addSectionHeader("MOVEMENT", nextOrder())
+addSectionHeader("الحركة", nextOrder())
 
-local speedSlider = createRangeSlider(playerPage, nextOrder(), "◉ Speed", 16, 500, playerState.speed.value, function(v)
+local speedSlider = createRangeSlider(playerPage, nextOrder(), "◉ السرعة", 16, 500, playerState.speed.value, function(v)
     playerState.speed.value = v
     if playerState.speed.applied then
         local hum = getHumanoid(localPlayer)
         if hum then hum.WalkSpeed = v end
     end
 end)
-createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
     local hum = getHumanoid(localPlayer)
     if hum then
         hum.WalkSpeed = playerState.speed.value
         playerState.speed.applied = true
-        showToast("◉  Speed applied: " .. playerState.speed.value)
-    else showToast("◉  Character not ready") end
+        showToast("◉  تم تطبيق السرعة: " .. playerState.speed.value)
+    else showToast("◉  الشخصية غير جاهزة") end
 end, function()
     playerState.speed.value = playerState.speed.original
     speedSlider.setValue(playerState.speed.original)
     local hum = getHumanoid(localPlayer)
     if hum then hum.WalkSpeed = playerState.speed.original end
     playerState.speed.applied = false
-    showToast("↻  Speed reset")
+    showToast("↻  تم إعادة تعيين السرعة")
 end)
 
-local jumpSlider = createRangeSlider(playerPage, nextOrder(), "◈ Jump Power", 50, 500, playerState.jump.value, function(v)
+local jumpSlider = createRangeSlider(playerPage, nextOrder(), "◈ قوة القفز", 50, 500, playerState.jump.value, function(v)
     playerState.jump.value = v
     if playerState.jump.applied then
         local hum = getHumanoid(localPlayer)
         if hum then hum.UseJumpPower = true; hum.JumpPower = v end
     end
 end)
-createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
     local hum = getHumanoid(localPlayer)
     if hum then
         hum.UseJumpPower = true
         hum.JumpPower = playerState.jump.value
         playerState.jump.applied = true
-        showToast("◈  Jump applied: " .. playerState.jump.value)
-    else showToast("◈  Character not ready") end
+        showToast("◈  تم تطبيق القفز: " .. playerState.jump.value)
+    else showToast("◈  الشخصية غير جاهزة") end
 end, function()
     playerState.jump.value = playerState.jump.original
     jumpSlider.setValue(playerState.jump.original)
     local hum = getHumanoid(localPlayer)
     if hum then hum.UseJumpPower = true; hum.JumpPower = playerState.jump.original end
     playerState.jump.applied = false
-    showToast("↻  Jump reset")
+    showToast("↻  تم إعادة تعيين القفز")
 end)
 
-local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "Hover & fly toward camera look", false, function(v)
+local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ الطيران", "تحويم وطيران باتجاه نظر الكاميرا", false, function(v)
     playerState.flight.active = v
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  Character not ready"); return end
+        if not char then showToast("◈  الشخصية غير جاهزة"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
@@ -1524,39 +1524,39 @@ local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "
                 bv.Velocity = Vector3.zero
             end
         end)
-        showToast("◈  Flight ON — move joystick to fly")
+        showToast("◈  الطيران مفعّل — حرّك عصا التحكم للطيران")
     else
         if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end); playerState.flight.conn = nil end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end); playerState.flight.bodyVel = nil end
-        showToast("◈  Flight OFF")
+        showToast("◈  الطيران معطّل")
     end
 end)
-createRangeSlider(playerPage, nextOrder(), "↝ Flight Speed", 10, 300, playerState.flight.speed, function(v)
+createRangeSlider(playerPage, nextOrder(), "↝ سرعة الطيران", 10, 300, playerState.flight.speed, function(v)
     playerState.flight.speed = v
 end)
 
-local gravitySlider = createRangeSlider(playerPage, nextOrder(), "◉ Gravity", 0, 196, math.floor(playerState.gravity.original), function(v)
+local gravitySlider = createRangeSlider(playerPage, nextOrder(), "◉ الجاذبية", 0, 196, math.floor(playerState.gravity.original), function(v)
     playerState.gravity.value = v; playerState.gravity.applied = true
     workspace.Gravity = v
 end)
-createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
     workspace.Gravity = playerState.gravity.value
     playerState.gravity.applied = true
-    showToast("◉  Gravity: " .. playerState.gravity.value)
+    showToast("◉  الجاذبية: " .. playerState.gravity.value)
 end, function()
     playerState.gravity.value = playerState.gravity.original
     workspace.Gravity = playerState.gravity.original
     gravitySlider.setValue(math.floor(playerState.gravity.original))
     playerState.gravity.applied = false
-    showToast("↻  Gravity reset")
+    showToast("↻  تم إعادة تعيين الجاذبية")
 end)
 
-local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Rotation", "Spin your character in place", false, function(v)
+local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ الدوران", "أدر شخصيتك في مكانها", false, function(v)
     playerState.rotation.active = v
     if playerState.rotation.bodyAV then pcall(function() playerState.rotation.bodyAV:Destroy() end); playerState.rotation.bodyAV = nil end
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  Character not ready"); return end
+        if not char then showToast("◈  الشخصية غير جاهزة"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         local av = Instance.new("BodyAngularVelocity")
@@ -1565,19 +1565,19 @@ local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Rotation
         av.AngularVelocity = Vector3.new(0, playerState.rotation.speed, 0)
         av.Parent = root
         playerState.rotation.bodyAV = av
-        showToast("◈  Rotation ON")
-    else showToast("◈  Rotation OFF") end
+        showToast("◈  الدوران مفعّل")
+    else showToast("◈  الدوران معطّل") end
 end)
-createRangeSlider(playerPage, nextOrder(), "↻ Rotation Speed", 1, 50, playerState.rotation.speed, function(v)
+createRangeSlider(playerPage, nextOrder(), "↻ سرعة الدوران", 1, 50, playerState.rotation.speed, function(v)
     playerState.rotation.speed = v
     if playerState.rotation.bodyAV and playerState.rotation.bodyAV.Parent then
         playerState.rotation.bodyAV.AngularVelocity = Vector3.new(0, v, 0)
     end
 end)
 
-addSectionHeader("SPECIAL MOVEMENT", nextOrder())
+addSectionHeader("حركة خاصة", nextOrder())
 
-createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedly while holding space", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ قفز لانهائي", "اقفز بشكل متكرر أثناء الضغط على المسافة", false, function(v)
     playerState.infiniteJump.active = v
     if v then
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end) end
@@ -1586,19 +1586,19 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedl
             local hum = getHumanoid(localPlayer)
             if hum and hum.Health > 0 then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
         end)
-        showToast("◈  Infinite Jump ON")
+        showToast("◈  القفز اللانهائي مفعّل")
     else
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end); playerState.infiniteJump.conn = nil end
-        showToast("◈  Infinite Jump OFF")
+        showToast("◈  القفز اللانهائي معطّل")
     end
 end)
 
-createPlayerToggle(playerPage, nextOrder(), "◈ Swimming", "Float in the air (local only)", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ السباحة", "التحويم في الهواء (محلي فقط)", false, function(v)
     playerState.swimming.active = v
     if playerState.swimming.bodyForce then pcall(function() playerState.swimming.bodyForce:Destroy() end); playerState.swimming.bodyForce = nil end
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  Character not ready"); return end
+        if not char then showToast("◈  الشخصية غير جاهزة"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         local bf = Instance.new("BodyForce")
@@ -1606,27 +1606,27 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Swimming", "Float in the air (l
         bf.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity, 0)
         bf.Parent = root
         playerState.swimming.bodyForce = bf
-        showToast("◈  Swimming ON")
-    else showToast("◈  Swimming OFF") end
+        showToast("◈  السباحة مفعّلة")
+    else showToast("◈  السباحة معطّلة") end
 end)
 
-addSectionHeader("VISUALS", nextOrder())
+addSectionHeader("المرئيات", nextOrder())
 
-createPlayerToggle(playerPage, nextOrder(), "▣ iPad View", "Wider camera FOV (local only)", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "▣ عرض الآيباد", "زاوية رؤية أوسع للكاميرا (محلي فقط)", false, function(v)
     playerState.ipadView.active = v
     local cam = workspace.CurrentCamera
     if not cam then return end
     if v then
         playerState.ipadView.originalFov = cam.FieldOfView
         cam.FieldOfView = 80
-        showToast("▣  iPad View ON (FOV 80)")
+        showToast("▣  عرض الآيباد مفعّل (FOV 80)")
     else
         cam.FieldOfView = playerState.ipadView.originalFov or 70
-        showToast("▣  iPad View OFF")
+        showToast("▣  عرض الآيباد معطّل")
     end
 end)
 
-createPlayerToggle(playerPage, nextOrder(), "◈ Invisible", "Local only — others still see you", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ غير مرئي", "محلي فقط — الآخرون ما زالوا يرونك", false, function(v)
     playerState.invisible.active = v
     local char = localPlayer.Character
     if not char then return end
@@ -1638,19 +1638,19 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Invisible", "Local only — oth
                 part.Transparency = 1
             end
         end
-        showToast("◈  Invisible ON (local only)")
+        showToast("◈  غير مرئي مفعّل (محلي فقط)")
     else
         for part, orig in pairs(playerState.invisible.originals) do
             if part and part.Parent then part.Transparency = orig end
         end
         playerState.invisible.originals = {}
-        showToast("◈  Invisible OFF")
+        showToast("◈  غير مرئي معطّل")
     end
 end)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 34), BackgroundTransparency = 1,
-    Text = "⚠ Invisible & iPad View affect only your local client, not other players or the server.",
+    Text = "⚠ ميزة غير مرئي وعرض الآيباد تؤثر فقط على عميلك المحلي، وليس على اللاعبين الآخرين أو السيرفر.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = nextOrder(), ZIndex = 4,
@@ -1729,7 +1729,7 @@ _G.LYNEX_CLEANUP = function()
 end
 
 --==================================================================
--- 16.6) fetchUrl (shared)
+-- 16.6) fetchUrl (مشترك)
 --==================================================================
 local function fetchUrl(url)
     local body = nil
@@ -1765,7 +1765,7 @@ local function fetchUrl(url)
            or head:find("<html", 1, true)
            or head:find("<!doctype", 1, true)
            or #body < 50 then
-            warn("[LYNEX fetchUrl] Invalid response for:", url)
+            warn("[LYNEX fetchUrl] استجابة غير صالحة للرابط:", url)
             return nil
         end
     end
@@ -1774,7 +1774,7 @@ local function fetchUrl(url)
 end
 
 --==================================================================
--- 16.7) Auto Fish Page
+-- 16.7) صفحة صيد تلقائي
 --==================================================================
 local AUTO_FISH_URL = "https://raw.githubusercontent.com/coronavip100-max/Auto-fish/refs/heads/main/Auto%20fish"
 
@@ -1809,14 +1809,14 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Auto Fish",
+    BackgroundTransparency = 1, Text = "صيد تلقائي",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afHeaderCard)
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Automatically fish for you in supported games. Load the external script to activate.",
+    Text = "يصطاد لك تلقائيًا في الألعاب المدعومة. حمّل السكربت الخارجي للتفعيل.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afHeaderCard)
@@ -1830,7 +1830,7 @@ addCorner(12, afActionCard); addStroke(THEME.BORDER, 1, 0.15, afActionCard)
 
 local afStatus = create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+    BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
     Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afActionCard)
@@ -1838,7 +1838,7 @@ local afStatus = create("TextLabel", {
 local afLoadBtn = create("TextButton", {
     Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  Load Auto Fish Script",
+    Text = "◈  تحميل سكربت الصيد التلقائي",
     Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
     TextScaled = false, ZIndex = 5,
 }, afActionCard)
@@ -1853,7 +1853,7 @@ addGradient(afLoadBtn, {
 create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
     BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Text = "⚠ يتطلب HTTP + loadstring (Delta / Fluxus / Synapse)",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afActionCard)
@@ -1867,14 +1867,14 @@ addCorner(12, afInstrCard); addStroke(THEME.BORDER, 1, 0.15, afInstrCard)
 
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+    BackgroundTransparency = 1, Text = "✦  التعليمات",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
     BackgroundTransparency = 1,
-    Text = "Press the button above to load and run the Auto Fish script.",
+    Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت الصيد التلقائي.",
     Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afInstrCard)
@@ -1888,7 +1888,7 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
     BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+    Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled. استخدم منفذًا حقيقيًا.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afInstrCard)
@@ -1904,12 +1904,12 @@ afLoadBtn.MouseButton1Click:Connect(function()
     if loadBusy then return end
     loadBusy = true
 
-    local origText = "◈  Load Auto Fish Script"
+    local origText = "◈  تحميل سكربت الصيد التلقائي"
     local origBg = THEME.P_MAIN
 
-    afLoadBtn.Text = "⏳  Loading…"
+    afLoadBtn.Text = "⏳  جاري التحميل…"
     afLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setAfStatus("⏳  Fetching script…", THEME.TX_DIM)
+    setAfStatus("⏳  جاري جلب السكربت…", THEME.TX_DIM)
 
     task.spawn(function()
         local success = false
@@ -1917,17 +1917,17 @@ afLoadBtn.MouseButton1Click:Connect(function()
 
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(AUTO_FISH_URL)
-            if not body then return false, "Download failed — check URL or executor HTTP" end
-            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+            if not body then return false, "فشل التنزيل — تحقق من الرابط أو من دعم HTTP في المنفذ" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
             local fn, compileErr = loadstring(body)
-            if not fn then return false, "Compile error: " .. tostring(compileErr) end
+            if not fn then return false, "خطأ في التجميع: " .. tostring(compileErr) end
             local runOk, runErr = pcall(fn)
-            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+            if not runOk then return false, "خطأ في التنفيذ: " .. tostring(runErr) end
             return true
         end)
 
         if ok then
-            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+            if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
         else
             errMsg = tostring(ret1)
         end
@@ -1938,12 +1938,12 @@ afLoadBtn.MouseButton1Click:Connect(function()
         afLoadBtn.BackgroundColor3 = origBg
 
         if success then
-            setAfStatus("✓  Script executed successfully", THEME.OK)
-            showToast("✓  Auto Fish loaded")
+            setAfStatus("✓  تم تنفيذ السكربت بنجاح", THEME.OK)
+            showToast("✓  تم تحميل صيد تلقائي")
         else
-            warn("[LYNEX Auto Fish] Failed:", errMsg)
-            setAfStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "Unknown error"))
+            warn("[LYNEX Auto Fish] فشل:", errMsg)
+            setAfStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
+            showToast("✕  " .. (errMsg or "خطأ غير معروف"))
         end
     end)
 end)
@@ -1951,7 +1951,7 @@ end)
 styleActionButton(afLoadBtn, afLoadStroke)
 
 --==================================================================
--- 16.8) Car Page
+-- 16.8) صفحة السيارة
 --==================================================================
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
 
@@ -1986,14 +1986,14 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Car Script",
+    BackgroundTransparency = 1, Text = "سكربت السيارة",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carHeaderCard)
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Show and run the Car Script in supported games. Load the external script to activate.",
+    Text = "يعرض ويشغل سكربت السيارة في الألعاب المدعومة. حمّل السكربت الخارجي للتفعيل.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carHeaderCard)
@@ -2007,7 +2007,7 @@ addCorner(12, carActionCard); addStroke(THEME.BORDER, 1, 0.15, carActionCard)
 
 local carStatus = create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+    BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
     Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carActionCard)
@@ -2015,7 +2015,7 @@ local carStatus = create("TextLabel", {
 local carLoadBtn = create("TextButton", {
     Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  Show Car Script",
+    Text = "◈  عرض سكربت السيارة",
     Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
     TextScaled = false, ZIndex = 5,
 }, carActionCard)
@@ -2030,7 +2030,7 @@ addGradient(carLoadBtn, {
 create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
     BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Text = "⚠ يتطلب HTTP + loadstring (Delta / Fluxus / Synapse)",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carActionCard)
@@ -2044,28 +2044,28 @@ addCorner(12, carInstrCard); addStroke(THEME.BORDER, 1, 0.15, carInstrCard)
 
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+    BackgroundTransparency = 1, Text = "✦  التعليمات",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
     BackgroundTransparency = 1,
-    Text = "Press the button above to show and run the Car Script.",
+    Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت السيارة.",
     Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
     BackgroundTransparency = 1,
-    Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت السيارات.",
+    Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت السيارة.",
     Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carInstrCard)
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
     BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+    Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled. استخدم منفذًا حقيقيًا.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carInstrCard)
@@ -2081,12 +2081,12 @@ carLoadBtn.MouseButton1Click:Connect(function()
     if carLoadBusy then return end
     carLoadBusy = true
 
-    local origText = "◈  Show Car Script"
+    local origText = "◈  عرض سكربت السيارة"
     local origBg = THEME.P_MAIN
 
-    carLoadBtn.Text = "⏳  Loading…"
+    carLoadBtn.Text = "⏳  جاري التحميل…"
     carLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setCarStatus("⏳  Fetching script…", THEME.TX_DIM)
+    setCarStatus("⏳  جاري جلب السكربت…", THEME.TX_DIM)
 
     task.spawn(function()
         local success = false
@@ -2094,17 +2094,17 @@ carLoadBtn.MouseButton1Click:Connect(function()
 
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(CAR_URL)
-            if not body then return false, "Download failed — check URL or executor HTTP" end
-            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+            if not body then return false, "فشل التنزيل — تحقق من الرابط أو من دعم HTTP في المنفذ" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
             local fn, compileErr = loadstring(body)
-            if not fn then return false, "Compile error: " .. tostring(compileErr) end
+            if not fn then return false, "خطأ في التجميع: " .. tostring(compileErr) end
             local runOk, runErr = pcall(fn)
-            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+            if not runOk then return false, "خطأ في التنفيذ: " .. tostring(runErr) end
             return true
         end)
 
         if ok then
-            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+            if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
         else
             errMsg = tostring(ret1)
         end
@@ -2115,12 +2115,12 @@ carLoadBtn.MouseButton1Click:Connect(function()
         carLoadBtn.BackgroundColor3 = origBg
 
         if success then
-            setCarStatus("✓  Car Script executed successfully", THEME.OK)
-            showToast("✓  Car Script loaded")
+            setCarStatus("✓  تم تنفيذ سكربت السيارة بنجاح", THEME.OK)
+            showToast("✓  تم تحميل سكربت السيارة")
         else
-            warn("[LYNEX Car] Failed:", errMsg)
-            setCarStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "Unknown error"))
+            warn("[LYNEX Car] فشل:", errMsg)
+            setCarStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
+            showToast("✕  " .. (errMsg or "خطأ غير معروف"))
         end
     end)
 end)
@@ -2128,7 +2128,7 @@ end)
 styleActionButton(carLoadBtn, carLoadStroke)
 
 --==================================================================
--- 16.9) Misc Page
+-- 16.9) صفحة متنوع
 --==================================================================
 local miscPage = createPage("misc", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, miscPage)
@@ -2174,14 +2174,14 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Misc Utilities",
+    BackgroundTransparency = 1, Text = "أدوات متنوعة",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, miscHeaderCard)
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Client-side tweaks: Graphics, Time, Server actions, Camera.",
+    Text = "تعديلات محلية: الرسومات، الوقت، إجراءات السيرفر، الكاميرا.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscHeaderCard)
@@ -2195,9 +2195,9 @@ addCorner(8, miscNotice); addStroke(Color3.fromRGB(200, 140, 60), 1, 0.3, miscNo
 create("TextLabel", {
     Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0),
     BackgroundTransparency = 1,
-    Text = "⚠  Graphics, Time & Zoom changes are CLIENT-SIDE only. Other players won't see them.",
+    Text = "⚠  تغييرات الرسومات والوقت والتكبير محلية فقط على عميلك. اللاعبون الآخرون لن يروها.",
     Font = FONT.Medium, TextSize = 9, TextColor3 = Color3.fromRGB(255, 210, 150),
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+    TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true, ZIndex = 5,
 }, miscNotice)
 
 local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight)
@@ -2290,14 +2290,14 @@ local function updateQualityStatus()
     if not qualityStatusLbl then return end
     local lvl = getCurrentQualityLevel()
     if not lvl then
-        qualityStatusLbl.Text = "◈ Current: Unknown / Automatic"
+        qualityStatusLbl.Text = "◈ الحالي: غير معروف / تلقائي"
         return
     end
     local idx = getQualityIndex(lvl)
     if idx then
-        qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
+        qualityStatusLbl.Text = "◈ الحالي: المستوى " .. idx .. " / 10"
     else
-        qualityStatusLbl.Text = "◈ Current: Automatic"
+        qualityStatusLbl.Text = "◈ الحالي: تلقائي"
     end
 end
 
@@ -2320,16 +2320,16 @@ local function increaseQuality()
             Lighting.EnvironmentDiffuseScale = 1
             Lighting.EnvironmentSpecularScale = 1
         end)
-        showToast("◈  Quality boosted (Lighting fallback)")
+        showToast("◈  تحسين الجودة (بديل إضاءة)")
         return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.min(idx + 1, #QUALITY_LEVELS)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
         updateQualityStatus()
-        showToast("◈  Quality: Level " .. idx)
+        showToast("◈  الجودة: المستوى " .. idx)
     else
-        showToast("✕  Cannot change quality in this executor")
+        showToast("✕  لا يمكن تغيير الجودة في هذا المنفذ")
     end
 end
 
@@ -2343,16 +2343,16 @@ local function decreaseQuality()
             Lighting.EnvironmentDiffuseScale = 0
             Lighting.EnvironmentSpecularScale = 0
         end)
-        showToast("◈  Quality reduced (Lighting fallback)")
+        showToast("◈  تقليل الجودة (بديل إضاءة)")
         return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.max(idx - 1, 1)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
         updateQualityStatus()
-        showToast("◈  Quality: Level " .. idx)
+        showToast("◈  الجودة: المستوى " .. idx)
     else
-        showToast("✕  Cannot change quality in this executor")
+        showToast("✕  لا يمكن تغيير الجودة في هذا المنفذ")
     end
 end
 
@@ -2382,7 +2382,7 @@ local function applyNight()
         Lighting.FogEnd = 500
         Lighting.FogStart = 50
     end)
-    showToast("◈  Night applied (local only)")
+    showToast("◈  تم تطبيق الليل (محلي فقط)")
 end
 
 local function applyDay()
@@ -2397,7 +2397,7 @@ local function applyDay()
         Lighting.FogEnd = 10000
         Lighting.FogStart = 0
     end)
-    showToast("◈  Day applied (local only)")
+    showToast("◈  تم تطبيق النهار (محلي فقط)")
 end
 
 local teleportBusy = false
@@ -2425,7 +2425,7 @@ local function showConfirm(titleText, messageText, onConfirm)
         BackgroundTransparency = 1,
         Text = titleText, Font = FONT.Bold, TextSize = 14,
         TextColor3 = THEME.TX_MAIN,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202,
+        TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 202,
     }, modal)
 
     create("TextLabel", {
@@ -2434,14 +2434,14 @@ local function showConfirm(titleText, messageText, onConfirm)
         BackgroundTransparency = 1,
         Text = messageText, Font = FONT.Regular, TextSize = 10,
         TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 202,
+        TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true, ZIndex = 202,
     }, modal)
 
     local cancelBtn = create("TextButton", {
         Size = UDim2.new(0.5, -18, 0, 34),
         Position = UDim2.new(0, 12, 1, -46),
         BackgroundColor3 = THEME.BG_CARD_HI,
-        AutoButtonColor = false, Text = "Cancel",
+        AutoButtonColor = false, Text = "إلغاء",
         Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM,
         ZIndex = 202,
     }, modal)
@@ -2451,7 +2451,7 @@ local function showConfirm(titleText, messageText, onConfirm)
         Size = UDim2.new(0.5, -18, 0, 34),
         Position = UDim2.new(0.5, 6, 1, -46),
         BackgroundColor3 = THEME.P_MAIN,
-        AutoButtonColor = false, Text = "Confirm",
+        AutoButtonColor = false, Text = "تأكيد",
         Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN,
         ZIndex = 202,
     }, modal)
@@ -2467,16 +2467,16 @@ end
 local function changeServer()
     if teleportBusy then return end
     showConfirm(
-        "Change Server",
-        "You will be teleported to a new server of this game. Session state will be lost.",
+        "تغيير السيرفر",
+        "سيتم نقلك إلى سيرفر جديد في هذه اللعبة. ستفقد حالة الجلسة الحالية.",
         function()
             teleportBusy = true
-            showToast("◈  Finding new server…")
+            showToast("◈  البحث عن سيرفر جديد…")
             local ok, err = pcall(function()
                 TeleportService:Teleport(game.PlaceId, localPlayer)
             end)
             if not ok then
-                showToast("✕  Teleport failed: " .. tostring(err))
+                showToast("✕  فشل الانتقال: " .. tostring(err))
                 teleportBusy = false
             end
             task.delay(3, function() teleportBusy = false end)
@@ -2487,11 +2487,11 @@ end
 local function rejoinServer()
     if teleportBusy then return end
     showConfirm(
-        "Rejoin Server",
-        "You will rejoin this same server. Session state will be lost.",
+        "إعادة الانضمام للسيرفر",
+        "سيتم إعادة انضمامك إلى نفس هذا السيرفر. ستفقد حالة الجلسة الحالية.",
         function()
             teleportBusy = true
-            showToast("◈  Rejoining server…")
+            showToast("◈  جاري إعادة الانضمام…")
             local ok, err = pcall(function()
                 if game.JobId and game.JobId ~= "" then
                     TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
@@ -2500,7 +2500,7 @@ local function rejoinServer()
                 end
             end)
             if not ok then
-                showToast("✕  Rejoin failed: " .. tostring(err))
+                showToast("✕  فشلت إعادة الانضمام: " .. tostring(err))
                 teleportBusy = false
             end
             task.delay(3, function() teleportBusy = false end)
@@ -2521,9 +2521,9 @@ local function toggleInfiniteZoom(enabled)
         end)
         if ok then
             miscState.zoomActive = true
-            showToast("◉  Infinite Zoom ON (local only)")
+            showToast("◉  التكبير اللانهائي مفعّل (محلي فقط)")
         else
-            showToast("✕  Camera locked by game")
+            showToast("✕  الكاميرا مقفلة من قبل اللعبة")
         end
     else
         pcall(function()
@@ -2531,26 +2531,26 @@ local function toggleInfiniteZoom(enabled)
             localPlayer.CameraMinZoomDistance = miscState.zoomOriginalMin or 0.5
         end)
         miscState.zoomActive = false
-        showToast("◉  Infinite Zoom OFF")
+        showToast("◉  التكبير اللانهائي معطّل")
     end
 end
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  GRAPHICS", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  الرسومات", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
 createMiscRow(miscPage, miscOrder(),
-    "▲  Increase Quality", "▼  Decrease Quality",
+    "▲  زيادة الجودة", "▼  تقليل الجودة",
     increaseQuality, decreaseQuality
 )
 
 qualityStatusLbl = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 20),
     BackgroundTransparency = 1,
-    Text = "◈ Current: —",
+    Text = "◈ الحالي: —",
     Font = FONT.Medium, TextSize = 10,
     TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Center,
@@ -2560,19 +2560,19 @@ updateQualityStatus()
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  TIME OF DAY", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  وقت اليوم", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
 createMiscRow(miscPage, miscOrder(),
-    "☾  Night", "☀  Day",
+    "☾  ليل", "☀  نهار",
     applyNight, applyDay
 )
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Lighting changes are local-only. Other players see their own time.",
+    Text = "⚠ تغييرات الإضاءة محلية فقط. اللاعبون الآخرون يرون وقتهم الخاص.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -2580,20 +2580,20 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  SERVER", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  السيرفر", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
 createMiscButton(miscPage, miscOrder(),
-    "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
+    "◈  تغيير السيرفر", THEME.P_MAIN, THEME.P_GLOW, changeServer)
 
 createMiscButton(miscPage, miscOrder(),
-    "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
+    "↻  إعادة الانضمام للسيرفر", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Teleporting will disconnect you — session state is lost.",
+    Text = "⚠ الانتقال سيفصلك — ستفقد حالة الجلسة.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -2601,21 +2601,21 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  CAMERA", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  الكاميرا", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
 createPlayerToggle(miscPage, miscOrder(),
-    "◉ Infinite Zoom",
-    "Extends camera max distance (local only)",
+    "◉ تكبير لانهائي",
+    "يمدّد أقصى مسافة للكاميرا (محلي فقط)",
     false,
     toggleInfiniteZoom
 )
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Some games clamp zoom distance — effect may be limited.",
+    Text = "⚠ بعض الألعاب تقيّد مسافة التكبير — قد يكون التأثير محدودًا.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -2646,9 +2646,9 @@ _G.LYNEX_CLEANUP_MISC = function()
 end
 
 --==================================================================
--- 16.10) Anti-strike Page — DEFENSIVE WRAP
+-- 16.10) صفحة مضاد الحظر — بحماية دفاعية
 --==================================================================
-print("[LYNEX] Section 16.10 — Anti-strike loading...")
+print("[LYNEX] القسم 16.10 — تحميل مضاد الحظر...")
 
 do
     local antiStrikePage
@@ -2686,14 +2686,14 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-            BackgroundTransparency = 1, Text = "Anti-strike Script",
+            BackgroundTransparency = 1, Text = "سكربت مضاد الحظر",
             Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
             BackgroundTransparency = 1,
-            Text = "Show and run the Anti-strike Script in supported games. Load the external script to activate.",
+            Text = "يعرض ويشغل سكربت مضاد الحظر في الألعاب المدعومة. حمّل السكربت الخارجي للتفعيل.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asHeaderCard)
@@ -2707,7 +2707,7 @@ do
 
         local asStatus = create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
             Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asActionCard)
@@ -2715,7 +2715,7 @@ do
         local asLoadBtn = create("TextButton", {
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-            Text = "◈  Show Anti-strike Script",
+            Text = "◈  عرض سكربت مضاد الحظر",
             Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
             TextScaled = false, ZIndex = 5,
         }, asActionCard)
@@ -2730,7 +2730,7 @@ do
         create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
             BackgroundTransparency = 1,
-            Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+            Text = "⚠ يتطلب HTTP + loadstring (Delta / Fluxus / Synapse)",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asActionCard)
@@ -2744,14 +2744,14 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            BackgroundTransparency = 1, Text = "✦  التعليمات",
             Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
             BackgroundTransparency = 1,
-            Text = "Press the button above to show and run the Anti-strike Script.",
+            Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت مضاد الحظر.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
@@ -2765,7 +2765,7 @@ do
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
             BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+            Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled. استخدم منفذًا حقيقيًا.",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
@@ -2780,27 +2780,27 @@ do
         asLoadBtn.MouseButton1Click:Connect(function()
             if asLoadBusy then return end
             asLoadBusy = true
-            local origText = "◈  Show Anti-strike Script"
+            local origText = "◈  عرض سكربت مضاد الحظر"
             local origBg = THEME.P_MAIN
-            asLoadBtn.Text = "⏳  Loading…"
+            asLoadBtn.Text = "⏳  جاري التحميل…"
             asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-            setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
+            setAsStatus("⏳  جاري جلب السكربت…", THEME.TX_DIM)
 
             task.spawn(function()
                 local success = false
                 local errMsg = nil
                 local ok, ret1, ret2 = pcall(function()
                     local body = fetchUrl(ANTI_STRIKE_URL)
-                    if not body then return false, "Download failed — check URL or executor HTTP" end
-                    if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+                    if not body then return false, "فشل التنزيل — تحقق من الرابط أو من دعم HTTP في المنفذ" end
+                    if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
                     local fn, compileErr = loadstring(body)
-                    if not fn then return false, "Compile error: " .. tostring(compileErr) end
+                    if not fn then return false, "خطأ في التجميع: " .. tostring(compileErr) end
                     local runOk, runErr = pcall(fn)
-                    if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+                    if not runOk then return false, "خطأ في التنفيذ: " .. tostring(runErr) end
                     return true
                 end)
                 if ok then
-                    if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+                    if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
                 else
                     errMsg = tostring(ret1)
                 end
@@ -2809,12 +2809,12 @@ do
                 asLoadBtn.Text = origText
                 asLoadBtn.BackgroundColor3 = origBg
                 if success then
-                    setAsStatus("✓  Anti-strike Script executed successfully", THEME.OK)
-                    showToast("✓  Anti-strike Script loaded")
+                    setAsStatus("✓  تم تنفيذ سكربت مضاد الحظر بنجاح", THEME.OK)
+                    showToast("✓  تم تحميل سكربت مضاد الحظر")
                 else
-                    warn("[LYNEX Anti-strike] Failed:", errMsg)
-                    setAsStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-                    showToast("✕  " .. (errMsg or "Unknown error"))
+                    warn("[LYNEX Anti-strike] فشل:", errMsg)
+                    setAsStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
+                    showToast("✕  " .. (errMsg or "خطأ غير معروف"))
                 end
             end)
         end)
@@ -2823,15 +2823,15 @@ do
     end)
 
     if okAntiStrike then
-        print("[LYNEX] ✓ Anti-strike section loaded OK")
+        print("[LYNEX] ✓ تم تحميل قسم مضاد الحظر بنجاح")
     else
-        warn("[LYNEX] ✗ Anti-strike section FAILED:", errAntiStrike)
+        warn("[LYNEX] ✗ فشل قسم مضاد الحظر:", errAntiStrike)
         if not antiStrikePage then
             antiStrikePage = createPage("antistrike", true)
             create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 80),
                 BackgroundTransparency = 1,
-                Text = "⚠ تعذّر تحميل تبويب Anti-strike:\n\n" .. tostring(errAntiStrike),
+                Text = "⚠ تعذّر تحميل تبويب مضاد الحظر:\n\n" .. tostring(errAntiStrike),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, antiStrikePage)
@@ -2840,9 +2840,9 @@ do
 end
 
 --==================================================================
--- 16.11) Chat Page — DEFENSIVE WRAP (جديد)
+-- 16.11) صفحة الدردشة — بحماية دفاعية (جديدة)
 --==================================================================
-print("[LYNEX] Section 16.11 — Chat loading...")
+print("[LYNEX] القسم 16.11 — تحميل الدردشة...")
 
 do
     local chatPage
@@ -2880,14 +2880,14 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-            BackgroundTransparency = 1, Text = "Chat Script",
+            BackgroundTransparency = 1, Text = "سكربت الدردشة",
             Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
             BackgroundTransparency = 1,
-            Text = "Show and run the Chat Script in supported games. Load the external script to activate.",
+            Text = "يعرض ويشغل سكربت الدردشة في الألعاب المدعومة. حمّل السكربت الخارجي للتفعيل.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chHeaderCard)
@@ -2901,7 +2901,7 @@ do
 
         local chStatus = create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
             Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chActionCard)
@@ -2909,7 +2909,7 @@ do
         local chLoadBtn = create("TextButton", {
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-            Text = "◈  Show Chat Script",
+            Text = "◈  عرض سكربت الدردشة",
             Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
             TextScaled = false, ZIndex = 5,
         }, chActionCard)
@@ -2924,7 +2924,7 @@ do
         create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
             BackgroundTransparency = 1,
-            Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+            Text = "⚠ يتطلب HTTP + loadstring (Delta / Fluxus / Synapse)",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chActionCard)
@@ -2938,14 +2938,14 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            BackgroundTransparency = 1, Text = "✦  التعليمات",
             Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
             BackgroundTransparency = 1,
-            Text = "Press the button above to show and run the Chat Script.",
+            Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت الدردشة.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
@@ -2959,7 +2959,7 @@ do
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
             BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+            Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled. استخدم منفذًا حقيقيًا.",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
@@ -2974,27 +2974,27 @@ do
         chLoadBtn.MouseButton1Click:Connect(function()
             if chLoadBusy then return end
             chLoadBusy = true
-            local origText = "◈  Show Chat Script"
+            local origText = "◈  عرض سكربت الدردشة"
             local origBg = THEME.P_MAIN
-            chLoadBtn.Text = "⏳  Loading…"
+            chLoadBtn.Text = "⏳  جاري التحميل…"
             chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-            setChStatus("⏳  Fetching script…", THEME.TX_DIM)
+            setChStatus("⏳  جاري جلب السكربت…", THEME.TX_DIM)
 
             task.spawn(function()
                 local success = false
                 local errMsg = nil
                 local ok, ret1, ret2 = pcall(function()
                     local body = fetchUrl(CHAT_URL)
-                    if not body then return false, "Download failed — check URL or executor HTTP" end
-                    if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+                    if not body then return false, "فشل التنزيل — تحقق من الرابط أو من دعم HTTP في المنفذ" end
+                    if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
                     local fn, compileErr = loadstring(body)
-                    if not fn then return false, "Compile error: " .. tostring(compileErr) end
+                    if not fn then return false, "خطأ في التجميع: " .. tostring(compileErr) end
                     local runOk, runErr = pcall(fn)
-                    if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+                    if not runOk then return false, "خطأ في التنفيذ: " .. tostring(runErr) end
                     return true
                 end)
                 if ok then
-                    if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+                    if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
                 else
                     errMsg = tostring(ret1)
                 end
@@ -3003,12 +3003,12 @@ do
                 chLoadBtn.Text = origText
                 chLoadBtn.BackgroundColor3 = origBg
                 if success then
-                    setChStatus("✓  Chat Script executed successfully", THEME.OK)
-                    showToast("✓  Chat Script loaded")
+                    setChStatus("✓  تم تنفيذ سكربت الدردشة بنجاح", THEME.OK)
+                    showToast("✓  تم تحميل سكربت الدردشة")
                 else
-                    warn("[LYNEX Chat] Failed:", errMsg)
-                    setChStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-                    showToast("✕  " .. (errMsg or "Unknown error"))
+                    warn("[LYNEX Chat] فشل:", errMsg)
+                    setChStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
+                    showToast("✕  " .. (errMsg or "خطأ غير معروف"))
                 end
             end)
         end)
@@ -3017,15 +3017,15 @@ do
     end)
 
     if okChat then
-        print("[LYNEX] ✓ Chat section loaded OK")
+        print("[LYNEX] ✓ تم تحميل قسم الدردشة بنجاح")
     else
-        warn("[LYNEX] ✗ Chat section FAILED:", errChat)
+        warn("[LYNEX] ✗ فشل قسم الدردشة:", errChat)
         if not chatPage then
             chatPage = createPage("chat", true)
             create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 80),
                 BackgroundTransparency = 1,
-                Text = "⚠ تعذّر تحميل تبويب Chat:\n\n" .. tostring(errChat),
+                Text = "⚠ تعذّر تحميل تبويب الدردشة:\n\n" .. tostring(errChat),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, chatPage)
@@ -3034,7 +3034,7 @@ do
 end
 
 --==================================================================
--- 17) Floating button
+-- 17) الزر العائم
 --==================================================================
 local floatingBtn = create("TextButton", {
     Name = "FloatingBtn", Size = UDim2.fromOffset(48, 48),
@@ -3059,7 +3059,7 @@ floatingBadge = create("Frame", {
 addCorner(5, floatingBadge); addStroke(THEME.BG_PANEL, 1.5, 0, floatingBadge)
 
 --==================================================================
--- 18) Fade
+-- 18) التلاشي
 --==================================================================
 local origTransparency = {}
 local function scanTransparency(obj)
@@ -3116,7 +3116,7 @@ local function fadeTo(value, duration, style, direction, onDone)
 end
 
 --==================================================================
--- 19) Glow
+-- 19) التوهج
 --==================================================================
 task.spawn(function()
     while screenGui and screenGui.Parent do
@@ -3137,7 +3137,7 @@ task.spawn(function()
 end)
 
 --==================================================================
--- 20) Press & Hover
+-- 20) الضغط والتحويم
 --==================================================================
 local function attachPressEffect(btn)
     local baseSize = btn.Size
@@ -3181,7 +3181,7 @@ if UserInputService.MouseEnabled then
 end
 
 --==================================================================
--- 21) Drag
+-- 21) السحب
 --==================================================================
 local dragging, dragStart, startPos = false, nil, nil
 header.InputBegan:Connect(function(input)
@@ -3208,7 +3208,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --==================================================================
--- 22) Sidebar toggle
+-- 22) الشريط الجانبي
 --==================================================================
 local sidebarOpen = true
 sidebar.Size = UDim2.new(0, sidebarW, 1, 0)
@@ -3227,7 +3227,7 @@ end
 menuBtn.MouseButton1Click:Connect(function() setSidebar(not sidebarOpen) end)
 
 --==================================================================
--- 23) Tab System
+-- 23) نظام التبويبات
 --==================================================================
 local pageTweens, pageOrigPos = {}, {}
 for id, page in pairs(tabPages) do pageOrigPos[id] = page.Position end
@@ -3273,7 +3273,6 @@ local function switchTab(id)
         tween(data.icon, TweenInfo.new(0.2), { TextColor3 = active and THEME.TX_MAIN or THEME.P_GLOW })
         tween(data.label, TweenInfo.new(0.2), { TextColor3 = active and THEME.TX_MAIN or THEME.TX_DIM })
     end
-    -- ✅ تمرير تلقائي للتبويب النشط داخل sidebar
     local activeBtn = tabButtons[id] and tabButtons[id].btn
     if activeBtn and sidebar:IsA("ScrollingFrame") then
         local targetY = activeBtn.AbsolutePosition.Y - sidebar.AbsolutePosition.Y
@@ -3296,7 +3295,7 @@ for id, data in pairs(tabButtons) do
 end
 
 --==================================================================
--- 24) Show/Hide
+-- 24) إظهار/إخفاء
 --==================================================================
 local function hideWindow()
     windowHidden = true; removeBlur()
@@ -3337,7 +3336,7 @@ closeBtn.MouseButton1Click:Connect(hideWindow)
 floatingBtn.MouseButton1Click:Connect(showWindow)
 
 --==================================================================
--- 25) Profile
+-- 25) الملف الشخصي
 --==================================================================
 local function loadPlayerProfile()
     pcall(function()
@@ -3349,15 +3348,15 @@ local function loadPlayerProfile()
     usernameLbl.Text = "@" .. username
     uidLbl.Text = tostring(userId)
     if okAge and typeof(accountAge) == "number" then
-        ageLbl.Text = tostring(accountAge) .. " days"
+        ageLbl.Text = tostring(accountAge) .. " يوم"
     else
-        ageLbl.Text = "N/A"
+        ageLbl.Text = "غير متاح"
     end
 end
 loadPlayerProfile()
 
 --==================================================================
--- 26) Settings functions
+-- 26) دوال الإعدادات
 --==================================================================
 function applyWindowTransparency(pct)
     settings.transparency = math.clamp(pct, 0, 90)
@@ -3385,11 +3384,11 @@ resetBtn.MouseButton1Click:Connect(function()
     settings.animations = true; settings.transparency = 15; settings.glow = true
     animRow.setOn(true); glowRow.setOn(true); transRow.setValue(15)
     applyWindowTransparency(15); applyGlowState()
-    showToast("↻  Settings restored")
+    showToast("↻  تمت استعادة الإعدادات")
 end)
 
 --==================================================================
--- 27) Viewport
+-- 27) منفذ العرض
 --==================================================================
 local function onViewportChange()
     local w, h = computeWindowSize()
@@ -3414,7 +3413,7 @@ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 end)
 
 --==================================================================
--- 28) Startup
+-- 28) التشغيل
 --==================================================================
 switchTab("home")
 applyBlur()
@@ -3437,4 +3436,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.4] ✦ Ready — Chat tab added")
+print("[LYNEX HUB v3.4] ✦ جاهز — تمت إضافة تبويب الدردشة")
