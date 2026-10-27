@@ -1,7 +1,7 @@
 --!nonstrict
 --==================================================================
 --  ✦ LYNEX HUB v3.4 ✦
---  الرئيسية • اللاعبون • اللاعب • صيد تلقائي • السيارة • متنوع • مضاد الحظر • الدردشة • الأخبار • الإعدادات
+--  الرئيسية • اللاعبون • اللاعب • صيد تلقائي • السيارة • العم مرزوق • متنوع • مضاد الحظر • الدردشة • الأخبار • الإعدادات
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -342,16 +342,17 @@ local pagesContainer = create("Frame", {
 -- 10) التبويبات
 --==================================================================
 local TABS = {
-    { id = "home",       name = "الرئيسية",    icon = "⌂"  },
-    { id = "players",    name = "اللاعبون",    icon = "◉"  },
-    { id = "player",     name = "اللاعب",      icon = "●"  },
-    { id = "autofish",   name = "صيد تلقائي",  icon = "≋"  },
-    { id = "car",        name = "السيارة",     icon = "🚗" },
-    { id = "misc",       name = "متنوع",       icon = "⚒"  },
-    { id = "antistrike", name = "مضاد الحظر",  icon = "⛨" },
-    { id = "chat",       name = "الدردشة",     icon = "✎"  },
-    { id = "news",       name = "الأخبار",     icon = "✉"  },
-    { id = "settings",   name = "الإعدادات",   icon = "⚙"  },
+    { id = "home",         name = "الرئيسية",     icon = "⌂"  },
+    { id = "players",      name = "اللاعبون",     icon = "◉"  },
+    { id = "player",       name = "اللاعب",       icon = "●"  },
+    { id = "autofish",     name = "صيد تلقائي",   icon = "≋"  },
+    { id = "car",          name = "السيارة",      icon = "🚗" },
+    { id = "unclemazrouk", name = "العم مرزوق",   icon = "🧔" },
+    { id = "misc",         name = "متنوع",        icon = "⚒"  },
+    { id = "antistrike",   name = "مضاد الحظر",   icon = "⛨" },
+    { id = "chat",         name = "الدردشة",      icon = "✎"  },
+    { id = "news",         name = "الأخبار",      icon = "✉"  },
+    { id = "settings",     name = "الإعدادات",    icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -1091,6 +1092,7 @@ local NEWS_DATA = {
     { title = "تبويب مضاد الحظر", body = "تمت إضافة تبويب مضاد الحظر. تحميل وتشغيل سكربت مضاد الحظر عند الطلب — نفس التصميم وسير العمل كالسيارة.", date = "2025-03-29" },
     { title = "إصلاح تمرير الشريط الجانبي", body = "الشريط الجانبي الآن قابل للتمرير. جميع التبويبات بما فيها الإعدادات متاحة دائمًا بغض النظر عن حجم الشاشة.", date = "2025-04-05" },
     { title = "تبويب الدردشة", body = "تمت إضافة تبويب الدردشة. تحميل وتشغيل سكربت الدردشة عند الطلب — نفس النمط الدفاعي كمضاد الحظر.", date = "2025-04-12" },
+    { title = "تبويب العم مرزوق", body = "تمت إضافة تبويب العم مرزوق. تحميل وتشغيل سكربت العم مرزوق عند الطلب — نفس تصميم صفحة السيارة مع نصوص عربية مستقلة.", date = "2025-04-19" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2126,6 +2128,183 @@ carLoadBtn.MouseButton1Click:Connect(function()
 end)
 
 styleActionButton(carLoadBtn, carLoadStroke)
+
+--==================================================================
+-- 16.8.1) صفحة العم مرزوق — جديدة (مبنية على صفحة السيارة)
+--==================================================================
+local UM_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Uncle%20Mazrouk"
+
+local umPage = createPage("unclemazrouk", true)
+create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, umPage)
+create("UIPadding", {
+    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+}, umPage)
+
+local umHeaderCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 86),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+}, umPage)
+addCorner(12, umHeaderCard); addStroke(THEME.BORDER, 1, 0.15, umHeaderCard)
+
+local umIconFrame = create("Frame", {
+    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+}, umHeaderCard)
+addCorner(30, umIconFrame)
+addStroke(THEME.P_GLOW, 1.5, 0.2, umIconFrame)
+addGradient(umIconFrame, {
+    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+}, 45)
+create("TextLabel", {
+    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+    Text = "🧔", Font = FONT.Logo, TextSize = 26,
+    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+}, umIconFrame)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+    BackgroundTransparency = 1, Text = "العم مرزوق",
+    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umHeaderCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+    BackgroundTransparency = 1,
+    Text = "يعرض ويشغل سكربت العم مرزوق في الألعاب المدعومة. حمّل السكربت الخارجي للتفعيل.",
+    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umHeaderCard)
+
+local umActionCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 114),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+}, umPage)
+addCorner(12, umActionCard); addStroke(THEME.BORDER, 1, 0.15, umActionCard)
+
+local umStatus = create("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+    BackgroundTransparency = 1, Text = "⏸  الحالة: خامل",
+    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umActionCard)
+
+local umLoadBtn = create("TextButton", {
+    Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+    BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+    Text = "◈  عرض سكربت العم مرزوق",
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
+    TextScaled = false, ZIndex = 5,
+}, umActionCard)
+addCorner(10, umLoadBtn)
+local umLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, umLoadBtn)
+addGradient(umLoadBtn, {
+    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+    ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+    ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+}, 90)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+    BackgroundTransparency = 1,
+    Text = "⚠ يتطلب HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umActionCard)
+
+local umInstrCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 146),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+}, umPage)
+addCorner(12, umInstrCard); addStroke(THEME.BORDER, 1, 0.15, umInstrCard)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+    BackgroundTransparency = 1, Text = "✦  التعليمات",
+    Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+    BackgroundTransparency = 1,
+    Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت العم مرزوق.",
+    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+    BackgroundTransparency = 1,
+    Text = "اضغط على الزر أعلاه لإظهار وتشغيل سكربت العم مرزوق.",
+    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+    BackgroundTransparency = 1,
+    Text = "⚠ التحميل معطّل في Studio بدون HttpEnabled. استخدم منفذًا حقيقيًا.",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umInstrCard)
+
+local umLoadBusy = false
+
+local function setUmStatus(text, color)
+    umStatus.Text = text
+    umStatus.TextColor3 = color or THEME.TX_DIM
+end
+
+umLoadBtn.MouseButton1Click:Connect(function()
+    if umLoadBusy then return end
+    umLoadBusy = true
+
+    local origText = "◈  عرض سكربت العم مرزوق"
+    local origBg = THEME.P_MAIN
+
+    umLoadBtn.Text = "⏳  جاري التحميل…"
+    umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+    setUmStatus("⏳  جاري جلب السكربت…", THEME.TX_DIM)
+
+    task.spawn(function()
+        local success = false
+        local errMsg = nil
+
+        local ok, ret1, ret2 = pcall(function()
+            local body = fetchUrl(UM_URL)
+            if not body then return false, "فشل التنزيل — تحقق من الرابط أو من دعم HTTP في المنفذ" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring غير متاح" end
+            local fn, compileErr = loadstring(body)
+            if not fn then return false, "خطأ في التجميع: " .. tostring(compileErr) end
+            local runOk, runErr = pcall(fn)
+            if not runOk then return false, "خطأ في التنفيذ: " .. tostring(runErr) end
+            return true
+        end)
+
+        if ok then
+            if ret1 == true then success = true else errMsg = ret2 or "خطأ غير معروف" end
+        else
+            errMsg = tostring(ret1)
+        end
+
+        task.wait(0.25)
+        umLoadBusy = false
+        umLoadBtn.Text = origText
+        umLoadBtn.BackgroundColor3 = origBg
+
+        if success then
+            setUmStatus("✓  تم تنفيذ سكربت العم مرزوق بنجاح", THEME.OK)
+            showToast("✓  تم تحميل سكربت العم مرزوق")
+        else
+            warn("[LYNEX Uncle Mazrouk] فشل:", errMsg)
+            setUmStatus("✕  " .. (errMsg or "خطأ غير معروف"), THEME.DANGER_HI)
+            showToast("✕  " .. (errMsg or "خطأ غير معروف"))
+        end
+    end)
+end)
+
+styleActionButton(umLoadBtn, umLoadStroke)
 
 --==================================================================
 -- 16.9) صفحة متنوع
@@ -3436,4 +3615,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.4] ✦ جاهز — تمت إضافة تبويب الدردشة")
+print("[LYNEX HUB v3.4] ✦ جاهز — تمت إضافة تبويب العم مرزوق")
