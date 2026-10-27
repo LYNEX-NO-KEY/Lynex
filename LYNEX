@@ -1,7 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.4 ✦
---  Home • Players • Player • Auto Fish • Car • Mazrouk • Misc • Anti-strike • Chat • News • Settings
+--  ✦ LYNEX HUB v3.4 ✦  — FIXED (fetchUrl + Mazrouk)
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -339,7 +338,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs  ← Mazrouk مُضاف هنا
+-- 10) Tabs
 --==================================================================
 local TABS = {
     { id = "home",         name = "Home",         icon = "⌂"  },
@@ -1077,22 +1076,23 @@ addGradient(newsHeader, {
 }, 0)
 
 local NEWS_DATA = {
-    { title = "LYNEX HUB Launch", body = "The first public release of LYNEX HUB is live. Enjoy the brand-new premium interface optimized for mobile.", date = "2025-01-15" },
-    { title = "Mobile Optimization", body = "Touch-friendly controls, responsive layout, and smooth animations tuned for phones of all sizes.", date = "2025-01-20" },
-    { title = "Player Profile Card", body = "Home tab now displays your real Roblox avatar, display name, user id and account age.", date = "2025-01-24" },
-    { title = "Settings & Customization", body = "You can now toggle animations, adjust window transparency, and enable or disable the purple glow.", date = "2025-01-26" },
-    { title = "Players Tab & Blur", body = "New Players tab with live search and player cards. A subtle blur effect now enhances the UI focus.", date = "2025-02-01" },
-    { title = "Spectate System", body = "New Spectate feature on Players tab lets you watch any player using the Roblox camera in real time.", date = "2025-02-08" },
-    { title = "Persistent Spectate Fix", body = "Spectate now persists after hiding the UI, supports all players, and handles respawns and disconnects reliably.", date = "2025-02-15" },
-    { title = "Teleport Button", body = "New Teleport button next to Spectate lets you travel to any player — compliant with in-game movement rules.", date = "2025-02-22" },
-    { title = "Player Tab", body = "New Player tab with Movement, Special Movement and Visuals — speed, jump, flight, gravity, rotation, infinite jump, swimming, iPad view, invisible.", date = "2025-03-01" },
-    { title = "Server Info + Auto Fish", body = "Home now shows live Server Information. New Auto Fish tab loads the fishing script on demand.", date = "2025-03-08" },
-    { title = "Car Script Tab", body = "New Car tab added. Load and run the Car Script on demand — mobile friendly with press animations.", date = "2025-03-15" },
-    { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
-    { title = "Anti-strike Tab", body = "New Anti-strike tab added. Load and run the Anti-strike Script on demand — same design and workflow as Car.", date = "2025-03-29" },
-    { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable. All tabs including Settings are always reachable regardless of screen size.", date = "2025-04-05" },
-    { title = "Chat Tab", body = "New Chat tab added. Load and run the Chat Script on demand — same defensive pattern as Anti-strike.", date = "2025-04-12" },
-    { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added. Load and run the Uncle Mazrouk Script on demand — same workflow and mobile-friendly design.", date = "2025-04-19" },
+    { title = "LYNEX HUB Launch", body = "The first public release of LYNEX HUB is live.", date = "2025-01-15" },
+    { title = "Mobile Optimization", body = "Touch-friendly controls and responsive layout.", date = "2025-01-20" },
+    { title = "Player Profile Card", body = "Home tab now displays your real Roblox avatar.", date = "2025-01-24" },
+    { title = "Settings & Customization", body = "Toggle animations, adjust transparency, enable glow.", date = "2025-01-26" },
+    { title = "Players Tab & Blur", body = "New Players tab with live search and player cards.", date = "2025-02-01" },
+    { title = "Spectate System", body = "New Spectate feature on Players tab.", date = "2025-02-08" },
+    { title = "Persistent Spectate Fix", body = "Spectate now persists after hiding the UI.", date = "2025-02-15" },
+    { title = "Teleport Button", body = "New Teleport button next to Spectate.", date = "2025-02-22" },
+    { title = "Player Tab", body = "New Player tab with Movement, Special Movement and Visuals.", date = "2025-03-01" },
+    { title = "Server Info + Auto Fish", body = "Home now shows live Server Information.", date = "2025-03-08" },
+    { title = "Car Script Tab", body = "New Car tab added.", date = "2025-03-15" },
+    { title = "Misc Tab", body = "New Misc tab: Graphics, Lighting, Server, Zoom.", date = "2025-03-22" },
+    { title = "Anti-strike Tab", body = "New Anti-strike tab added.", date = "2025-03-29" },
+    { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable.", date = "2025-04-05" },
+    { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
+    { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
+    { title = "fetchUrl Fix (Delta)", body = "Critical fix: removed broken typeof(game.HttpGet) check. All external scripts now load reliably.", date = "2025-04-26" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1731,34 +1731,44 @@ _G.LYNEX_CLEANUP = function()
 end
 
 --==================================================================
--- 16.6) fetchUrl (shared)
+-- 16.6) fetchUrl (FIXED for Delta)
 --==================================================================
 local function fetchUrl(url)
     local body = nil
 
-    if typeof(game.HttpGet) == "function" then
-        local ok, res = pcall(function() return game:HttpGet(url) end)
-        if ok and typeof(res) == "string" and res ~= "" then body = res end
+    -- ⚡ Primary: direct game:HttpGet (works in Delta)
+    local ok, res = pcall(function() return game:HttpGet(url) end)
+    if ok and typeof(res) == "string" and #res > 0 then
+        body = res
     end
 
+    -- Fallback: request / http_request with timeout (prevents Delta hang)
     if not body then
         local reqFunc = (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
             or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
             or (typeof(http_request) == "function" and http_request)
             or (typeof(request) == "function" and request)
         if reqFunc then
-            local ok, resp = pcall(reqFunc, { Url = url, Method = "GET" })
-            if ok and typeof(resp) == "table" and typeof(resp.Body) == "string" and resp.Body ~= "" then
-                body = resp.Body
-            end
+            local finished, resp = false, nil
+            task.spawn(function()
+                local ok2, r = pcall(reqFunc, { Url = url, Method = "GET" })
+                if ok2 and typeof(r) == "table" and typeof(r.Body) == "string" and r.Body ~= "" then
+                    resp = r.Body
+                end
+                finished = true
+            end)
+            local t0 = os.clock()
+            while not finished and (os.clock() - t0) < 6 do task.wait(0.1) end
+            if resp then body = resp end
         end
     end
 
+    -- Fallback: HttpService
     if not body then
-        local ok, res = pcall(function()
+        local ok2, res2 = pcall(function()
             return game:GetService("HttpService"):GetAsync(url)
         end)
-        if ok and typeof(res) == "string" and res ~= "" then body = res end
+        if ok2 and typeof(res2) == "string" and res2 ~= "" then body = res2 end
     end
 
     if body then
@@ -1818,7 +1828,7 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Automatically fish for you in supported games. Load the external script to activate.",
+    Text = "Automatically fish for you in supported games.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afHeaderCard)
@@ -1841,8 +1851,7 @@ local afLoadBtn = create("TextButton", {
     Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
     Text = "◈  Load Auto Fish Script",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-    TextScaled = false, ZIndex = 5,
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
 }, afActionCard)
 addCorner(10, afLoadBtn)
 local afLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, afLoadBtn)
@@ -1855,7 +1864,7 @@ addGradient(afLoadBtn, {
 create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
     BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Text = "⚠ Requires HTTP + loadstring",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, afActionCard)
@@ -1876,7 +1885,7 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
     BackgroundTransparency = 1,
-    Text = "Press the button above to load and run the Auto Fish script.",
+    Text = "Press the button above to load the Auto Fish script.",
     Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afInstrCard)
@@ -1890,13 +1899,12 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
     BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+    Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afInstrCard)
 
 local loadBusy = false
-
 local function setAfStatus(text, color)
     afStatus.Text = text
     afStatus.TextColor3 = color or THEME.TX_DIM
@@ -1905,21 +1913,17 @@ end
 afLoadBtn.MouseButton1Click:Connect(function()
     if loadBusy then return end
     loadBusy = true
-
     local origText = "◈  Load Auto Fish Script"
     local origBg = THEME.P_MAIN
-
     afLoadBtn.Text = "⏳  Loading…"
     afLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
     setAfStatus("⏳  Fetching script…", THEME.TX_DIM)
 
     task.spawn(function()
-        local success = false
-        local errMsg = nil
-
+        local success, errMsg = false, nil
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(AUTO_FISH_URL)
-            if not body then return false, "Download failed — check URL or executor HTTP" end
+            if not body then return false, "Download failed" end
             if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
             local fn, compileErr = loadstring(body)
             if not fn then return false, "Compile error: " .. tostring(compileErr) end
@@ -1927,18 +1931,15 @@ afLoadBtn.MouseButton1Click:Connect(function()
             if not runOk then return false, "Runtime error: " .. tostring(runErr) end
             return true
         end)
-
         if ok then
             if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
         else
             errMsg = tostring(ret1)
         end
-
         task.wait(0.25)
         loadBusy = false
         afLoadBtn.Text = origText
         afLoadBtn.BackgroundColor3 = origBg
-
         if success then
             setAfStatus("✓  Script executed successfully", THEME.OK)
             showToast("✓  Auto Fish loaded")
@@ -1949,7 +1950,6 @@ afLoadBtn.MouseButton1Click:Connect(function()
         end
     end)
 end)
-
 styleActionButton(afLoadBtn, afLoadStroke)
 
 --==================================================================
@@ -1995,7 +1995,7 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Show and run the Car Script in supported games. Load the external script to activate.",
+    Text = "Show and run the Car Script in supported games.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carHeaderCard)
@@ -2018,8 +2018,7 @@ local carLoadBtn = create("TextButton", {
     Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
     Text = "◈  Show Car Script",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-    TextScaled = false, ZIndex = 5,
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
 }, carActionCard)
 addCorner(10, carLoadBtn)
 local carLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, carLoadBtn)
@@ -2032,7 +2031,7 @@ addGradient(carLoadBtn, {
 create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
     BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Text = "⚠ Requires HTTP + loadstring",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, carActionCard)
@@ -2067,13 +2066,12 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
     BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+    Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, carInstrCard)
 
 local carLoadBusy = false
-
 local function setCarStatus(text, color)
     carStatus.Text = text
     carStatus.TextColor3 = color or THEME.TX_DIM
@@ -2082,21 +2080,17 @@ end
 carLoadBtn.MouseButton1Click:Connect(function()
     if carLoadBusy then return end
     carLoadBusy = true
-
     local origText = "◈  Show Car Script"
     local origBg = THEME.P_MAIN
-
     carLoadBtn.Text = "⏳  Loading…"
     carLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
     setCarStatus("⏳  Fetching script…", THEME.TX_DIM)
 
     task.spawn(function()
-        local success = false
-        local errMsg = nil
-
+        local success, errMsg = false, nil
         local ok, ret1, ret2 = pcall(function()
             local body = fetchUrl(CAR_URL)
-            if not body then return false, "Download failed — check URL or executor HTTP" end
+            if not body then return false, "Download failed" end
             if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
             local fn, compileErr = loadstring(body)
             if not fn then return false, "Compile error: " .. tostring(compileErr) end
@@ -2104,18 +2098,15 @@ carLoadBtn.MouseButton1Click:Connect(function()
             if not runOk then return false, "Runtime error: " .. tostring(runErr) end
             return true
         end)
-
         if ok then
             if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
         else
             errMsg = tostring(ret1)
         end
-
         task.wait(0.25)
         carLoadBusy = false
         carLoadBtn.Text = origText
         carLoadBtn.BackgroundColor3 = origBg
-
         if success then
             setCarStatus("✓  Car Script executed successfully", THEME.OK)
             showToast("✓  Car Script loaded")
@@ -2126,11 +2117,10 @@ carLoadBtn.MouseButton1Click:Connect(function()
         end
     end)
 end)
-
 styleActionButton(carLoadBtn, carLoadStroke)
 
 --==================================================================
--- 16.8b) Uncle Mazrouk Page
+-- 16.8b) Uncle Mazrouk Page (DIRECT loadstring approach — confirmed working)
 --==================================================================
 local UNCLE_MAZROUK_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Uncle%20Mazrouk"
 
@@ -2172,7 +2162,7 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Uncle Mazrouk Script — a special tool for an easier and faster experience in supported games. Click the load button to run the script and use its features.",
+    Text = "Uncle Mazrouk Script — click load to run.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, umHeaderCard)
@@ -2195,8 +2185,7 @@ local umLoadBtn = create("TextButton", {
     Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
     Text = "◈  Load Uncle Mazrouk Script",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-    TextScaled = false, ZIndex = 5,
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
 }, umActionCard)
 addCorner(10, umLoadBtn)
 local umLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, umLoadBtn)
@@ -2209,7 +2198,7 @@ addGradient(umLoadBtn, {
 create("TextLabel", {
     Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
     BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Text = "⚠ Requires HTTP + loadstring",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, umActionCard)
@@ -2244,13 +2233,12 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
     BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+    Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, umInstrCard)
 
 local umLoadBusy = false
-
 local function setUmStatus(text, color)
     umStatus.Text = text
     umStatus.TextColor3 = color or THEME.TX_DIM
@@ -2259,51 +2247,31 @@ end
 umLoadBtn.MouseButton1Click:Connect(function()
     if umLoadBusy then return end
     umLoadBusy = true
-
     local origText = "◈  Load Uncle Mazrouk Script"
     local origBg = THEME.P_MAIN
-
     umLoadBtn.Text = "⏳  Loading…"
     umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setUmStatus("⏳  Fetching script…", THEME.TX_DIM)
+    setUmStatus("⏳  Loading script…", THEME.TX_DIM)
 
     task.spawn(function()
-        local success = false
-        local errMsg = nil
-
-        local ok, ret1, ret2 = pcall(function()
-            local body = fetchUrl(UNCLE_MAZROUK_URL)
-            if not body then return false, "Download failed — check URL or executor HTTP" end
-            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
-            local fn, compileErr = loadstring(body)
-            if not fn then return false, "Compile error: " .. tostring(compileErr) end
-            local runOk, runErr = pcall(fn)
-            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
-            return true
+        -- ⚡ استدعاء مباشر — نفس الأمر اللي أثبتّ إنه شغال
+        local ok, err = pcall(function()
+            loadstring(game:HttpGet(UNCLE_MAZROUK_URL))()
         end)
-
-        if ok then
-            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-        else
-            errMsg = tostring(ret1)
-        end
-
-        task.wait(0.25)
+        task.wait(0.3)
         umLoadBusy = false
         umLoadBtn.Text = origText
         umLoadBtn.BackgroundColor3 = origBg
-
-        if success then
+        if ok then
             setUmStatus("✓  Uncle Mazrouk Script executed successfully", THEME.OK)
             showToast("✓  Uncle Mazrouk loaded")
         else
-            warn("[LYNEX Uncle Mazrouk] Failed:", errMsg)
-            setUmStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "Unknown error"))
+            warn("[LYNEX Uncle Mazrouk] Failed:", err)
+            setUmStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+            showToast("✕  " .. tostring(err))
         end
     end)
 end)
-
 styleActionButton(umLoadBtn, umLoadStroke)
 
 --==================================================================
@@ -2319,13 +2287,10 @@ local miscOrderCounter = 0
 local function miscOrder() miscOrderCounter += 1; return miscOrderCounter end
 
 local miscState = {
-    qualityCaptured = false,
-    qualityOriginal = nil,
+    qualityCaptured = false, qualityOriginal = nil,
     lightingOriginal = nil,
-    zoomActive = false,
-    zoomCaptured = false,
-    zoomOriginalMax = nil,
-    zoomOriginalMin = nil,
+    zoomActive = false, zoomCaptured = false,
+    zoomOriginalMax = nil, zoomOriginalMin = nil,
 }
 
 local miscHeaderCard = create("Frame", {
@@ -2360,7 +2325,7 @@ create("TextLabel", {
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Client-side tweaks: Graphics, Time, Server actions, Camera.",
+    Text = "Client-side tweaks: Graphics, Time, Server, Camera.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscHeaderCard)
@@ -2374,7 +2339,7 @@ addCorner(8, miscNotice); addStroke(Color3.fromRGB(200, 140, 60), 1, 0.3, miscNo
 create("TextLabel", {
     Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0),
     BackgroundTransparency = 1,
-    Text = "⚠  Graphics, Time & Zoom changes are CLIENT-SIDE only. Other players won't see them.",
+    Text = "⚠  Graphics, Time & Zoom changes are CLIENT-SIDE only.",
     Font = FONT.Medium, TextSize = 9, TextColor3 = Color3.fromRGB(255, 210, 150),
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscNotice)
@@ -2388,7 +2353,7 @@ local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0, 0, 0, 0),
         BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
         Text = leftText, Font = FONT.Bold, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextScaled = false, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 5,
     }, row)
     addCorner(10, leftBtn)
     local leftStroke = addStroke(THEME.P_GLOW, 1.5, 0.2, leftBtn)
@@ -2403,14 +2368,12 @@ local function createMiscRow(parent, order, leftText, rightText, onLeft, onRight
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0.5, 4, 0, 0),
         BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
         Text = rightText, Font = FONT.Bold, TextSize = 12,
-        TextColor3 = THEME.TX_MAIN, TextScaled = false, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 5,
     }, row)
     addCorner(10, rightBtn)
     local rightStroke = addStroke(THEME.P_GLOW, 1.5, 0.3, rightBtn)
     styleActionButton(rightBtn, rightStroke)
     rightBtn.MouseButton1Click:Connect(onRight)
-
-    return leftBtn, rightBtn
 end
 
 local function createMiscButton(parent, order, label, color, strokeColor, onClick)
@@ -2418,14 +2381,13 @@ local function createMiscButton(parent, order, label, color, strokeColor, onClic
         Size = UDim2.new(1, 0, 0, 44),
         BackgroundColor3 = color, AutoButtonColor = false,
         Text = label, Font = FONT.Bold, TextSize = 13,
-        TextColor3 = THEME.TX_MAIN, TextScaled = false, ZIndex = 5,
+        TextColor3 = THEME.TX_MAIN, ZIndex = 5,
         LayoutOrder = order,
     }, parent)
     addCorner(10, btn)
     local stroke = addStroke(strokeColor, 1.5, 0.2, btn)
     styleActionButton(btn, stroke)
     btn.MouseButton1Click:Connect(onClick)
-    return btn
 end
 
 local function getUserGameSettings()
@@ -2447,14 +2409,11 @@ local function getCurrentQualityLevel()
     local ok, lvl = pcall(function() return s.SavedQualityLevel end)
     return ok and lvl or nil
 end
-
 local function setQualityLevel(lvl)
     local s = getUserGameSettings()
     if not s then return false end
-    local ok = pcall(function() s.SavedQualityLevel = lvl end)
-    return ok
+    return pcall(function() s.SavedQualityLevel = lvl end)
 end
-
 local function getQualityIndex(setting)
     if not setting then return nil end
     for i, lvl in ipairs(QUALITY_LEVELS) do
@@ -2464,29 +2423,19 @@ local function getQualityIndex(setting)
 end
 
 local qualityStatusLbl
-
 local function updateQualityStatus()
     if not qualityStatusLbl then return end
     local lvl = getCurrentQualityLevel()
-    if not lvl then
-        qualityStatusLbl.Text = "◈ Current: Unknown / Automatic"
-        return
-    end
+    if not lvl then qualityStatusLbl.Text = "◈ Current: Unknown / Automatic"; return end
     local idx = getQualityIndex(lvl)
-    if idx then
-        qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
-    else
-        qualityStatusLbl.Text = "◈ Current: Automatic"
-    end
+    if idx then qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
+    else qualityStatusLbl.Text = "◈ Current: Automatic" end
 end
 
 local function captureQualityOriginal()
     if miscState.qualityCaptured then return end
     local lvl = getCurrentQualityLevel()
-    if lvl then
-        miscState.qualityOriginal = lvl
-        miscState.qualityCaptured = true
-    end
+    if lvl then miscState.qualityOriginal = lvl; miscState.qualityCaptured = true end
 end
 
 local function increaseQuality()
@@ -2505,11 +2454,8 @@ local function increaseQuality()
     local idx = getQualityIndex(lvl) or 5
     idx = math.min(idx + 1, #QUALITY_LEVELS)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus()
-        showToast("◈  Quality: Level " .. idx)
-    else
-        showToast("✕  Cannot change quality in this executor")
-    end
+        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
+    else showToast("✕  Cannot change quality") end
 end
 
 local function decreaseQuality()
@@ -2528,38 +2474,29 @@ local function decreaseQuality()
     local idx = getQualityIndex(lvl) or 5
     idx = math.max(idx - 1, 1)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus()
-        showToast("◈  Quality: Level " .. idx)
-    else
-        showToast("✕  Cannot change quality in this executor")
-    end
+        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
+    else showToast("✕  Cannot change quality") end
 end
 
 local function captureLightingOriginals()
     if miscState.lightingOriginal then return end
     miscState.lightingOriginal = {
-        ClockTime = Lighting.ClockTime,
-        Brightness = Lighting.Brightness,
-        Ambient = Lighting.Ambient,
-        OutdoorAmbient = Lighting.OutdoorAmbient,
-        ColorShift_Top = Lighting.ColorShift_Top,
-        ColorShift_Bottom = Lighting.ColorShift_Bottom,
-        FogEnd = Lighting.FogEnd,
-        FogStart = Lighting.FogStart,
+        ClockTime = Lighting.ClockTime, Brightness = Lighting.Brightness,
+        Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient,
+        ColorShift_Top = Lighting.ColorShift_Top, ColorShift_Bottom = Lighting.ColorShift_Bottom,
+        FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart,
     }
 end
 
 local function applyNight()
     captureLightingOriginals()
     pcall(function()
-        Lighting.ClockTime = 0
-        Lighting.Brightness = 0.5
+        Lighting.ClockTime = 0; Lighting.Brightness = 0.5
         Lighting.Ambient = Color3.fromRGB(20, 20, 40)
         Lighting.OutdoorAmbient = Color3.fromRGB(30, 30, 60)
         Lighting.ColorShift_Top = Color3.fromRGB(30, 40, 80)
         Lighting.ColorShift_Bottom = Color3.fromRGB(10, 10, 20)
-        Lighting.FogEnd = 500
-        Lighting.FogStart = 50
+        Lighting.FogEnd = 500; Lighting.FogStart = 50
     end)
     showToast("◈  Night applied (local only)")
 end
@@ -2567,75 +2504,52 @@ end
 local function applyDay()
     captureLightingOriginals()
     pcall(function()
-        Lighting.ClockTime = 14
-        Lighting.Brightness = 2
+        Lighting.ClockTime = 14; Lighting.Brightness = 2
         Lighting.Ambient = Color3.fromRGB(128, 128, 128)
         Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
         Lighting.ColorShift_Top = Color3.fromRGB(0, 0, 0)
         Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
-        Lighting.FogEnd = 10000
-        Lighting.FogStart = 0
+        Lighting.FogEnd = 10000; Lighting.FogStart = 0
     end)
     showToast("◈  Day applied (local only)")
 end
 
 local teleportBusy = false
-
 local function showConfirm(titleText, messageText, onConfirm)
     local overlay = create("Frame", {
         Size = UDim2.fromScale(1, 1),
         BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-        BackgroundTransparency = 0.5,
-        BorderSizePixel = 0, ZIndex = 200,
+        BackgroundTransparency = 0.5, BorderSizePixel = 0, ZIndex = 200,
     }, screenGui)
-
     local modal = create("Frame", {
         Size = UDim2.fromOffset(260, 150),
         Position = UDim2.new(0.5, -130, 0.5, -75),
-        BackgroundColor3 = THEME.BG_PANEL,
-        BorderSizePixel = 0, ZIndex = 201,
+        BackgroundColor3 = THEME.BG_PANEL, BorderSizePixel = 0, ZIndex = 201,
     }, overlay)
-    addCorner(12, modal)
-    addStroke(THEME.P_BRIGHT, 1.5, 0.15, modal)
-
+    addCorner(12, modal); addStroke(THEME.P_BRIGHT, 1.5, 0.15, modal)
     create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 24),
-        Position = UDim2.new(0, 12, 0, 12),
-        BackgroundTransparency = 1,
-        Text = titleText, Font = FONT.Bold, TextSize = 14,
-        TextColor3 = THEME.TX_MAIN,
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202,
+        Size = UDim2.new(1, -24, 0, 24), Position = UDim2.new(0, 12, 0, 12),
+        BackgroundTransparency = 1, Text = titleText, Font = FONT.Bold, TextSize = 14,
+        TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 202,
     }, modal)
-
     create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 48),
-        Position = UDim2.new(0, 12, 0, 40),
-        BackgroundTransparency = 1,
-        Text = messageText, Font = FONT.Regular, TextSize = 10,
-        TextColor3 = THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 202,
+        Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 40),
+        BackgroundTransparency = 1, Text = messageText, Font = FONT.Regular, TextSize = 10,
+        TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true, ZIndex = 202,
     }, modal)
-
     local cancelBtn = create("TextButton", {
-        Size = UDim2.new(0.5, -18, 0, 34),
-        Position = UDim2.new(0, 12, 1, -46),
-        BackgroundColor3 = THEME.BG_CARD_HI,
-        AutoButtonColor = false, Text = "Cancel",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM,
-        ZIndex = 202,
+        Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0, 12, 1, -46),
+        BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false, Text = "Cancel",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM, ZIndex = 202,
     }, modal)
     addCorner(8, cancelBtn); addStroke(THEME.BORDER, 1, 0.3, cancelBtn)
-
     local confirmBtn = create("TextButton", {
-        Size = UDim2.new(0.5, -18, 0, 34),
-        Position = UDim2.new(0.5, 6, 1, -46),
-        BackgroundColor3 = THEME.P_MAIN,
-        AutoButtonColor = false, Text = "Confirm",
-        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN,
-        ZIndex = 202,
+        Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0.5, 6, 1, -46),
+        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false, Text = "Confirm",
+        Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN, ZIndex = 202,
     }, modal)
     addCorner(8, confirmBtn); addStroke(THEME.P_GLOW, 1.5, 0.2, confirmBtn)
-
     cancelBtn.MouseButton1Click:Connect(function() pcall(function() overlay:Destroy() end) end)
     confirmBtn.MouseButton1Click:Connect(function()
         pcall(function() overlay:Destroy() end)
@@ -2645,46 +2559,28 @@ end
 
 local function changeServer()
     if teleportBusy then return end
-    showConfirm(
-        "Change Server",
-        "You will be teleported to a new server of this game. Session state will be lost.",
+    showConfirm("Change Server", "You will be teleported to a new server.",
         function()
-            teleportBusy = true
-            showToast("◈  Finding new server…")
-            local ok, err = pcall(function()
-                TeleportService:Teleport(game.PlaceId, localPlayer)
-            end)
-            if not ok then
-                showToast("✕  Teleport failed: " .. tostring(err))
-                teleportBusy = false
-            end
+            teleportBusy = true; showToast("◈  Finding new server…")
+            local ok, err = pcall(function() TeleportService:Teleport(game.PlaceId, localPlayer) end)
+            if not ok then showToast("✕  " .. tostring(err)); teleportBusy = false end
             task.delay(3, function() teleportBusy = false end)
-        end
-    )
+        end)
 end
 
 local function rejoinServer()
     if teleportBusy then return end
-    showConfirm(
-        "Rejoin Server",
-        "You will rejoin this same server. Session state will be lost.",
+    showConfirm("Rejoin Server", "You will rejoin this same server.",
         function()
-            teleportBusy = true
-            showToast("◈  Rejoining server…")
+            teleportBusy = true; showToast("◈  Rejoining server…")
             local ok, err = pcall(function()
                 if game.JobId and game.JobId ~= "" then
                     TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
-                else
-                    TeleportService:Teleport(game.PlaceId, localPlayer)
-                end
+                else TeleportService:Teleport(game.PlaceId, localPlayer) end
             end)
-            if not ok then
-                showToast("✕  Rejoin failed: " .. tostring(err))
-                teleportBusy = false
-            end
+            if not ok then showToast("✕  " .. tostring(err)); teleportBusy = false end
             task.delay(3, function() teleportBusy = false end)
-        end
-    )
+        end)
 end
 
 local function toggleInfiniteZoom(enabled)
@@ -2698,19 +2594,14 @@ local function toggleInfiniteZoom(enabled)
             localPlayer.CameraMaxZoomDistance = 10000
             localPlayer.CameraMinZoomDistance = 0.1
         end)
-        if ok then
-            miscState.zoomActive = true
-            showToast("◉  Infinite Zoom ON (local only)")
-        else
-            showToast("✕  Camera locked by game")
-        end
+        if ok then miscState.zoomActive = true; showToast("◉  Infinite Zoom ON")
+        else showToast("✕  Camera locked") end
     else
         pcall(function()
             localPlayer.CameraMaxZoomDistance = miscState.zoomOriginalMax or 400
             localPlayer.CameraMinZoomDistance = miscState.zoomOriginalMin or 0.5
         end)
-        miscState.zoomActive = false
-        showToast("◉  Infinite Zoom OFF")
+        miscState.zoomActive = false; showToast("◉  Infinite Zoom OFF")
     end
 end
 
@@ -2721,18 +2612,12 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscRow(miscPage, miscOrder(),
-    "▲  Increase Quality", "▼  Decrease Quality",
-    increaseQuality, decreaseQuality
-)
+createMiscRow(miscPage, miscOrder(), "▲  Increase Quality", "▼  Decrease Quality", increaseQuality, decreaseQuality)
 
 qualityStatusLbl = create("TextLabel", {
-    Size = UDim2.new(1, 0, 0, 20),
-    BackgroundTransparency = 1,
-    Text = "◈ Current: —",
-    Font = FONT.Medium, TextSize = 10,
-    TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Center,
+    Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1,
+    Text = "◈ Current: —", Font = FONT.Medium, TextSize = 10,
+    TextColor3 = THEME.TX_SUBTLE, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 updateQualityStatus()
@@ -2744,14 +2629,11 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscRow(miscPage, miscOrder(),
-    "☾  Night", "☀  Day",
-    applyNight, applyDay
-)
+createMiscRow(miscPage, miscOrder(), "☾  Night", "☀  Day", applyNight, applyDay)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Lighting changes are local-only. Other players see their own time.",
+    Text = "⚠ Lighting changes are local-only.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -2764,15 +2646,12 @@ create("TextLabel", {
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscButton(miscPage, miscOrder(),
-    "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
-
-createMiscButton(miscPage, miscOrder(),
-    "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
+createMiscButton(miscPage, miscOrder(), "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
+createMiscButton(miscPage, miscOrder(), "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Teleporting will disconnect you — session state is lost.",
+    Text = "⚠ Teleporting will disconnect you.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -2786,15 +2665,11 @@ create("TextLabel", {
 }, miscPage)
 
 createPlayerToggle(miscPage, miscOrder(),
-    "◉ Infinite Zoom",
-    "Extends camera max distance (local only)",
-    false,
-    toggleInfiniteZoom
-)
+    "◉ Infinite Zoom", "Extends camera max distance", false, toggleInfiniteZoom)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Some games clamp zoom distance — effect may be limited.",
+    Text = "⚠ Some games clamp zoom distance.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -2803,9 +2678,7 @@ create("TextLabel", {
 _G.LYNEX_CLEANUP_MISC = function()
     if miscState.lightingOriginal then
         pcall(function()
-            for k, v in pairs(miscState.lightingOriginal) do
-                Lighting[k] = v
-            end
+            for k, v in pairs(miscState.lightingOriginal) do Lighting[k] = v end
         end)
         miscState.lightingOriginal = nil
     end
@@ -2818,14 +2691,12 @@ _G.LYNEX_CLEANUP_MISC = function()
     end
     if miscState.qualityCaptured and miscState.qualityOriginal then
         local s = getUserGameSettings()
-        if s then
-            pcall(function() s.SavedQualityLevel = miscState.qualityOriginal end)
-        end
+        if s then pcall(function() s.SavedQualityLevel = miscState.qualityOriginal end) end
     end
 end
 
 --==================================================================
--- 16.10) Anti-strike Page — DEFENSIVE WRAP
+-- 16.10) Anti-strike Page
 --==================================================================
 print("[LYNEX] Section 16.10 — Anti-strike loading...")
 
@@ -2841,9 +2712,8 @@ do
         }, antiStrikePage)
 
         local asHeaderCard = create("Frame", {
-            Size = UDim2.new(1, 0, 0, 86),
-            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+            Size = UDim2.new(1, 0, 0, 86), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
         }, antiStrikePage)
         addCorner(12, asHeaderCard); addStroke(THEME.BORDER, 1, 0.15, asHeaderCard)
 
@@ -2851,8 +2721,7 @@ do
             Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
             BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
         }, asHeaderCard)
-        addCorner(30, asIconFrame)
-        addStroke(THEME.P_GLOW, 1.5, 0.2, asIconFrame)
+        addCorner(30, asIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, asIconFrame)
         addGradient(asIconFrame, {
             ColorSequenceKeypoint.new(0, THEME.P_MAIN),
             ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
@@ -2871,16 +2740,14 @@ do
         }, asHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-            BackgroundTransparency = 1,
-            Text = "Show and run the Anti-strike Script in supported games. Load the external script to activate.",
+            BackgroundTransparency = 1, Text = "Show and run the Anti-strike Script.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asHeaderCard)
 
         local asActionCard = create("Frame", {
-            Size = UDim2.new(1, 0, 0, 114),
-            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+            Size = UDim2.new(1, 0, 0, 114), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
         }, antiStrikePage)
         addCorner(12, asActionCard); addStroke(THEME.BORDER, 1, 0.15, asActionCard)
 
@@ -2895,8 +2762,7 @@ do
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
             Text = "◈  Show Anti-strike Script",
-            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-            TextScaled = false, ZIndex = 5,
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
         }, asActionCard)
         addCorner(10, asLoadBtn)
         local asLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, asLoadBtn)
@@ -2908,16 +2774,14 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-            BackgroundTransparency = 1,
-            Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, asActionCard)
 
         local asInstrCard = create("Frame", {
-            Size = UDim2.new(1, 0, 0, 146),
-            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+            Size = UDim2.new(1, 0, 0, 146), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
         }, antiStrikePage)
         addCorner(12, asInstrCard); addStroke(THEME.BORDER, 1, 0.15, asInstrCard)
 
@@ -2929,28 +2793,24 @@ do
         }, asInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-            BackgroundTransparency = 1,
-            Text = "Press the button above to show and run the Anti-strike Script.",
+            BackgroundTransparency = 1, Text = "Press the button above to show and run the Anti-strike Script.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-            BackgroundTransparency = 1,
-            Text = "لتفعيل السكربت اضغط على هذا الزر",
+            BackgroundTransparency = 1, Text = "لتفعيل السكربت اضغط على هذا الزر",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+            BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
 
         local asLoadBusy = false
-
         local function setAsStatus(text, color)
             asStatus.Text = text
             asStatus.TextColor3 = color or THEME.TX_DIM
@@ -2959,18 +2819,15 @@ do
         asLoadBtn.MouseButton1Click:Connect(function()
             if asLoadBusy then return end
             asLoadBusy = true
-            local origText = "◈  Show Anti-strike Script"
-            local origBg = THEME.P_MAIN
+            local origText, origBg = "◈  Show Anti-strike Script", THEME.P_MAIN
             asLoadBtn.Text = "⏳  Loading…"
             asLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
             setAsStatus("⏳  Fetching script…", THEME.TX_DIM)
-
             task.spawn(function()
-                local success = false
-                local errMsg = nil
+                local success, errMsg = false, nil
                 local ok, ret1, ret2 = pcall(function()
                     local body = fetchUrl(ANTI_STRIKE_URL)
-                    if not body then return false, "Download failed — check URL or executor HTTP" end
+                    if not body then return false, "Download failed" end
                     if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
                     local fn, compileErr = loadstring(body)
                     if not fn then return false, "Compile error: " .. tostring(compileErr) end
@@ -2980,9 +2837,7 @@ do
                 end)
                 if ok then
                     if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-                else
-                    errMsg = tostring(ret1)
-                end
+                else errMsg = tostring(ret1) end
                 task.wait(0.25)
                 asLoadBusy = false
                 asLoadBtn.Text = origText
@@ -2997,20 +2852,17 @@ do
                 end
             end)
         end)
-
         styleActionButton(asLoadBtn, asLoadStroke)
     end)
 
-    if okAntiStrike then
-        print("[LYNEX] ✓ Anti-strike section loaded OK")
+    if okAntiStrike then print("[LYNEX] ✓ Anti-strike section loaded OK")
     else
         warn("[LYNEX] ✗ Anti-strike section FAILED:", errAntiStrike)
         if not antiStrikePage then
             antiStrikePage = createPage("antistrike", true)
             create("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 80),
-                BackgroundTransparency = 1,
-                Text = "⚠ تعذّر تحميل تبويب Anti-strike:\n\n" .. tostring(errAntiStrike),
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Anti-strike tab:\n\n" .. tostring(errAntiStrike),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, antiStrikePage)
@@ -3019,7 +2871,7 @@ do
 end
 
 --==================================================================
--- 16.11) Chat Page — DEFENSIVE WRAP
+-- 16.11) Chat Page
 --==================================================================
 print("[LYNEX] Section 16.11 — Chat loading...")
 
@@ -3035,9 +2887,8 @@ do
         }, chatPage)
 
         local chHeaderCard = create("Frame", {
-            Size = UDim2.new(1, 0, 0, 86),
-            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+            Size = UDim2.new(1, 0, 0, 86), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
         }, chatPage)
         addCorner(12, chHeaderCard); addStroke(THEME.BORDER, 1, 0.15, chHeaderCard)
 
@@ -3045,8 +2896,7 @@ do
             Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
             BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
         }, chHeaderCard)
-        addCorner(30, chIconFrame)
-        addStroke(THEME.P_GLOW, 1.5, 0.2, chIconFrame)
+        addCorner(30, chIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, chIconFrame)
         addGradient(chIconFrame, {
             ColorSequenceKeypoint.new(0, THEME.P_MAIN),
             ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
@@ -3065,16 +2915,14 @@ do
         }, chHeaderCard)
         create("TextLabel", {
             Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-            BackgroundTransparency = 1,
-            Text = "Show and run the Chat Script in supported games. Load the external script to activate.",
+            BackgroundTransparency = 1, Text = "Show and run the Chat Script.",
             Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chHeaderCard)
 
         local chActionCard = create("Frame", {
-            Size = UDim2.new(1, 0, 0, 114),
-            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+            Size = UDim2.new(1, 0, 0, 114), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
         }, chatPage)
         addCorner(12, chActionCard); addStroke(THEME.BORDER, 1, 0.15, chActionCard)
 
@@ -3089,8 +2937,7 @@ do
             Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
             BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
             Text = "◈  Show Chat Script",
-            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-            TextScaled = false, ZIndex = 5,
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
         }, chActionCard)
         addCorner(10, chLoadBtn)
         local chLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, chLoadBtn)
@@ -3102,16 +2949,14 @@ do
 
         create("TextLabel", {
             Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-            BackgroundTransparency = 1,
-            Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, chActionCard)
 
         local chInstrCard = create("Frame", {
-            Size = UDim2.new(1, 0, 0, 146),
-            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+            Size = UDim2.new(1, 0, 0, 146), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
         }, chatPage)
         addCorner(12, chInstrCard); addStroke(THEME.BORDER, 1, 0.15, chInstrCard)
 
@@ -3123,28 +2968,24 @@ do
         }, chInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-            BackgroundTransparency = 1,
-            Text = "Press the button above to show and run the Chat Script.",
+            BackgroundTransparency = 1, Text = "Press the button above to show and run the Chat Script.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-            BackgroundTransparency = 1,
-            Text = "لتفعيل السكربت اضغط على هذا الزر",
+            BackgroundTransparency = 1, Text = "لتفعيل السكربت اضغط على هذا الزر",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
         create("TextLabel", {
             Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+            BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
             Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
 
         local chLoadBusy = false
-
         local function setChStatus(text, color)
             chStatus.Text = text
             chStatus.TextColor3 = color or THEME.TX_DIM
@@ -3153,18 +2994,15 @@ do
         chLoadBtn.MouseButton1Click:Connect(function()
             if chLoadBusy then return end
             chLoadBusy = true
-            local origText = "◈  Show Chat Script"
-            local origBg = THEME.P_MAIN
+            local origText, origBg = "◈  Show Chat Script", THEME.P_MAIN
             chLoadBtn.Text = "⏳  Loading…"
             chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
             setChStatus("⏳  Fetching script…", THEME.TX_DIM)
-
             task.spawn(function()
-                local success = false
-                local errMsg = nil
+                local success, errMsg = false, nil
                 local ok, ret1, ret2 = pcall(function()
                     local body = fetchUrl(CHAT_URL)
-                    if not body then return false, "Download failed — check URL or executor HTTP" end
+                    if not body then return false, "Download failed" end
                     if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
                     local fn, compileErr = loadstring(body)
                     if not fn then return false, "Compile error: " .. tostring(compileErr) end
@@ -3174,9 +3012,7 @@ do
                 end)
                 if ok then
                     if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-                else
-                    errMsg = tostring(ret1)
-                end
+                else errMsg = tostring(ret1) end
                 task.wait(0.25)
                 chLoadBusy = false
                 chLoadBtn.Text = origText
@@ -3191,20 +3027,17 @@ do
                 end
             end)
         end)
-
         styleActionButton(chLoadBtn, chLoadStroke)
     end)
 
-    if okChat then
-        print("[LYNEX] ✓ Chat section loaded OK")
+    if okChat then print("[LYNEX] ✓ Chat section loaded OK")
     else
         warn("[LYNEX] ✗ Chat section FAILED:", errChat)
         if not chatPage then
             chatPage = createPage("chat", true)
             create("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 80),
-                BackgroundTransparency = 1,
-                Text = "⚠ تعذّر تحميل تبويب Chat:\n\n" .. tostring(errChat),
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Chat tab:\n\n" .. tostring(errChat),
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, chatPage)
@@ -3528,9 +3361,7 @@ local function loadPlayerProfile()
     uidLbl.Text = tostring(userId)
     if okAge and typeof(accountAge) == "number" then
         ageLbl.Text = tostring(accountAge) .. " days"
-    else
-        ageLbl.Text = "N/A"
-    end
+    else ageLbl.Text = "N/A" end
 end
 loadPlayerProfile()
 
@@ -3615,4 +3446,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.4] ✦ Ready — Mazrouk tab added")
+print("[LYNEX HUB v3.4] ✦ Ready — fetchUrl FIXED for Delta")
