@@ -1,7 +1,7 @@
 --!nonstrict
 --==================================================================
 --  ✦ LYNEX HUB v3.4 ✦
---  Home • Players • Player • Auto Fish • Uncle Mazrouk • Car • Misc • Anti-strike • Chat • News • Settings
+--  Home • Players • Player • Auto Fish • Car • Mazrouk • Misc • Anti-strike • Chat • News • Settings
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -294,7 +294,7 @@ local closeBtn = create("TextButton", {
 addCorner(8, closeBtn); addStroke(THEME.DANGER, 1, 0.3, closeBtn)
 
 --==================================================================
--- 9) Body / Sidebar / Content
+-- 9) Body / Sidebar (scrollable) / Content
 --==================================================================
 local body = create("Frame", {
     Name = "Body", Size = UDim2.new(1, 0, 1, -headerH),
@@ -339,20 +339,20 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs
+-- 10) Tabs  ← Mazrouk مُضاف هنا
 --==================================================================
 local TABS = {
-    { id = "home",         name = "Home",          icon = "⌂"  },
-    { id = "players",      name = "Players",       icon = "◉"  },
-    { id = "player",       name = "Player",        icon = "●"  },
-    { id = "autofish",     name = "Auto Fish",     icon = "≋"  },
-    { id = "unclemazrouk", name = "Uncle Mazrouk", icon = "✦"  },
-    { id = "car",          name = "Car",           icon = "🚗" },
-    { id = "misc",         name = "Misc",          icon = "⚒"  },
-    { id = "antistrike",   name = "Anti-strike",   icon = "⛨" },
-    { id = "chat",         name = "Chat",          icon = "✎"  },
-    { id = "news",         name = "News",          icon = "✉"  },
-    { id = "settings",     name = "Settings",      icon = "⚙"  },
+    { id = "home",         name = "Home",         icon = "⌂"  },
+    { id = "players",      name = "Players",      icon = "◉"  },
+    { id = "player",       name = "Player",       icon = "●"  },
+    { id = "autofish",     name = "Auto Fish",    icon = "≋"  },
+    { id = "car",          name = "Car",          icon = "🚗" },
+    { id = "unclemazrouk", name = "Mazrouk",      icon = "✦"  },
+    { id = "misc",         name = "Misc",         icon = "⚒"  },
+    { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
+    { id = "chat",         name = "Chat",         icon = "✎"  },
+    { id = "news",         name = "News",         icon = "✉"  },
+    { id = "settings",     name = "Settings",     icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -1087,12 +1087,12 @@ local NEWS_DATA = {
     { title = "Teleport Button", body = "New Teleport button next to Spectate lets you travel to any player — compliant with in-game movement rules.", date = "2025-02-22" },
     { title = "Player Tab", body = "New Player tab with Movement, Special Movement and Visuals — speed, jump, flight, gravity, rotation, infinite jump, swimming, iPad view, invisible.", date = "2025-03-01" },
     { title = "Server Info + Auto Fish", body = "Home now shows live Server Information. New Auto Fish tab loads the fishing script on demand.", date = "2025-03-08" },
-    { title = "Uncle Mazrouk Tab", body = "New Uncle Mazrouk tab added. Load and run the Uncle Mazrouk Script on demand.", date = "2025-03-12" },
     { title = "Car Script Tab", body = "New Car tab added. Load and run the Car Script on demand — mobile friendly with press animations.", date = "2025-03-15" },
     { title = "Misc Tab", body = "New Misc tab: Graphics quality, Night/Day lighting, Change/Rejoin Server, and Infinite Zoom — all client-side.", date = "2025-03-22" },
     { title = "Anti-strike Tab", body = "New Anti-strike tab added. Load and run the Anti-strike Script on demand — same design and workflow as Car.", date = "2025-03-29" },
     { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable. All tabs including Settings are always reachable regardless of screen size.", date = "2025-04-05" },
     { title = "Chat Tab", body = "New Chat tab added. Load and run the Chat Script on demand — same defensive pattern as Anti-strike.", date = "2025-04-12" },
+    { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added. Load and run the Uncle Mazrouk Script on demand — same workflow and mobile-friendly design.", date = "2025-04-19" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1953,183 +1953,6 @@ end)
 styleActionButton(afLoadBtn, afLoadStroke)
 
 --==================================================================
--- 16.8b) Uncle Mazrouk Page
---==================================================================
-local UNCLE_MAZROUK_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Uncle%20Mazrouk"
-
-local unclePage = createPage("unclemazrouk", true)
-create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, unclePage)
-create("UIPadding", {
-    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
-}, unclePage)
-
-local umHeaderCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 86),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
-}, unclePage)
-addCorner(12, umHeaderCard); addStroke(THEME.BORDER, 1, 0.15, umHeaderCard)
-
-local umIconFrame = create("Frame", {
-    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
-    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-}, umHeaderCard)
-addCorner(30, umIconFrame)
-addStroke(THEME.P_GLOW, 1.5, 0.2, umIconFrame)
-addGradient(umIconFrame, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
-}, 45)
-create("TextLabel", {
-    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-    Text = "✦", Font = FONT.Logo, TextSize = 28,
-    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-}, umIconFrame)
-
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Uncle Mazrouk",
-    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umHeaderCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-    BackgroundTransparency = 1,
-    Text = "Uncle Mazrouk Script — a special tool for an easier and faster experience in supported games. Click the load button to run the script and use its features.",
-    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umHeaderCard)
-
-local umActionCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 114),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
-}, unclePage)
-addCorner(12, umActionCard); addStroke(THEME.BORDER, 1, 0.15, umActionCard)
-
-local umStatus = create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
-    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umActionCard)
-
-local umLoadBtn = create("TextButton", {
-    Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  Load Uncle Mazrouk Script",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
-    TextScaled = false, ZIndex = 5,
-}, umActionCard)
-addCorner(10, umLoadBtn)
-local umLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, umLoadBtn)
-addGradient(umLoadBtn, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
-    ColorSequenceKeypoint.new(1, THEME.P_MAIN),
-}, 90)
-
-create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-    BackgroundTransparency = 1,
-    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umActionCard)
-
-local umInstrCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 146),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
-}, unclePage)
-addCorner(12, umInstrCard); addStroke(THEME.BORDER, 1, 0.15, umInstrCard)
-
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
-    Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, umInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundTransparency = 1,
-    Text = "Press the button above to load and run the Uncle Mazrouk script.",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-    BackgroundTransparency = 1,
-    Text = "Press the button above to load and run the Uncle Mazrouk script.",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-    BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, umInstrCard)
-
-local umLoadBusy = false
-
-local function setUmStatus(text, color)
-    umStatus.Text = text
-    umStatus.TextColor3 = color or THEME.TX_DIM
-end
-
-umLoadBtn.MouseButton1Click:Connect(function()
-    if umLoadBusy then return end
-    umLoadBusy = true
-
-    local origText = "◈  Load Uncle Mazrouk Script"
-    local origBg = THEME.P_MAIN
-
-    umLoadBtn.Text = "⏳  Loading…"
-    umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setUmStatus("⏳  Fetching script…", THEME.TX_DIM)
-
-    task.spawn(function()
-        local success = false
-        local errMsg = nil
-
-        local ok, ret1, ret2 = pcall(function()
-            local body = fetchUrl(UNCLE_MAZROUK_URL)
-            if not body then return false, "Download failed — check URL or executor HTTP" end
-            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
-            local fn, compileErr = loadstring(body)
-            if not fn then return false, "Compile error: " .. tostring(compileErr) end
-            local runOk, runErr = pcall(fn)
-            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
-            return true
-        end)
-
-        if ok then
-            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-        else
-            errMsg = tostring(ret1)
-        end
-
-        task.wait(0.25)
-        umLoadBusy = false
-        umLoadBtn.Text = origText
-        umLoadBtn.BackgroundColor3 = origBg
-
-        if success then
-            setUmStatus("✓  Uncle Mazrouk Script executed successfully", THEME.OK)
-            showToast("✓  Uncle Mazrouk loaded")
-        else
-            warn("[LYNEX Uncle Mazrouk] Failed:", errMsg)
-            setUmStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "Unknown error"))
-        end
-    end)
-end)
-
-styleActionButton(umLoadBtn, umLoadStroke)
-
---==================================================================
 -- 16.8) Car Page
 --==================================================================
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
@@ -2305,6 +2128,183 @@ carLoadBtn.MouseButton1Click:Connect(function()
 end)
 
 styleActionButton(carLoadBtn, carLoadStroke)
+
+--==================================================================
+-- 16.8b) Uncle Mazrouk Page
+--==================================================================
+local UNCLE_MAZROUK_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Uncle%20Mazrouk"
+
+local unclePage = createPage("unclemazrouk", true)
+create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, unclePage)
+create("UIPadding", {
+    PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+}, unclePage)
+
+local umHeaderCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 86),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+}, unclePage)
+addCorner(12, umHeaderCard); addStroke(THEME.BORDER, 1, 0.15, umHeaderCard)
+
+local umIconFrame = create("Frame", {
+    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+}, umHeaderCard)
+addCorner(30, umIconFrame)
+addStroke(THEME.P_GLOW, 1.5, 0.2, umIconFrame)
+addGradient(umIconFrame, {
+    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+}, 45)
+create("TextLabel", {
+    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+    Text = "✦", Font = FONT.Logo, TextSize = 28,
+    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+}, umIconFrame)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+    BackgroundTransparency = 1, Text = "Uncle Mazrouk",
+    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umHeaderCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+    BackgroundTransparency = 1,
+    Text = "Uncle Mazrouk Script — a special tool for an easier and faster experience in supported games. Click the load button to run the script and use its features.",
+    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umHeaderCard)
+
+local umActionCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 114),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+}, unclePage)
+addCorner(12, umActionCard); addStroke(THEME.BORDER, 1, 0.15, umActionCard)
+
+local umStatus = create("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umActionCard)
+
+local umLoadBtn = create("TextButton", {
+    Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+    BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+    Text = "◈  Load Uncle Mazrouk Script",
+    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN,
+    TextScaled = false, ZIndex = 5,
+}, umActionCard)
+addCorner(10, umLoadBtn)
+local umLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, umLoadBtn)
+addGradient(umLoadBtn, {
+    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+    ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+    ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+}, 90)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+    BackgroundTransparency = 1,
+    Text = "⚠ Requires HTTP + loadstring (Delta / Fluxus / Synapse)",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umActionCard)
+
+local umInstrCard = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 146),
+    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+    BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+}, unclePage)
+addCorner(12, umInstrCard); addStroke(THEME.BORDER, 1, 0.15, umInstrCard)
+
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+    Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+}, umInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+    BackgroundTransparency = 1,
+    Text = "Press the button above to load and run the Uncle Mazrouk script.",
+    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+    BackgroundTransparency = 1,
+    Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت أبو مزورق.",
+    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umInstrCard)
+create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+    BackgroundTransparency = 1,
+    Text = "⚠ Loading is disabled in Studio without HttpEnabled. Use a real executor.",
+    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+}, umInstrCard)
+
+local umLoadBusy = false
+
+local function setUmStatus(text, color)
+    umStatus.Text = text
+    umStatus.TextColor3 = color or THEME.TX_DIM
+end
+
+umLoadBtn.MouseButton1Click:Connect(function()
+    if umLoadBusy then return end
+    umLoadBusy = true
+
+    local origText = "◈  Load Uncle Mazrouk Script"
+    local origBg = THEME.P_MAIN
+
+    umLoadBtn.Text = "⏳  Loading…"
+    umLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+    setUmStatus("⏳  Fetching script…", THEME.TX_DIM)
+
+    task.spawn(function()
+        local success = false
+        local errMsg = nil
+
+        local ok, ret1, ret2 = pcall(function()
+            local body = fetchUrl(UNCLE_MAZROUK_URL)
+            if not body then return false, "Download failed — check URL or executor HTTP" end
+            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+            local fn, compileErr = loadstring(body)
+            if not fn then return false, "Compile error: " .. tostring(compileErr) end
+            local runOk, runErr = pcall(fn)
+            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+            return true
+        end)
+
+        if ok then
+            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+        else
+            errMsg = tostring(ret1)
+        end
+
+        task.wait(0.25)
+        umLoadBusy = false
+        umLoadBtn.Text = origText
+        umLoadBtn.BackgroundColor3 = origBg
+
+        if success then
+            setUmStatus("✓  Uncle Mazrouk Script executed successfully", THEME.OK)
+            showToast("✓  Uncle Mazrouk loaded")
+        else
+            warn("[LYNEX Uncle Mazrouk] Failed:", errMsg)
+            setUmStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+            showToast("✕  " .. (errMsg or "Unknown error"))
+        end
+    end)
+end)
+
+styleActionButton(umLoadBtn, umLoadStroke)
 
 --==================================================================
 -- 16.9) Misc Page
@@ -3615,4 +3615,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.4] ✦ Ready — Uncle Mazrouk tab added")
+print("[LYNEX HUB v3.4] ✦ Ready — Mazrouk tab added")
