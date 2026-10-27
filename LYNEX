@@ -341,7 +341,7 @@ local TABS = {
     { id = "player",       name = "Player",       icon = "●"  },
     { id = "autofish",     name = "Auto Fish",    icon = "≋"  },
     { id = "car",          name = "Car",          icon = "🚗" },
-    { id = "unclemazrouk", name = "Mazrouk",      icon = "✦"  },
+    { id = "unclemazrouk", name = "Abu Marzouk",      icon = "✦"  },
     { id = "misc",         name = "Misc",         icon = "⚒"  },
     { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
     { id = "chat",         name = "Chat",         icon = "✎"  },
