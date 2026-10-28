@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.5 ✦  — MOBILE FIX + ADMIN TAB
+--  ✦ LYNEX HUB v3.5 ✦  — MOBILE FIX + ADMIN + TRANSFERS TAB
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -332,7 +332,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs  (⭐ Admin مضاف هنا)
+-- 10) Tabs
 --==================================================================
 local TABS = {
     { id = "home",         name = "Home",         icon = "⌂"  },
@@ -341,7 +341,8 @@ local TABS = {
     { id = "autofish",     name = "Auto Fish",    icon = "≋"  },
     { id = "car",          name = "Car",          icon = "🚗" },
     { id = "unclemazrouk", name = "Mazrouk",      icon = "✦"  },
-    { id = "admin",        name = "Admin",        icon = "★"  },  -- ⭐ جديد
+    { id = "admin",        name = "Admin",        icon = "★"  },
+    { id = "transfers",    name = "Transfers",    icon = "⇄"  },  -- ⭐ جديد
     { id = "misc",         name = "Misc",         icon = "⚒"  },
     { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
     { id = "chat",         name = "Chat",         icon = "✎"  },
@@ -1088,6 +1089,7 @@ local NEWS_DATA = {
     { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
     { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
     { title = "Admin Tab", body = "New Admin tab added.", date = "2025-05-01" },
+    { title = "Transfers Tab", body = "New Transfers tab added (⇄).", date = "2025-10-28" },
     { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
 }
 local newsCards = {}
@@ -2270,7 +2272,7 @@ do
 end
 
 --==================================================================
--- 16.8c) ⭐ Admin Page (NEW)
+-- 16.8c) ⭐ Admin Page
 --==================================================================
 print("[LYNEX] Section 16.8c — Admin loading...")
 
@@ -2427,6 +2429,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, adminPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8d) ⭐ Transfers Page (NEW)
+--==================================================================
+print("[LYNEX] Section 16.8d — Transfers loading...")
+
+do
+    local TRANSFERS_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Transfers"
+    local transfersPage
+    local okTransfers, errTransfers = pcall(function()
+        transfersPage = createPage("transfers", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, transfersPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, transfersPage)
+
+        local trHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, transfersPage)
+        addCorner(12, trHeaderCard); addStroke(THEME.BORDER, 1, 0.15, trHeaderCard)
+
+        local trIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, trHeaderCard)
+        addCorner(30, trIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, trIconFrame)
+        addGradient(trIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "⇄", Font = FONT.Logo, TextSize = 28,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, trIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Transfers Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, trHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Transfers Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, trHeaderCard)
+
+        local trActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, transfersPage)
+        addCorner(12, trActionCard); addStroke(THEME.BORDER, 1, 0.15, trActionCard)
+
+        local trStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, trActionCard)
+
+        local trLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Transfers Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, trActionCard)
+        addCorner(10, trLoadBtn)
+        local trLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, trLoadBtn)
+        addGradient(trLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, trActionCard)
+
+        local trInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, transfersPage)
+        addCorner(12, trInstrCard); addStroke(THEME.BORDER, 1, 0.15, trInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, trInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Transfers script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, trInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت التحويلات.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, trInstrCard)
+
+        local trLoadBusy = false
+        local function setTrStatus(text, color)
+            trStatus.Text = text
+            trStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        trLoadBtn.MouseButton1Click:Connect(function()
+            if trLoadBusy then return end
+            trLoadBusy = true
+            local origText = "◈  Load Transfers Script"
+            local origBg = THEME.P_MAIN
+            trLoadBtn.Text = "⏳  Loading…"
+            trLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setTrStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(TRANSFERS_URL))()
+                end)
+                task.wait(0.3)
+                trLoadBusy = false
+                trLoadBtn.Text = origText
+                trLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setTrStatus("✓  Transfers Script executed successfully", THEME.OK)
+                    showToast("✓  Transfers Script loaded")
+                else
+                    warn("[LYNEX Transfers] Failed:", err)
+                    setTrStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(trLoadBtn, trLoadStroke)
+    end)
+
+    if okTransfers then
+        print("[LYNEX] ✓ Transfers section loaded OK")
+    else
+        warn("[LYNEX] ✗ Transfers section FAILED:", errTransfers)
+        if not transfersPage then
+            transfersPage = createPage("transfers", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Transfers tab:\n\n" .. tostring(errTransfers),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, transfersPage)
         end
     end
 end
@@ -3601,4 +3765,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.5] ✦ Ready — Admin tab added (★)")
+print("[LYNEX HUB v3.5] ✦ Ready — Admin + Transfers tabs added (★ ⇄)")
