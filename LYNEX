@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.4 ✦  — MOBILE FIX (Forced PlayerGui + Instant Visibility)
+--  ✦ LYNEX HUB v3.5 ✦  — MOBILE FIX + ADMIN TAB
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -25,7 +25,6 @@ local screenGui, blurObj
 -- 1) Root resolver
 --==================================================================
 local function resolveGuiParent()
-    -- 📱 Mobile/Delta Fix: إجبار الواجهة على الظهور في PlayerGui
     return playerGui
 end
 
@@ -288,7 +287,7 @@ local closeBtn = create("TextButton", {
 addCorner(8, closeBtn); addStroke(THEME.DANGER, 1, 0.3, closeBtn)
 
 --==================================================================
--- 9) Body / Sidebar (scrollable) / Content
+-- 9) Body / Sidebar / Content
 --==================================================================
 local body = create("Frame", {
     Name = "Body", Size = UDim2.new(1, 0, 1, -headerH),
@@ -333,20 +332,21 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs
+-- 10) Tabs  (⭐ Admin مضاف هنا)
 --==================================================================
 local TABS = {
-    { id = "home",         name = "رائسيه",         icon = "⌂"  },
-    { id = "players",      name = "اللاعبين",      icon = "◉"  },
-    { id = "player",       name = "الاعب",       icon = "●"  },
-    { id = "autofish",     name = "صيد تلقائي",    icon = "≋"  },
-    { id = "car",          name = "تحكم السياره",          icon = "🚗" },
-    { id = "unclemazrouk", name = "ابو مرزوق",      icon = "✦"  },
-    { id = "misc",         name = "متنوع",         icon = "⚒"  },
-    { id = "antistrike",   name = "مضادات",  icon = "⛨" },
-    { id = "chat",         name = "مراقبة الشات",         icon = "✎"  },
-    { id = "news",         name = "الاخبار",         icon = "✉"  },
-    { id = "settings",     name = "اعدادات",     icon = "⚙"  },
+    { id = "home",         name = "Home",         icon = "⌂"  },
+    { id = "players",      name = "Players",      icon = "◉"  },
+    { id = "player",       name = "Player",       icon = "●"  },
+    { id = "autofish",     name = "Auto Fish",    icon = "≋"  },
+    { id = "car",          name = "Car",          icon = "🚗" },
+    { id = "unclemazrouk", name = "Mazrouk",      icon = "✦"  },
+    { id = "admin",        name = "Admin",        icon = "★"  },  -- ⭐ جديد
+    { id = "misc",         name = "Misc",         icon = "⚒"  },
+    { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
+    { id = "chat",         name = "Chat",         icon = "✎"  },
+    { id = "news",         name = "News",         icon = "✉"  },
+    { id = "settings",     name = "Settings",     icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -1087,6 +1087,7 @@ local NEWS_DATA = {
     { title = "Sidebar Scroll Fix", body = "Sidebar is now scrollable.", date = "2025-04-05" },
     { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
     { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
+    { title = "Admin Tab", body = "New Admin tab added.", date = "2025-05-01" },
     { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
 }
 local newsCards = {}
@@ -1730,14 +1731,10 @@ end
 --==================================================================
 local function fetchUrl(url)
     local body = nil
-
-    -- ⚡ Primary: direct game:HttpGet (works in Delta)
     local ok, res = pcall(function() return game:HttpGet(url) end)
     if ok and typeof(res) == "string" and #res > 0 then
         body = res
     end
-
-    -- Fallback: request / http_request with timeout (prevents Delta hang)
     if not body then
         local reqFunc = (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
             or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
@@ -1757,15 +1754,12 @@ local function fetchUrl(url)
             if resp then body = resp end
         end
     end
-
-    -- Fallback: HttpService
     if not body then
         local ok2, res2 = pcall(function()
             return game:GetService("HttpService"):GetAsync(url)
         end)
         if ok2 and typeof(res2) == "string" and res2 ~= "" then body = res2 end
     end
-
     if body then
         local head = body:sub(1, 200):lower()
         if head:find("404: not found", 1, true)
@@ -1776,7 +1770,6 @@ local function fetchUrl(url)
             return nil
         end
     end
-
     return body
 end
 
@@ -2272,6 +2265,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, unclePage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c) ⭐ Admin Page (NEW)
+--==================================================================
+print("[LYNEX] Section 16.8c — Admin loading...")
+
+do
+    local ADMIN_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/admin"
+    local adminPage
+    local okAdmin, errAdmin = pcall(function()
+        adminPage = createPage("admin", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, adminPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, adminPage)
+
+        local adHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, adminPage)
+        addCorner(12, adHeaderCard); addStroke(THEME.BORDER, 1, 0.15, adHeaderCard)
+
+        local adIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, adHeaderCard)
+        addCorner(30, adIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, adIconFrame)
+        addGradient(adIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "★", Font = FONT.Logo, TextSize = 28,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, adIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Admin Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, adHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Admin Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, adHeaderCard)
+
+        local adActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, adminPage)
+        addCorner(12, adActionCard); addStroke(THEME.BORDER, 1, 0.15, adActionCard)
+
+        local adStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, adActionCard)
+
+        local adLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Admin Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, adActionCard)
+        addCorner(10, adLoadBtn)
+        local adLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, adLoadBtn)
+        addGradient(adLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, adActionCard)
+
+        local adInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, adminPage)
+        addCorner(12, adInstrCard); addStroke(THEME.BORDER, 1, 0.15, adInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, adInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Admin script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, adInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت الأدمن.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, adInstrCard)
+
+        local adLoadBusy = false
+        local function setAdStatus(text, color)
+            adStatus.Text = text
+            adStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        adLoadBtn.MouseButton1Click:Connect(function()
+            if adLoadBusy then return end
+            adLoadBusy = true
+            local origText = "◈  Load Admin Script"
+            local origBg = THEME.P_MAIN
+            adLoadBtn.Text = "⏳  Loading…"
+            adLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setAdStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(ADMIN_URL))()
+                end)
+                task.wait(0.3)
+                adLoadBusy = false
+                adLoadBtn.Text = origText
+                adLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setAdStatus("✓  Admin Script executed successfully", THEME.OK)
+                    showToast("✓  Admin Script loaded")
+                else
+                    warn("[LYNEX Admin] Failed:", err)
+                    setAdStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(adLoadBtn, adLoadStroke)
+    end)
+
+    if okAdmin then
+        print("[LYNEX] ✓ Admin section loaded OK")
+    else
+        warn("[LYNEX] ✗ Admin section FAILED:", errAdmin)
+        if not adminPage then
+            adminPage = createPage("admin", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Admin tab:\n\n" .. tostring(errAdmin),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, adminPage)
         end
     end
 end
@@ -3425,20 +3580,18 @@ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 end)
 
 --==================================================================
--- 28) Startup (MOBILE FIX: Skip fade animation)
+-- 28) Startup
 --==================================================================
 switchTab("home")
 applyBlur()
 
 do
-    -- إجبار الواجهة على الظهور فوراً (بدون أنيميشن)
     root.Visible = true
     main.Visible = true
     main.BackgroundTransparency = 0.08
     mainStroke.Transparency = 0.15
     outerGlow.BackgroundTransparency = 0.85
-    
-    -- استعادة الشفافية الطبيعية لكل العناصر
+
     for obj, snap in pairs(origTransparency) do
         if obj and obj.Parent then
             for k, v in pairs(snap) do
@@ -3448,4 +3601,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.4] ✦ Ready — FORCED VISIBILITY (Mobile Fix)")
+print("[LYNEX HUB v3.5] ✦ Ready — Admin tab added (★)")
