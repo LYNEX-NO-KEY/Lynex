@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.6 ✦  — MOBILE FIX + ADMIN + TRANSFERS + PUMPKIN
+--  ✦ LYNEX HUB v3.7 ✦  — MOBILE FIX + ADMIN + TRANSFERS + PUMPKIN + AUTO CASH
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -344,6 +344,7 @@ local TABS = {
     { id = "admin",        name = "Admin",        icon = "★"  },
     { id = "transfers",    name = "Transfers",    icon = "⇄"  },
     { id = "pumpkin",      name = "Pumpkin",      icon = "🎃" },
+    { id = "autocash",     name = "Auto Cash",    icon = "💰" },
     { id = "misc",         name = "Misc",         icon = "⚒"  },
     { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
     { id = "chat",         name = "Chat",         icon = "✎"  },
@@ -1093,6 +1094,7 @@ local NEWS_DATA = {
     { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
     { title = "Transfers Tab", body = "New Transfers tab added (⇄).", date = "2025-10-28" },
     { title = "Pumpkin Tab", body = "New Pumpkin tab added (🎃).", date = "2025-10-28" },
+    { title = "Auto Cash Tab", body = "New Auto Cash tab added (💰).", date = "2025-10-28" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2760,6 +2762,168 @@ do
 end
 
 --==================================================================
+-- 16.8f) 💰 Auto Cash Page
+--==================================================================
+print("[LYNEX] Section 16.8f — Auto Cash loading...")
+
+do
+    local AUTOCASH_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Auto%20cash"
+    local autocashPage
+    local okAutocash, errAutocash = pcall(function()
+        autocashPage = createPage("autocash", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, autocashPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, autocashPage)
+
+        local acHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, autocashPage)
+        addCorner(12, acHeaderCard); addStroke(THEME.BORDER, 1, 0.15, acHeaderCard)
+
+        local acIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, acHeaderCard)
+        addCorner(30, acIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, acIconFrame)
+        addGradient(acIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "💰", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, acIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Auto Cash Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, acHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Auto Cash Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, acHeaderCard)
+
+        local acActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, autocashPage)
+        addCorner(12, acActionCard); addStroke(THEME.BORDER, 1, 0.15, acActionCard)
+
+        local acStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, acActionCard)
+
+        local acLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Auto Cash Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, acActionCard)
+        addCorner(10, acLoadBtn)
+        local acLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, acLoadBtn)
+        addGradient(acLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, acActionCard)
+
+        local acInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, autocashPage)
+        addCorner(12, acInstrCard); addStroke(THEME.BORDER, 1, 0.15, acInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, acInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Auto Cash script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, acInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Auto Cash.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, acInstrCard)
+
+        local acLoadBusy = false
+        local function setAcStatus(text, color)
+            acStatus.Text = text
+            acStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        acLoadBtn.MouseButton1Click:Connect(function()
+            if acLoadBusy then return end
+            acLoadBusy = true
+            local origText = "◈  Load Auto Cash Script"
+            local origBg = THEME.P_MAIN
+            acLoadBtn.Text = "⏳  Loading…"
+            acLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setAcStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(AUTOCASH_URL))()
+                end)
+                task.wait(0.3)
+                acLoadBusy = false
+                acLoadBtn.Text = origText
+                acLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setAcStatus("✓  Auto Cash Script executed successfully", THEME.OK)
+                    showToast("✓  Auto Cash Script loaded")
+                else
+                    warn("[LYNEX Auto Cash] Failed:", err)
+                    setAcStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(acLoadBtn, acLoadStroke)
+    end)
+
+    if okAutocash then
+        print("[LYNEX] ✓ Auto Cash section loaded OK")
+    else
+        warn("[LYNEX] ✗ Auto Cash section FAILED:", errAutocash)
+        if not autocashPage then
+            autocashPage = createPage("autocash", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Auto Cash tab:\n\n" .. tostring(errAutocash),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, autocashPage)
+        end
+    end
+end
+
+--==================================================================
 -- 16.9) Misc Page
 --==================================================================
 local miscPage = createPage("misc", true)
@@ -3929,4 +4093,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.6] ✦ Ready — Admin + Transfers + Pumpkin tabs added (★ ⇄ 🎃)")
+print("[LYNEX HUB v3.7] ✦ Ready — Admin + Transfers + Pumpkin + Auto Cash tabs added (★ ⇄ 🎃 💰)")
