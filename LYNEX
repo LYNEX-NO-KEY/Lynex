@@ -336,17 +336,17 @@ local pagesContainer = create("Frame", {
 -- 10) Tabs
 --==================================================================
 local TABS = {
-    { id = "home",         name = "Home",         icon = "⌂"  },
-    { id = "players",      name = "Players",      icon = "◉"  },
-    { id = "player",       name = "Player",       icon = "●"  },
-    { id = "autofish",     name = "Auto Fish",    icon = "≋"  },
-    { id = "car",          name = "Car",          icon = "🚗" },
-    { id = "unclemazrouk", name = "Abu Marzouk",      icon = "✦"  },
-    { id = "misc",         name = "Misc",         icon = "⚒"  },
-    { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
-    { id = "chat",         name = "Chat",         icon = "✎"  },
-    { id = "news",         name = "News",         icon = "✉"  },
-    { id = "settings",     name = "Settings",     icon = "⚙"  },
+    { id = "home",         name = "رائسيه",         icon = "⌂"  },
+    { id = "players",      name = "اللاعبين",      icon = "◉"  },
+    { id = "player",       name = "الاعب",       icon = "●"  },
+    { id = "autofish",     name = "صيد تلقائي",    icon = "≋"  },
+    { id = "car",          name = "تحكم السياره",          icon = "🚗" },
+    { id = "unclemazrouk", name = "ابو مرزوق",      icon = "✦"  },
+    { id = "misc",         name = "متنوع",         icon = "⚒"  },
+    { id = "antistrike",   name = "مضادات",  icon = "⛨" },
+    { id = "chat",         name = "مراقبة الشات",         icon = "✎"  },
+    { id = "news",         name = "الاخبار",         icon = "✉"  },
+    { id = "settings",     name = "اعدادات",     icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
