@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.5 ✦  — MOBILE FIX + ADMIN + TRANSFERS TAB
+--  ✦ LYNEX HUB v3.6 ✦  — MOBILE FIX + ADMIN + TRANSFERS + PUMPKIN
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -342,7 +342,8 @@ local TABS = {
     { id = "car",          name = "Car",          icon = "🚗" },
     { id = "unclemazrouk", name = "Mazrouk",      icon = "✦"  },
     { id = "admin",        name = "Admin",        icon = "★"  },
-    { id = "transfers",    name = "Transfers",    icon = "⇄"  },  -- ⭐ جديد
+    { id = "transfers",    name = "Transfers",    icon = "⇄"  },
+    { id = "pumpkin",      name = "Pumpkin",      icon = "🎃" },
     { id = "misc",         name = "Misc",         icon = "⚒"  },
     { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
     { id = "chat",         name = "Chat",         icon = "✎"  },
@@ -1089,8 +1090,9 @@ local NEWS_DATA = {
     { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
     { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
     { title = "Admin Tab", body = "New Admin tab added.", date = "2025-05-01" },
-    { title = "Transfers Tab", body = "New Transfers tab added (⇄).", date = "2025-10-28" },
     { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
+    { title = "Transfers Tab", body = "New Transfers tab added (⇄).", date = "2025-10-28" },
+    { title = "Pumpkin Tab", body = "New Pumpkin tab added (🎃).", date = "2025-10-28" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2434,7 +2436,7 @@ do
 end
 
 --==================================================================
--- 16.8d) ⭐ Transfers Page (NEW)
+-- 16.8d) ⭐ Transfers Page
 --==================================================================
 print("[LYNEX] Section 16.8d — Transfers loading...")
 
@@ -2591,6 +2593,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, transfersPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8e) 🎃 Pumpkin Page
+--==================================================================
+print("[LYNEX] Section 16.8e — Pumpkin loading...")
+
+do
+    local PUMPKIN_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Pumpkin"
+    local pumpkinPage
+    local okPumpkin, errPumpkin = pcall(function()
+        pumpkinPage = createPage("pumpkin", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, pumpkinPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, pumpkinPage)
+
+        local pkHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, pumpkinPage)
+        addCorner(12, pkHeaderCard); addStroke(THEME.BORDER, 1, 0.15, pkHeaderCard)
+
+        local pkIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, pkHeaderCard)
+        addCorner(30, pkIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, pkIconFrame)
+        addGradient(pkIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "🎃", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, pkIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Pumpkin Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, pkHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Pumpkin Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, pkHeaderCard)
+
+        local pkActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, pumpkinPage)
+        addCorner(12, pkActionCard); addStroke(THEME.BORDER, 1, 0.15, pkActionCard)
+
+        local pkStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, pkActionCard)
+
+        local pkLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Pumpkin Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, pkActionCard)
+        addCorner(10, pkLoadBtn)
+        local pkLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, pkLoadBtn)
+        addGradient(pkLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, pkActionCard)
+
+        local pkInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, pumpkinPage)
+        addCorner(12, pkInstrCard); addStroke(THEME.BORDER, 1, 0.15, pkInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, pkInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Pumpkin script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, pkInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Pumpkin.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, pkInstrCard)
+
+        local pkLoadBusy = false
+        local function setPkStatus(text, color)
+            pkStatus.Text = text
+            pkStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        pkLoadBtn.MouseButton1Click:Connect(function()
+            if pkLoadBusy then return end
+            pkLoadBusy = true
+            local origText = "◈  Load Pumpkin Script"
+            local origBg = THEME.P_MAIN
+            pkLoadBtn.Text = "⏳  Loading…"
+            pkLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setPkStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(PUMPKIN_URL))()
+                end)
+                task.wait(0.3)
+                pkLoadBusy = false
+                pkLoadBtn.Text = origText
+                pkLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setPkStatus("✓  Pumpkin Script executed successfully", THEME.OK)
+                    showToast("✓  Pumpkin Script loaded")
+                else
+                    warn("[LYNEX Pumpkin] Failed:", err)
+                    setPkStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(pkLoadBtn, pkLoadStroke)
+    end)
+
+    if okPumpkin then
+        print("[LYNEX] ✓ Pumpkin section loaded OK")
+    else
+        warn("[LYNEX] ✗ Pumpkin section FAILED:", errPumpkin)
+        if not pumpkinPage then
+            pumpkinPage = createPage("pumpkin", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Pumpkin tab:\n\n" .. tostring(errPumpkin),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, pumpkinPage)
         end
     end
 end
@@ -3765,4 +3929,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.5] ✦ Ready — Admin + Transfers tabs added (★ ⇄)")
+print("[LYNEX HUB v3.6] ✦ Ready — Admin + Transfers + Pumpkin tabs added (★ ⇄ 🎃)")
