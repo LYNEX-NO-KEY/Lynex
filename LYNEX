@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.7 ✦  — MOBILE FIX + ADMIN + TRANSFERS + PUMPKIN + AUTO CASH
+--  ✦ LYNEX HUB v3.8 ✦  — + TOOLS TAB
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -332,24 +332,25 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs
+-- 10) Tabs (WITH TOOLS ADDED)
 --==================================================================
 local TABS = {
-    { id = "home",         name = "المنزل",         icon = "⌂"  },
-    { id = "players",      name = "اللاعبين",      icon = "◉"  },
-    { id = "player",       name = "الاعب",       icon = "●"  },
-    { id = "autofish",     name = "صيد سمك تلقائي",    icon = "≋"  },
-    { id = "car",          name = "تحكم بالسياره",          icon = "🚗" },
-    { id = "unclemazrouk", name = "مهمة العم مرزوق",      icon = "✦"  },
-    { id = "admin",        name = "كشف الادمن",        icon = "★"  },
-    { id = "transfers",    name = "انتقالات",    icon = "⇄"  },
-    { id = "pumpkin",      name = "تجميع يقطين تلقائي",      icon = "🎃" },
-    { id = "autocash",     name = "سرقه فلوس تلقائي",    icon = "💰" },
-    { id = "misc",         name = "متنوع",         icon = "⚒"  },
-    { id = "antistrike",   name = "مضادات",  icon = "⛨" },
-    { id = "chat",         name = "شات",         icon = "✎"  },
-    { id = "news",         name = "الاخبار",         icon = "✉"  },
-    { id = "settings",     name = "اعدادات",     icon = "⚙"  },
+    { id = "home",         name = "Home",         icon = "⌂"  },
+    { id = "players",      name = "Players",      icon = "◉"  },
+    { id = "player",       name = "Player",       icon = "●"  },
+    { id = "autofish",     name = "Auto Fish",    icon = "≋"  },
+    { id = "car",          name = "Car",          icon = "🚗" },
+    { id = "unclemazrouk", name = "Mazrouk",      icon = "✦"  },
+    { id = "admin",        name = "Admin",        icon = "★"  },
+    { id = "tools",        name = "Tools",        icon = "🔧" },
+    { id = "transfers",    name = "Transfers",    icon = "⇄"  },
+    { id = "pumpkin",      name = "Pumpkin",      icon = "🎃" },
+    { id = "autocash",     name = "Auto Cash",    icon = "💰" },
+    { id = "misc",         name = "Misc",         icon = "⚒"  },
+    { id = "antistrike",   name = "Anti-strike",  icon = "⛨" },
+    { id = "chat",         name = "Chat",         icon = "✎"  },
+    { id = "news",         name = "News",         icon = "✉"  },
+    { id = "settings",     name = "Settings",     icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -1095,6 +1096,7 @@ local NEWS_DATA = {
     { title = "Transfers Tab", body = "New Transfers tab added (⇄).", date = "2025-10-28" },
     { title = "Pumpkin Tab", body = "New Pumpkin tab added (🎃).", date = "2025-10-28" },
     { title = "Auto Cash Tab", body = "New Auto Cash tab added (💰).", date = "2025-10-28" },
+    { title = "Tools Tab", body = "New Tools tab added (🔧).", date = "2025-10-29" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2433,6 +2435,175 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, adminPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c2) 🔧 Tools Page (NEW)
+--==================================================================
+print("[LYNEX] Section 16.8c2 — Tools loading...")
+
+do
+    local TOOLS_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/tools"
+    local toolsPage
+    local okTools, errTools = pcall(function()
+        toolsPage = createPage("tools", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, toolsPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, toolsPage)
+
+        local tlHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, toolsPage)
+        addCorner(12, tlHeaderCard); addStroke(THEME.BORDER, 1, 0.15, tlHeaderCard)
+
+        local tlIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, tlHeaderCard)
+        addCorner(30, tlIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, tlIconFrame)
+        addGradient(tlIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "🔧", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, tlIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Tools Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, tlHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Tools Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, tlHeaderCard)
+
+        local tlActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, toolsPage)
+        addCorner(12, tlActionCard); addStroke(THEME.BORDER, 1, 0.15, tlActionCard)
+
+        local tlStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, tlActionCard)
+
+        local tlLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Tools Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, tlActionCard)
+        addCorner(10, tlLoadBtn)
+        local tlLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, tlLoadBtn)
+        addGradient(tlLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, tlActionCard)
+
+        local tlInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, toolsPage)
+        addCorner(12, tlInstrCard); addStroke(THEME.BORDER, 1, 0.15, tlInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, tlInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Tools script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, tlInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت الأدوات.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, tlInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+            BackgroundTransparency = 1,
+            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, tlInstrCard)
+
+        local tlLoadBusy = false
+        local function setTlStatus(text, color)
+            tlStatus.Text = text
+            tlStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        tlLoadBtn.MouseButton1Click:Connect(function()
+            if tlLoadBusy then return end
+            tlLoadBusy = true
+            local origText = "◈  Load Tools Script"
+            local origBg = THEME.P_MAIN
+            tlLoadBtn.Text = "⏳  Loading…"
+            tlLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setTlStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(TOOLS_URL))()
+                end)
+                task.wait(0.3)
+                tlLoadBusy = false
+                tlLoadBtn.Text = origText
+                tlLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setTlStatus("✓  Tools Script executed successfully", THEME.OK)
+                    showToast("✓  Tools Script loaded")
+                else
+                    warn("[LYNEX Tools] Failed:", err)
+                    setTlStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(tlLoadBtn, tlLoadStroke)
+    end)
+
+    if okTools then
+        print("[LYNEX] ✓ Tools section loaded OK")
+    else
+        warn("[LYNEX] ✗ Tools section FAILED:", errTools)
+        if not toolsPage then
+            toolsPage = createPage("tools", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Tools tab:\n\n" .. tostring(errTools),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, toolsPage)
         end
     end
 end
@@ -4093,4 +4264,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.7] ✦ Ready — Admin + Transfers + Pumpkin + Auto Cash tabs added (★ ⇄ 🎃 💰)")
+print("[LYNEX HUB v3.8] ✦ Ready — Tools tab added (🔧)")
