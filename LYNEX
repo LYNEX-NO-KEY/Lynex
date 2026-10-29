@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.8 ✦  — + TOOLS TAB
+--  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -332,7 +332,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH TOOLS ADDED)
+-- 10) Tabs (WITH TOOLS + HANDCUFF)
 --==================================================================
 local TABS = {
     { id = "home",         name = "Home",         icon = "⌂"  },
@@ -343,6 +343,7 @@ local TABS = {
     { id = "unclemazrouk", name = "Mazrouk",      icon = "✦"  },
     { id = "admin",        name = "Admin",        icon = "★"  },
     { id = "tools",        name = "Tools",        icon = "🔧" },
+    { id = "handcuff",     name = "Handcuff",     icon = "🔗" },
     { id = "transfers",    name = "Transfers",    icon = "⇄"  },
     { id = "pumpkin",      name = "Pumpkin",      icon = "🎃" },
     { id = "autocash",     name = "Auto Cash",    icon = "💰" },
@@ -1097,6 +1098,7 @@ local NEWS_DATA = {
     { title = "Pumpkin Tab", body = "New Pumpkin tab added (🎃).", date = "2025-10-28" },
     { title = "Auto Cash Tab", body = "New Auto Cash tab added (💰).", date = "2025-10-28" },
     { title = "Tools Tab", body = "New Tools tab added (🔧).", date = "2025-10-29" },
+    { title = "Handcuff Tab", body = "New Handcuff tab added (🔗).", date = "2025-10-29" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2440,7 +2442,7 @@ do
 end
 
 --==================================================================
--- 16.8c2) 🔧 Tools Page (NEW)
+-- 16.8c2) 🔧 Tools Page
 --==================================================================
 print("[LYNEX] Section 16.8c2 — Tools loading...")
 
@@ -2604,6 +2606,175 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, toolsPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c3) 🔗 Handcuff Page
+--==================================================================
+print("[LYNEX] Section 16.8c3 — Handcuff loading...")
+
+do
+    local HANDCUFF_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Handcuff"
+    local handcuffPage
+    local okHandcuff, errHandcuff = pcall(function()
+        handcuffPage = createPage("handcuff", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, handcuffPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, handcuffPage)
+
+        local hcHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, handcuffPage)
+        addCorner(12, hcHeaderCard); addStroke(THEME.BORDER, 1, 0.15, hcHeaderCard)
+
+        local hcIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, hcHeaderCard)
+        addCorner(30, hcIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, hcIconFrame)
+        addGradient(hcIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "🔗", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, hcIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Handcuff Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, hcHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Handcuff Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, hcHeaderCard)
+
+        local hcActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, handcuffPage)
+        addCorner(12, hcActionCard); addStroke(THEME.BORDER, 1, 0.15, hcActionCard)
+
+        local hcStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, hcActionCard)
+
+        local hcLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Handcuff Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, hcActionCard)
+        addCorner(10, hcLoadBtn)
+        local hcLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, hcLoadBtn)
+        addGradient(hcLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, hcActionCard)
+
+        local hcInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, handcuffPage)
+        addCorner(12, hcInstrCard); addStroke(THEME.BORDER, 1, 0.15, hcInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, hcInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Handcuff script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, hcInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Handcuff.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, hcInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+            BackgroundTransparency = 1,
+            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, hcInstrCard)
+
+        local hcLoadBusy = false
+        local function setHcStatus(text, color)
+            hcStatus.Text = text
+            hcStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        hcLoadBtn.MouseButton1Click:Connect(function()
+            if hcLoadBusy then return end
+            hcLoadBusy = true
+            local origText = "◈  Load Handcuff Script"
+            local origBg = THEME.P_MAIN
+            hcLoadBtn.Text = "⏳  Loading…"
+            hcLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setHcStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(HANDCUFF_URL))()
+                end)
+                task.wait(0.3)
+                hcLoadBusy = false
+                hcLoadBtn.Text = origText
+                hcLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setHcStatus("✓  Handcuff Script executed successfully", THEME.OK)
+                    showToast("✓  Handcuff Script loaded")
+                else
+                    warn("[LYNEX Handcuff] Failed:", err)
+                    setHcStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(hcLoadBtn, hcLoadStroke)
+    end)
+
+    if okHandcuff then
+        print("[LYNEX] ✓ Handcuff section loaded OK")
+    else
+        warn("[LYNEX] ✗ Handcuff section FAILED:", errHandcuff)
+        if not handcuffPage then
+            handcuffPage = createPage("handcuff", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Handcuff tab:\n\n" .. tostring(errHandcuff),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, handcuffPage)
         end
     end
 end
@@ -4264,4 +4435,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.8] ✦ Ready — Tools tab added (🔧)")
+print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff tabs added (🔧 🔗)")
