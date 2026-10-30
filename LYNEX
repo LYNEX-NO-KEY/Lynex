@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH
+--  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -332,7 +332,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH TOOLS + HANDCUFF + INFINITE CASH)
+-- 10) Tabs (WITH TOOLS + HANDCUFF + INFINITE CASH + ESP)
 --==================================================================
 local TABS = {
     { id = "home",         name = "المنزل",         icon = "⌂"  },
@@ -342,6 +342,7 @@ local TABS = {
     { id = "car",          name = "تحكم بالسياره",          icon = "🚗" },
     { id = "unclemazrouk", name = "المهمة العم مرزوق",      icon = "✦"  },
     { id = "admin",        name = "كسف الادمن",        icon = "★"  },
+    { id = "esp",          name = "ESP",             icon = "👁️" },
     { id = "tools",        name = "اعطاء جميع ادوات",        icon = "🔧" },
     { id = "handcuff",     name = "كلبشه ورمي تلقائي",     icon = "🔗" },
     { id = "infinitecash", name = "فلوس و ستريك لانهائي", icon = "💵" },
@@ -1094,6 +1095,7 @@ local NEWS_DATA = {
     { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
     { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
     { title = "Admin Tab", body = "New Admin tab added.", date = "2025-05-01" },
+    { title = "ESP Tab", body = "New ESP tab added (👁️).", date = "2025-05-02" },
     { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
     { title = "Transfers Tab", body = "New Transfers tab added (⇄).", date = "2025-10-28" },
     { title = "Pumpkin Tab", body = "New Pumpkin tab added (🎃).", date = "2025-10-28" },
@@ -2444,6 +2446,175 @@ do
 end
 
 --==================================================================
+-- 16.8c1) 👁️ ESP Page  ← ✨ NEW TAB
+--==================================================================
+print("[LYNEX] Section 16.8c1 — ESP loading...")
+
+do
+    local ESP_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Esp"
+    local espPage
+    local okEsp, errEsp = pcall(function()
+        espPage = createPage("esp", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, espPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, espPage)
+
+        local espHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, espPage)
+        addCorner(12, espHeaderCard); addStroke(THEME.BORDER, 1, 0.15, espHeaderCard)
+
+        local espIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, espHeaderCard)
+        addCorner(30, espIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, espIconFrame)
+        addGradient(espIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "👁️", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, espIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "ESP Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, espHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "ESP Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, espHeaderCard)
+
+        local espActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, espPage)
+        addCorner(12, espActionCard); addStroke(THEME.BORDER, 1, 0.15, espActionCard)
+
+        local espStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, espActionCard)
+
+        local espLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load ESP Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, espActionCard)
+        addCorner(10, espLoadBtn)
+        local espLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, espLoadBtn)
+        addGradient(espLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, espActionCard)
+
+        local espInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, espPage)
+        addCorner(12, espInstrCard); addStroke(THEME.BORDER, 1, 0.15, espInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, espInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the ESP script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, espInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت ESP.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, espInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+            BackgroundTransparency = 1,
+            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, espInstrCard)
+
+        local espLoadBusy = false
+        local function setEspStatus(text, color)
+            espStatus.Text = text
+            espStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        espLoadBtn.MouseButton1Click:Connect(function()
+            if espLoadBusy then return end
+            espLoadBusy = true
+            local origText = "◈  Load ESP Script"
+            local origBg = THEME.P_MAIN
+            espLoadBtn.Text = "⏳  Loading…"
+            espLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setEspStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(ESP_URL))()
+                end)
+                task.wait(0.3)
+                espLoadBusy = false
+                espLoadBtn.Text = origText
+                espLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setEspStatus("✓  ESP Script executed successfully", THEME.OK)
+                    showToast("✓  ESP Script loaded")
+                else
+                    warn("[LYNEX ESP] Failed:", err)
+                    setEspStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(espLoadBtn, espLoadStroke)
+    end)
+
+    if okEsp then
+        print("[LYNEX] ✓ ESP section loaded OK")
+    else
+        warn("[LYNEX] ✗ ESP section FAILED:", errEsp)
+        if not espPage then
+            espPage = createPage("esp", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load ESP tab:\n\n" .. tostring(errEsp),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, espPage)
+        end
+    end
+end
+
+--==================================================================
 -- 16.8c2) 🔧 Tools Page
 --==================================================================
 print("[LYNEX] Section 16.8c2 — Tools loading...")
@@ -2782,7 +2953,7 @@ do
 end
 
 --==================================================================
--- 16.8c4) 💵 Infinite Cash Page  ← ✨ NEW TAB
+-- 16.8c4) 💵 Infinite Cash Page
 --==================================================================
 print("[LYNEX] Section 16.8c4 — Infinite Cash loading...")
 
@@ -2951,7 +3122,7 @@ do
 end
 
 --==================================================================
--- 16.8d) ⭐ Transfers Page
+-- 16.8d) ⇄ Transfers Page
 --==================================================================
 print("[LYNEX] Section 16.8d — Transfers loading...")
 
@@ -4606,4 +4777,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff + Infinite Cash tabs added (🔧 🔗 💵)")
+print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff + Infinite Cash + ESP tabs added (🔧 🔗 💵 👁️)")
