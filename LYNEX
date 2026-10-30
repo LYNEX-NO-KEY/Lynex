@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP
+--  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -332,7 +332,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH TOOLS + HANDCUFF + INFINITE CASH + ESP)
+-- 10) Tabs (WITH TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB)
 --==================================================================
 local TABS = {
     { id = "home",         name = "المنزل",         icon = "⌂"  },
@@ -343,6 +343,7 @@ local TABS = {
     { id = "unclemazrouk", name = "المهمة العم مرزوق",      icon = "✦"  },
     { id = "admin",        name = "كشف الادمن",        icon = "★"  },
     { id = "esp",          name = "ESP",             icon = "👁️" },
+    { id = "bomb",         name = "Bomb",            icon = "💣" },
     { id = "tools",        name = "اعطاء جميع ادوات",        icon = "🔧" },
     { id = "handcuff",     name = "كلبشه ورمي تلقائي",     icon = "🔗" },
     { id = "infinitecash", name = "فلوس و ستريك لانهائي", icon = "💵" },
@@ -1096,6 +1097,7 @@ local NEWS_DATA = {
     { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
     { title = "Admin Tab", body = "New Admin tab added.", date = "2025-05-01" },
     { title = "ESP Tab", body = "New ESP tab added (👁️).", date = "2025-05-02" },
+    { title = "Bomb Tab", body = "New Bomb tab added (💣).", date = "2025-05-02" },
     { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
     { title = "Transfers Tab", body = "New Transfers tab added (⇄).", date = "2025-10-28" },
     { title = "Pumpkin Tab", body = "New Pumpkin tab added (🎃).", date = "2025-10-28" },
@@ -2446,7 +2448,7 @@ do
 end
 
 --==================================================================
--- 16.8c1) 👁️ ESP Page  ← ✨ NEW TAB
+-- 16.8c1) 👁️ ESP Page
 --==================================================================
 print("[LYNEX] Section 16.8c1 — ESP loading...")
 
@@ -2610,6 +2612,175 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, espPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c1b) 💣 Bomb Page
+--==================================================================
+print("[LYNEX] Section 16.8c1b — Bomb loading...")
+
+do
+    local BOMB_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Bomb"
+    local bombPage
+    local okBomb, errBomb = pcall(function()
+        bombPage = createPage("bomb", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, bombPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, bombPage)
+
+        local bmHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, bombPage)
+        addCorner(12, bmHeaderCard); addStroke(THEME.BORDER, 1, 0.15, bmHeaderCard)
+
+        local bmIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, bmHeaderCard)
+        addCorner(30, bmIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, bmIconFrame)
+        addGradient(bmIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "💣", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, bmIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Bomb Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, bmHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Bomb Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, bmHeaderCard)
+
+        local bmActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, bombPage)
+        addCorner(12, bmActionCard); addStroke(THEME.BORDER, 1, 0.15, bmActionCard)
+
+        local bmStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, bmActionCard)
+
+        local bmLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Bomb Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, bmActionCard)
+        addCorner(10, bmLoadBtn)
+        local bmLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, bmLoadBtn)
+        addGradient(bmLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, bmActionCard)
+
+        local bmInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, bombPage)
+        addCorner(12, bmInstrCard); addStroke(THEME.BORDER, 1, 0.15, bmInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, bmInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Bomb script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, bmInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Bomb.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, bmInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+            BackgroundTransparency = 1,
+            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, bmInstrCard)
+
+        local bmLoadBusy = false
+        local function setBmStatus(text, color)
+            bmStatus.Text = text
+            bmStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        bmLoadBtn.MouseButton1Click:Connect(function()
+            if bmLoadBusy then return end
+            bmLoadBusy = true
+            local origText = "◈  Load Bomb Script"
+            local origBg = THEME.P_MAIN
+            bmLoadBtn.Text = "⏳  Loading…"
+            bmLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setBmStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(BOMB_URL))()
+                end)
+                task.wait(0.3)
+                bmLoadBusy = false
+                bmLoadBtn.Text = origText
+                bmLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setBmStatus("✓  Bomb Script executed successfully", THEME.OK)
+                    showToast("✓  Bomb Script loaded")
+                else
+                    warn("[LYNEX Bomb] Failed:", err)
+                    setBmStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(bmLoadBtn, bmLoadStroke)
+    end)
+
+    if okBomb then
+        print("[LYNEX] ✓ Bomb section loaded OK")
+    else
+        warn("[LYNEX] ✗ Bomb section FAILED:", errBomb)
+        if not bombPage then
+            bombPage = createPage("bomb", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Bomb tab:\n\n" .. tostring(errBomb),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, bombPage)
         end
     end
 end
@@ -4777,4 +4948,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff + Infinite Cash + ESP tabs added (🔧 🔗 💵 👁️)")
+print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff + Infinite Cash + ESP + Bomb tabs added (🔧 🔗 💵 👁️ 💣)")
