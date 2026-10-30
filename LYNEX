@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB
+--  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB + DANCES
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -332,7 +332,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB)
+-- 10) Tabs (WITH DANCES ADDED)
 --==================================================================
 local TABS = {
     { id = "home",         name = "المنزل",         icon = "⌂"  },
@@ -342,6 +342,7 @@ local TABS = {
     { id = "car",          name = "تحكم بالسياره",          icon = "🚗" },
     { id = "unclemazrouk", name = "المهمة العم مرزوق",      icon = "✦"  },
     { id = "admin",        name = "كشف الادمن",        icon = "★"  },
+    { id = "dances",       name = "رقصات",             icon = "💃" },
     { id = "esp",          name = "ESP",             icon = "👁️" },
     { id = "bomb",         name = "Bomb",            icon = "💣" },
     { id = "tools",        name = "اعطاء جميع ادوات",        icon = "🔧" },
@@ -1105,6 +1106,7 @@ local NEWS_DATA = {
     { title = "Tools Tab", body = "New Tools tab added (🔧).", date = "2025-10-29" },
     { title = "Handcuff Tab", body = "New Handcuff tab added (🔗).", date = "2025-10-29" },
     { title = "Infinite Cash Tab", body = "New Infinite Cash tab added (💵).", date = "2025-10-29" },
+    { title = "Dances Tab", body = "New Dances tab added (💃).", date = "2025-10-30" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1347,9 +1349,7 @@ local function createRangeSlider(parent, order, labelText, minV, maxV, initialVa
     local current = initialValue
     local dragging = false
     local function apply(v, fire)
-        v = math.clamp(v, minV, maxV)
-        v = math.floor(v + 0.5)
-        current = v
+        v = math.clamp(v, minV, maxV); v = math.floor(v + 0.5); current = v
         local rel = (v - minV) / (maxV - minV)
         tween(fill, TweenInfo.new(0.08), { Size = UDim2.new(rel, 0, 1, 0) })
         tween(knob, TweenInfo.new(0.08), { Position = UDim2.new(rel, -9, 0.5, -9) })
@@ -1676,8 +1676,7 @@ localPlayer.CharacterAdded:Connect(function(char)
     local root = char:FindFirstChild("HumanoidRootPart")
     if playerState.speed.applied and hum then hum.WalkSpeed = playerState.speed.value end
     if playerState.jump.applied and hum then
-        hum.UseJumpPower = true
-        hum.JumpPower = playerState.jump.value
+        hum.UseJumpPower = true; hum.JumpPower = playerState.jump.value
     end
     if playerState.flight.active and root then
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
@@ -1743,14 +1742,12 @@ _G.LYNEX_CLEANUP = function()
 end
 
 --==================================================================
--- 16.6) fetchUrl (FIXED for Delta)
+-- 16.6) fetchUrl
 --==================================================================
 local function fetchUrl(url)
     local body = nil
     local ok, res = pcall(function() return game:HttpGet(url) end)
-    if ok and typeof(res) == "string" and #res > 0 then
-        body = res
-    end
+    if ok and typeof(res) == "string" and #res > 0 then body = res end
     if not body then
         local reqFunc = (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
             or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
@@ -1937,9 +1934,7 @@ afLoadBtn.MouseButton1Click:Connect(function()
         end)
         if ok then
             if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-        else
-            errMsg = tostring(ret1)
-        end
+        else errMsg = tostring(ret1) end
         task.wait(0.25)
         loadBusy = false
         afLoadBtn.Text = origText
@@ -2104,9 +2099,7 @@ carLoadBtn.MouseButton1Click:Connect(function()
         end)
         if ok then
             if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-        else
-            errMsg = tostring(ret1)
-        end
+        else errMsg = tostring(ret1) end
         task.wait(0.25)
         carLoadBusy = false
         carLoadBtn.Text = origText
@@ -2557,13 +2550,6 @@ do
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, espInstrCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-        }, espInstrCard)
 
         local espLoadBusy = false
         local function setEspStatus(text, color)
@@ -2724,13 +2710,6 @@ do
             Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
             BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Bomb.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-        }, bmInstrCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, bmInstrCard)
 
@@ -2895,13 +2874,6 @@ do
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, tlInstrCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-        }, tlInstrCard)
 
         local tlLoadBusy = false
         local function setTlStatus(text, color)
@@ -3064,13 +3036,6 @@ do
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, hcInstrCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-        }, hcInstrCard)
 
         local hcLoadBusy = false
         local function setHcStatus(text, color)
@@ -3231,13 +3196,6 @@ do
             Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
             BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Infinite Cash.",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-        }, icInstrCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1,
-            Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, icInstrCard)
 
@@ -3779,6 +3737,168 @@ do
 end
 
 --==================================================================
+-- 16.12) 💃 Dances Page — NEW!
+--==================================================================
+print("[LYNEX] Section 16.12 — Dances loading...")
+
+do
+    local DANCES_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Dances"
+    local dancesPage
+    local okDances, errDances = pcall(function()
+        dancesPage = createPage("dances", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, dancesPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, dancesPage)
+
+        local dnHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, dancesPage)
+        addCorner(12, dnHeaderCard); addStroke(THEME.BORDER, 1, 0.15, dnHeaderCard)
+
+        local dnIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, dnHeaderCard)
+        addCorner(30, dnIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, dnIconFrame)
+        addGradient(dnIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "💃", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, dnIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Dances Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, dnHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Dances Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, dnHeaderCard)
+
+        local dnActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, dancesPage)
+        addCorner(12, dnActionCard); addStroke(THEME.BORDER, 1, 0.15, dnActionCard)
+
+        local dnStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, dnActionCard)
+
+        local dnLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Dances Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, dnActionCard)
+        addCorner(10, dnLoadBtn)
+        local dnLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, dnLoadBtn)
+        addGradient(dnLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, dnActionCard)
+
+        local dnInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, dancesPage)
+        addCorner(12, dnInstrCard); addStroke(THEME.BORDER, 1, 0.15, dnInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, dnInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Dances script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, dnInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت الرقصات.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, dnInstrCard)
+
+        local dnLoadBusy = false
+        local function setDnStatus(text, color)
+            dnStatus.Text = text
+            dnStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        dnLoadBtn.MouseButton1Click:Connect(function()
+            if dnLoadBusy then return end
+            dnLoadBusy = true
+            local origText = "◈  Load Dances Script"
+            local origBg = THEME.P_MAIN
+            dnLoadBtn.Text = "⏳  Loading…"
+            dnLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setDnStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(DANCES_URL))()
+                end)
+                task.wait(0.3)
+                dnLoadBusy = false
+                dnLoadBtn.Text = origText
+                dnLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setDnStatus("✓  Dances Script executed successfully", THEME.OK)
+                    showToast("✓  Dances Script loaded")
+                else
+                    warn("[LYNEX Dances] Failed:", err)
+                    setDnStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(dnLoadBtn, dnLoadStroke)
+    end)
+
+    if okDances then
+        print("[LYNEX] ✓ Dances section loaded OK")
+    else
+        warn("[LYNEX] ✗ Dances section FAILED:", errDances)
+        if not dancesPage then
+            dancesPage = createPage("dances", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Dances tab:\n\n" .. tostring(errDances),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, dancesPage)
+        end
+    end
+end
+
+--==================================================================
 -- 16.9) Misc Page
 --==================================================================
 local miscPage = createPage("misc", true)
@@ -4307,12 +4427,6 @@ do
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, asInstrCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-        }, asInstrCard)
 
         local asLoadBusy = false
         local function setAsStatus(text, color)
@@ -4480,12 +4594,6 @@ do
             Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
             BackgroundTransparency = 1, Text = "لتفعيل السكربت اضغط على هذا الزر",
             Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-        }, chInstrCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-            BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
         }, chInstrCard)
 
@@ -4948,4 +5056,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff + Infinite Cash + ESP + Bomb tabs added (🔧 🔗 💵 👁️ 💣)")
+print("[LYNEX HUB v3.9] ✦ Ready — Dances 💃 tab added (total 21 tabs)")
