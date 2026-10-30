@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB + DANCES + ANIMATION PACKS
+--  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB + DANCES + ANIMATION PACKS + AUTO PIANO
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -332,31 +332,32 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH ANIMATION PACKS ADDED)
+-- 10) Tabs (WITH ANIMATION PACKS + AUTO PIANO)
 --==================================================================
 local TABS = {
-    { id = "home",          name = "المنزل",         icon = "⌂"  },
-    { id = "players",       name = "اللاعبين",       icon = "◉"  },
-    { id = "player",        name = "الاعب",          icon = "●"  },
-    { id = "autofish",      name = "صيد تلقائي",     icon = "≋"  },
-    { id = "car",           name = "تحكم بالسياره",  icon = "🚗" },
-    { id = "unclemazrouk",  name = "المهمة العم مرزوق", icon = "✦" },
-    { id = "admin",         name = "كشف الادمن",     icon = "★"  },
-    { id = "dances",        name = "رقصات",          icon = "💃" },
-    { id = "animationpacks",name = "Animation Packs",icon = "🎬" },
-    { id = "esp",           name = "ESP",            icon = "👁️" },
-    { id = "bomb",          name = "Bomb",           icon = "💣" },
-    { id = "tools",         name = "اعطاء جميع ادوات", icon = "🔧" },
+    { id = "home",          name = "المنزل",            icon = "⌂"  },
+    { id = "players",       name = "اللاعبين",          icon = "◉"  },
+    { id = "player",        name = "الاعب",             icon = "●"  },
+    { id = "autofish",      name = "صيد تلقائي",        icon = "≋"  },
+    { id = "car",           name = "تحكم بالسياره",     icon = "🚗" },
+    { id = "unclemazrouk",  name = "المهمة العم مرزوق", icon = "✦"  },
+    { id = "admin",         name = "كشف الادمن",        icon = "★"  },
+    { id = "dances",        name = "رقصات",             icon = "💃" },
+    { id = "animationpacks",name = "Animation Packs",   icon = "🎬" },
+    { id = "autopiano",     name = "Auto Piano",        icon = "🎹" },
+    { id = "esp",           name = "ESP",               icon = "👁️" },
+    { id = "bomb",          name = "Bomb",              icon = "💣" },
+    { id = "tools",         name = "اعطاء جميع ادوات",  icon = "🔧" },
     { id = "handcuff",      name = "كلبشه ورمي تلقائي", icon = "🔗" },
     { id = "infinitecash",  name = "فلوس و ستريك لانهائي", icon = "💵" },
-    { id = "transfers",     name = "انتقالات",       icon = "⇄"  },
+    { id = "transfers",     name = "انتقالات",          icon = "⇄"  },
     { id = "pumpkin",       name = "تجميع اليقطين تلقائي", icon = "🎃" },
-    { id = "autocash",      name = "سرقه فلوس تلقائي", icon = "💰" },
-    { id = "misc",          name = "متنوع",          icon = "⚒"  },
-    { id = "antistrike",    name = "مضادات",         icon = "⛨"  },
-    { id = "chat",          name = "شات",            icon = "✎"  },
-    { id = "news",          name = "الاخبار",        icon = "✉"  },
-    { id = "settings",      name = "اعدادات",        icon = "⚙"  },
+    { id = "autocash",      name = "سرقه فلوس تلقائي",  icon = "💰" },
+    { id = "misc",          name = "متنوع",             icon = "⚒"  },
+    { id = "antistrike",    name = "مضادات",            icon = "⛨"  },
+    { id = "chat",          name = "شات",               icon = "✎"  },
+    { id = "news",          name = "الاخبار",           icon = "✉"  },
+    { id = "settings",      name = "اعدادات",           icon = "⚙"  },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -1109,6 +1110,7 @@ local NEWS_DATA = {
     { title = "Infinite Cash Tab", body = "New Infinite Cash tab added (💵).", date = "2025-10-29" },
     { title = "Dances Tab", body = "New Dances tab added (💃).", date = "2025-10-30" },
     { title = "Animation Packs Tab", body = "New Animation Packs tab added (🎬).", date = "2025-10-30" },
+    { title = "Auto Piano Tab", body = "New Auto Piano tab added (🎹).", date = "2025-10-30" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -3894,7 +3896,7 @@ do
 end
 
 --==================================================================
--- 16.13) 🎬 Animation Packs Page — NEW!
+-- 16.13) 🎬 Animation Packs Page
 --==================================================================
 print("[LYNEX] Section 16.13 — Animation Packs loading...")
 
@@ -4051,6 +4053,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, animationPacksPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.14) 🎹 Auto Piano Page — NEW!
+--==================================================================
+print("[LYNEX] Section 16.14 — Auto Piano loading...")
+
+do
+    local AUTO_PIANO_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Auto%20Piano"
+    local autoPianoPage
+    local okAutoPiano, errAutoPiano = pcall(function()
+        autoPianoPage = createPage("autopiano", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, autoPianoPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, autoPianoPage)
+
+        local apnHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, autoPianoPage)
+        addCorner(12, apnHeaderCard); addStroke(THEME.BORDER, 1, 0.15, apnHeaderCard)
+
+        local apnIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, apnHeaderCard)
+        addCorner(30, apnIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, apnIconFrame)
+        addGradient(apnIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "🎹", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, apnIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Auto Piano Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, apnHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Auto Piano Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, apnHeaderCard)
+
+        local apnActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, autoPianoPage)
+        addCorner(12, apnActionCard); addStroke(THEME.BORDER, 1, 0.15, apnActionCard)
+
+        local apnStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, apnActionCard)
+
+        local apnLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Auto Piano Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, apnActionCard)
+        addCorner(10, apnLoadBtn)
+        local apnLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, apnLoadBtn)
+        addGradient(apnLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, apnActionCard)
+
+        local apnInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, autoPianoPage)
+        addCorner(12, apnInstrCard); addStroke(THEME.BORDER, 1, 0.15, apnInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, apnInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Auto Piano script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, apnInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت البيانو التلقائي.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, apnInstrCard)
+
+        local apnLoadBusy = false
+        local function setApnStatus(text, color)
+            apnStatus.Text = text
+            apnStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        apnLoadBtn.MouseButton1Click:Connect(function()
+            if apnLoadBusy then return end
+            apnLoadBusy = true
+            local origText = "◈  Load Auto Piano Script"
+            local origBg = THEME.P_MAIN
+            apnLoadBtn.Text = "⏳  Loading…"
+            apnLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setApnStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(AUTO_PIANO_URL))()
+                end)
+                task.wait(0.3)
+                apnLoadBusy = false
+                apnLoadBtn.Text = origText
+                apnLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setApnStatus("✓  Auto Piano Script executed successfully", THEME.OK)
+                    showToast("✓  Auto Piano Script loaded")
+                else
+                    warn("[LYNEX Auto Piano] Failed:", err)
+                    setApnStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(apnLoadBtn, apnLoadStroke)
+    end)
+
+    if okAutoPiano then
+        print("[LYNEX] ✓ Auto Piano section loaded OK")
+    else
+        warn("[LYNEX] ✗ Auto Piano section FAILED:", errAutoPiano)
+        if not autoPianoPage then
+            autoPianoPage = createPage("autopiano", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Auto Piano tab:\n\n" .. tostring(errAutoPiano),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, autoPianoPage)
         end
     end
 end
@@ -5213,4 +5377,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.9] ✦ Ready — 22 tabs (Dances 💃 + Animation Packs 🎬)")
+print("[LYNEX HUB v3.9] ✦ Ready — 23 tabs (Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
