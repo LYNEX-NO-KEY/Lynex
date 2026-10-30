@@ -1,8 +1,6 @@
 --!nonstrict
 --==================================================================
 --  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH
---  🔧 PC Patch: Infinite Jump + Flight (PC + Mobile)
---  PART 1 of 2
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -334,7 +332,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs
+-- 10) Tabs (WITH TOOLS + HANDCUFF + INFINITE CASH)
 --==================================================================
 local TABS = {
     { id = "home",         name = "المنزل",         icon = "⌂"  },
@@ -1103,7 +1101,6 @@ local NEWS_DATA = {
     { title = "Tools Tab", body = "New Tools tab added (🔧).", date = "2025-10-29" },
     { title = "Handcuff Tab", body = "New Handcuff tab added (🔗).", date = "2025-10-29" },
     { title = "Infinite Cash Tab", body = "New Infinite Cash tab added (💵).", date = "2025-10-29" },
-    { title = "PC Compatibility Patch", body = "Infinite Jump & Flight now work on PC keyboard.", date = "2025-10-30" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1285,7 +1282,7 @@ local resetBtn = create("TextButton", {
 addCorner(10, resetBtn); addStroke(THEME.DANGER, 1.2, 0.15, resetBtn)
 
 --==================================================================
--- 16.5) Player Page  ← 🔧 MODIFIED
+-- 16.5) Player Page
 --==================================================================
 local playerPage = createPage("player", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, playerPage)
@@ -1299,7 +1296,7 @@ local playerState = {
     flight = { active = false, speed = 60, bodyVel = nil, conn = nil },
     gravity = { applied = false, value = 196.2, original = 196.2 },
     rotation = { active = false, speed = 10, bodyAV = nil },
-    infiniteJump = { active = false, conn = nil, pcConn = nil },  -- 🔧 pcConn added
+    infiniteJump = { active = false, conn = nil },
     swimming = { active = false, bodyForce = nil },
     ipadView = { active = false, originalFov = nil },
     invisible = { active = false, originals = {} },
@@ -1510,65 +1507,34 @@ end, function()
     showToast("↻  Jump reset")
 end)
 
--- 🔧 FLIGHT — MODIFIED for PC + respawn fix
-local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "W/Space/Shift on PC • Joystick on mobile", false, function(v)
+local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "Hover & fly toward camera look", false, function(v)
     playerState.flight.active = v
     if v then
         local char = localPlayer.Character
         if not char then showToast("◈  Character not ready"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
-        if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end); playerState.flight.conn = nil end
-        if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end); playerState.flight.bodyVel = nil end
+        if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
         local bv = Instance.new("BodyVelocity")
         bv.Name = "LYNEX_Flight"
         bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         bv.Velocity = Vector3.zero
         bv.Parent = root
         playerState.flight.bodyVel = bv
-
         playerState.flight.conn = RunService.RenderStepped:Connect(function()
             if not playerState.flight.active then return end
             local c = localPlayer.Character
             local h = c and c:FindFirstChildOfClass("Humanoid")
             local r = c and c:FindFirstChild("HumanoidRootPart")
-            if not (h and r) then return end
-
-            -- Respawn fix: recreate BodyVelocity if stale
-            local currentBv = playerState.flight.bodyVel
-            if not currentBv or not currentBv.Parent or currentBv.Parent ~= r then
-                if currentBv then pcall(function() currentBv:Destroy() end) end
-                currentBv = Instance.new("BodyVelocity")
-                currentBv.Name = "LYNEX_Flight"
-                currentBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                currentBv.Velocity = Vector3.zero
-                currentBv.Parent = r
-                playerState.flight.bodyVel = currentBv
-            end
-
-            -- Vertical control via Space/Shift (PC)
-            local vert = 0
-            pcall(function()
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then vert = 1 end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then vert = -1 end
-            end)
-
-            local cam = workspace.CurrentCamera
-            if not cam then return end
-
-            local moveDir = h.MoveDirection
-            if moveDir.Magnitude > 0.01 or vert ~= 0 then
-                local velocity = Vector3.zero
-                if moveDir.Magnitude > 0.01 then
-                    velocity = cam.CFrame.LookVector * playerState.flight.speed
-                end
-                velocity = velocity + Vector3.new(0, vert * playerState.flight.speed, 0)
-                currentBv.Velocity = velocity
+            if not (h and r and bv.Parent) then return end
+            if h.MoveDirection.Magnitude > 0.01 then
+                local cam = workspace.CurrentCamera
+                if cam then bv.Velocity = cam.CFrame.LookVector * playerState.flight.speed end
             else
-                currentBv.Velocity = Vector3.zero
+                bv.Velocity = Vector3.zero
             end
         end)
-        showToast("◈  Flight ON — W/Space/Shift")
+        showToast("◈  Flight ON — move joystick to fly")
     else
         if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end); playerState.flight.conn = nil end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end); playerState.flight.bodyVel = nil end
@@ -1621,44 +1587,18 @@ end)
 
 addSectionHeader("SPECIAL MOVEMENT", nextOrder())
 
--- 🔧 INFINITE JUMP — MODIFIED for PC
-createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Hold Space on PC • Tap jump on mobile", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedly while holding space", false, function(v)
     playerState.infiniteJump.active = v
     if v then
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end) end
-        if playerState.infiniteJump.pcConn then pcall(function() playerState.infiniteJump.pcConn:Disconnect() end) end
-
-        -- Mobile + first PC press
         playerState.infiniteJump.conn = UserInputService.JumpRequest:Connect(function()
             if not playerState.infiniteJump.active then return end
             local hum = getHumanoid(localPlayer)
-            if hum and hum.Health > 0 then
-                local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if root then root.Velocity = Vector3.new(root.Velocity.X, 50, root.Velocity.Z) end
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
+            if hum and hum.Health > 0 then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
         end)
-
-        -- PC: hold Space
-        playerState.infiniteJump.pcConn = RunService.Heartbeat:Connect(function()
-            if not playerState.infiniteJump.active then return end
-            local pressed = false
-            pcall(function()
-                pressed = UserInputService:IsKeyDown(Enum.KeyCode.Space)
-            end)
-            if not pressed then return end
-            local hum = getHumanoid(localPlayer)
-            if not hum or hum.Health <= 0 then return end
-            local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if not root then return end
-            root.Velocity = Vector3.new(root.Velocity.X, 50, root.Velocity.Z)
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-        end)
-
         showToast("◈  Infinite Jump ON")
     else
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end); playerState.infiniteJump.conn = nil end
-        if playerState.infiniteJump.pcConn then pcall(function() playerState.infiniteJump.pcConn:Disconnect() end); playerState.infiniteJump.pcConn = nil end
         showToast("◈  Infinite Jump OFF")
     end
 end)
@@ -1763,9 +1703,6 @@ localPlayer.CharacterAdded:Connect(function(char)
     end
     if playerState.invisible.active then
         playerState.invisible.originals = {}
-        for _,
-    if playerState.invisible.active then
-        playerState.invisible.originals = {}
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
                 playerState.invisible.originals[part] = part.Transparency
@@ -1788,7 +1725,6 @@ _G.LYNEX_CLEANUP = function()
     if playerState.rotation.bodyAV then pcall(function() playerState.rotation.bodyAV:Destroy() end) end
     if playerState.swimming.bodyForce then pcall(function() playerState.swimming.bodyForce:Destroy() end) end
     if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end) end
-    if playerState.infiniteJump.pcConn then pcall(function() playerState.infiniteJump.pcConn:Disconnect() end) end
     if playerState.invisible.active then
         for part, orig in pairs(playerState.invisible.originals) do
             if part and part.Parent then pcall(function() part.Transparency = orig end) end
@@ -1803,7 +1739,7 @@ _G.LYNEX_CLEANUP = function()
 end
 
 --==================================================================
--- 16.6) fetchUrl
+-- 16.6) fetchUrl (FIXED for Delta)
 --==================================================================
 local function fetchUrl(url)
     local body = nil
@@ -2846,7 +2782,7 @@ do
 end
 
 --==================================================================
--- 16.8c4) 💵 Infinite Cash Page
+-- 16.8c4) 💵 Infinite Cash Page  ← ✨ NEW TAB
 --==================================================================
 print("[LYNEX] Section 16.8c4 — Infinite Cash loading...")
 
@@ -3013,6 +2949,7 @@ do
         end
     end
 end
+
 --==================================================================
 -- 16.8d) ⭐ Transfers Page
 --==================================================================
@@ -4669,5 +4606,4 @@ do
     end
 end
 
-print("[LYNEX HUB v3.9] ✦ Ready — PC + Mobile Patch applied (Infinite Jump + Flight)")
-print("[LYNEX HUB v3.9] ✦ Tools + Handcuff + Infinite Cash tabs (🔧 🔗 💵)")
+print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff + Infinite Cash tabs added (🔧 🔗 💵)")
