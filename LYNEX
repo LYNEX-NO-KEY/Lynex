@@ -1,6 +1,8 @@
 --!nonstrict
 --==================================================================
 --  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH
+--  🔧 PC Patch: Infinite Jump + Flight (PC + Mobile)
+--  PART 1 of 2
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -341,7 +343,7 @@ local TABS = {
     { id = "autofish",     name = "صيد تلقائي",    icon = "≋"  },
     { id = "car",          name = "تحكم بالسياره",          icon = "🚗" },
     { id = "unclemazrouk", name = "المهمة العم مرزوق",      icon = "✦"  },
-    { id = "admin",        name = "كشف الادمن",        icon = "★"  },
+    { id = "admin",        name = "كسف الادمن",        icon = "★"  },
     { id = "tools",        name = "اعطاء جميع ادوات",        icon = "🔧" },
     { id = "handcuff",     name = "كلبشه ورمي تلقائي",     icon = "🔗" },
     { id = "infinitecash", name = "فلوس و ستريك لانهائي", icon = "💵" },
@@ -1101,6 +1103,7 @@ local NEWS_DATA = {
     { title = "Tools Tab", body = "New Tools tab added (🔧).", date = "2025-10-29" },
     { title = "Handcuff Tab", body = "New Handcuff tab added (🔗).", date = "2025-10-29" },
     { title = "Infinite Cash Tab", body = "New Infinite Cash tab added (💵).", date = "2025-10-29" },
+    { title = "PC Compatibility Patch", body = "Infinite Jump & Flight now work on PC keyboard.", date = "2025-10-30" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -1282,7 +1285,7 @@ local resetBtn = create("TextButton", {
 addCorner(10, resetBtn); addStroke(THEME.DANGER, 1.2, 0.15, resetBtn)
 
 --==================================================================
--- 16.5) Player Page
+-- 16.5) Player Page  ← 🔧 MODIFIED
 --==================================================================
 local playerPage = createPage("player", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, playerPage)
@@ -1296,7 +1299,7 @@ local playerState = {
     flight = { active = false, speed = 60, bodyVel = nil, conn = nil },
     gravity = { applied = false, value = 196.2, original = 196.2 },
     rotation = { active = false, speed = 10, bodyAV = nil },
-    infiniteJump = { active = false, conn = nil, jumpReqConn = nil, lastJumpTime = 0, lastJumpRequest = 0 },
+    infiniteJump = { active = false, conn = nil, pcConn = nil },  -- 🔧 pcConn added
     swimming = { active = false, bodyForce = nil },
     ipadView = { active = false, originalFov = nil },
     invisible = { active = false, originals = {} },
@@ -1507,17 +1510,16 @@ end, function()
     showToast("↻  Jump reset")
 end)
 
--- ◈ Flight — نسخة مُصلحة (PC + Mobile)
-local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "Hover & fly toward camera look", false, function(v)
+-- 🔧 FLIGHT — MODIFIED for PC + respawn fix
+local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "W/Space/Shift on PC • Joystick on mobile", false, function(v)
     playerState.flight.active = v
     if v then
         local char = localPlayer.Character
         if not char then showToast("◈  Character not ready"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if not root or not hum then return end
-
-        if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
+        if not root then return end
+        if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end); playerState.flight.conn = nil end
+        if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end); playerState.flight.bodyVel = nil end
         local bv = Instance.new("BodyVelocity")
         bv.Name = "LYNEX_Flight"
         bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
@@ -1525,43 +1527,51 @@ local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "
         bv.Parent = root
         playerState.flight.bodyVel = bv
 
-        -- يمنع فيزيا Humanoid من مقاومة BodyVelocity (حل مشكلة PC)
-        pcall(function() hum.PlatformStand = true end)
-
-        -- فحص الإدخال: MoveDirection (موبايل) أو الكيبورد (PC)
-        local function isMovingInput(h)
-            if h.MoveDirection.Magnitude > 0.01 then return true end
-            local u = UserInputService
-            return u:IsKeyDown(Enum.KeyCode.W)
-                or u:IsKeyDown(Enum.KeyCode.A)
-                or u:IsKeyDown(Enum.KeyCode.S)
-                or u:IsKeyDown(Enum.KeyCode.D)
-                or u:IsKeyDown(Enum.KeyCode.Up)
-                or u:IsKeyDown(Enum.KeyCode.Down)
-                or u:IsKeyDown(Enum.KeyCode.Left)
-                or u:IsKeyDown(Enum.KeyCode.Right)
-        end
-
-        playerState.flight.conn = RunService.Heartbeat:Connect(function()
+        playerState.flight.conn = RunService.RenderStepped:Connect(function()
             if not playerState.flight.active then return end
             local c = localPlayer.Character
             local h = c and c:FindFirstChildOfClass("Humanoid")
             local r = c and c:FindFirstChild("HumanoidRootPart")
-            if not (h and r and bv.Parent) then return end
+            if not (h and r) then return end
+
+            -- Respawn fix: recreate BodyVelocity if stale
+            local currentBv = playerState.flight.bodyVel
+            if not currentBv or not currentBv.Parent or currentBv.Parent ~= r then
+                if currentBv then pcall(function() currentBv:Destroy() end) end
+                currentBv = Instance.new("BodyVelocity")
+                currentBv.Name = "LYNEX_Flight"
+                currentBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                currentBv.Velocity = Vector3.zero
+                currentBv.Parent = r
+                playerState.flight.bodyVel = currentBv
+            end
+
+            -- Vertical control via Space/Shift (PC)
+            local vert = 0
+            pcall(function()
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then vert = 1 end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then vert = -1 end
+            end)
+
             local cam = workspace.CurrentCamera
             if not cam then return end
-            if isMovingInput(h) then
-                bv.Velocity = cam.CFrame.LookVector * playerState.flight.speed
+
+            local moveDir = h.MoveDirection
+            if moveDir.Magnitude > 0.01 or vert ~= 0 then
+                local velocity = Vector3.zero
+                if moveDir.Magnitude > 0.01 then
+                    velocity = cam.CFrame.LookVector * playerState.flight.speed
+                end
+                velocity = velocity + Vector3.new(0, vert * playerState.flight.speed, 0)
+                currentBv.Velocity = velocity
             else
-                bv.Velocity = Vector3.zero
+                currentBv.Velocity = Vector3.zero
             end
         end)
-        showToast("◈  Flight ON — move joystick to fly")
+        showToast("◈  Flight ON — W/Space/Shift")
     else
         if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end); playerState.flight.conn = nil end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end); playerState.flight.bodyVel = nil end
-        local hum = getHumanoid(localPlayer)
-        if hum then pcall(function() hum.PlatformStand = false end) end
         showToast("◈  Flight OFF")
     end
 end)
@@ -1611,53 +1621,44 @@ end)
 
 addSectionHeader("SPECIAL MOVEMENT", nextOrder())
 
--- ◈ Infinite Jump — نسخة مُصلحة (PC + Mobile)
-createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedly while holding space", false, function(v)
+-- 🔧 INFINITE JUMP — MODIFIED for PC
+createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Hold Space on PC • Tap jump on mobile", false, function(v)
     playerState.infiniteJump.active = v
     if v then
-        -- تنظيف اتصالات سابقة
-        if playerState.infiniteJump.conn then
-            pcall(function() playerState.infiniteJump.conn:Disconnect() end)
-            playerState.infiniteJump.conn = nil
-        end
-        if playerState.infiniteJump.jumpReqConn then
-            pcall(function() playerState.infiniteJump.jumpReqConn:Disconnect() end)
-            playerState.infiniteJump.jumpReqConn = nil
-        end
+        if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end) end
+        if playerState.infiniteJump.pcConn then pcall(function() playerState.infiniteJump.pcConn:Disconnect() end) end
 
-        playerState.infiniteJump.lastJumpTime = 0
-        playerState.infiniteJump.lastJumpRequest = 0
-
-        -- مصدر 1: طلبات القفز (يشتغل على الموبايل)
-        playerState.infiniteJump.jumpReqConn = UserInputService.JumpRequest:Connect(function()
-            if not playerState.infiniteJump.active then return end
-            playerState.infiniteJump.lastJumpRequest = os.clock()
-        end)
-
-        -- مصدر 2: Heartbeat يفحص Space مباشرة (يشتغل على البي سي)
-        playerState.infiniteJump.conn = RunService.Heartbeat:Connect(function()
+        -- Mobile + first PC press
+        playerState.infiniteJump.conn = UserInputService.JumpRequest:Connect(function()
             if not playerState.infiniteJump.active then return end
             local hum = getHumanoid(localPlayer)
-            if not hum or hum.Health <= 0 then return end
-            if hum:GetState() ~= Enum.HumanoidStateType.Freefall then return end
-            if os.clock() - playerState.infiniteJump.lastJumpTime < 0.08 then return end
-            local spaceHeld = UserInputService:IsKeyDown(Enum.KeyCode.Space)
-            local recentRequest = (os.clock() - playerState.infiniteJump.lastJumpRequest) < 0.2
-            if spaceHeld or recentRequest then
+            if hum and hum.Health > 0 then
+                local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if root then root.Velocity = Vector3.new(root.Velocity.X, 50, root.Velocity.Z) end
                 hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                playerState.infiniteJump.lastJumpTime = os.clock()
             end
         end)
+
+        -- PC: hold Space
+        playerState.infiniteJump.pcConn = RunService.Heartbeat:Connect(function()
+            if not playerState.infiniteJump.active then return end
+            local pressed = false
+            pcall(function()
+                pressed = UserInputService:IsKeyDown(Enum.KeyCode.Space)
+            end)
+            if not pressed then return end
+            local hum = getHumanoid(localPlayer)
+            if not hum or hum.Health <= 0 then return end
+            local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            root.Velocity = Vector3.new(root.Velocity.X, 50, root.Velocity.Z)
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end)
+
         showToast("◈  Infinite Jump ON")
     else
-        if playerState.infiniteJump.conn then
-            pcall(function() playerState.infiniteJump.conn:Disconnect() end)
-            playerState.infiniteJump.conn = nil
-        end
-        if playerState.infiniteJump.jumpReqConn then
-            pcall(function() playerState.infiniteJump.jumpReqConn:Disconnect() end)
-            playerState.infiniteJump.jumpReqConn = nil
-        end
+        if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end); playerState.infiniteJump.conn = nil end
+        if playerState.infiniteJump.pcConn then pcall(function() playerState.infiniteJump.pcConn:Disconnect() end); playerState.infiniteJump.pcConn = nil end
         showToast("◈  Infinite Jump OFF")
     end
 end)
@@ -1742,7 +1743,6 @@ localPlayer.CharacterAdded:Connect(function(char)
         bv.Velocity = Vector3.zero
         bv.Parent = root
         playerState.flight.bodyVel = bv
-        if hum then pcall(function() hum.PlatformStand = true end) end
     end
     if playerState.rotation.active and root then
         if playerState.rotation.bodyAV then pcall(function() playerState.rotation.bodyAV:Destroy() end) end
@@ -1761,6 +1761,9 @@ localPlayer.CharacterAdded:Connect(function(char)
         bf.Parent = root
         playerState.swimming.bodyForce = bf
     end
+    if playerState.invisible.active then
+        playerState.invisible.originals = {}
+        for _,
     if playerState.invisible.active then
         playerState.invisible.originals = {}
         for _, part in ipairs(char:GetDescendants()) do
@@ -1782,12 +1785,10 @@ _G.LYNEX_CLEANUP = function()
     end
     if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end) end
     if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
-    local _cleanupHum = getHumanoid(localPlayer)
-    if _cleanupHum then pcall(function() _cleanupHum.PlatformStand = false end) end
     if playerState.rotation.bodyAV then pcall(function() playerState.rotation.bodyAV:Destroy() end) end
     if playerState.swimming.bodyForce then pcall(function() playerState.swimming.bodyForce:Destroy() end) end
     if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end) end
-    if playerState.infiniteJump.jumpReqConn then pcall(function() playerState.infiniteJump.jumpReqConn:Disconnect() end) end
+    if playerState.infiniteJump.pcConn then pcall(function() playerState.infiniteJump.pcConn:Disconnect() end) end
     if playerState.invisible.active then
         for part, orig in pairs(playerState.invisible.originals) do
             if part and part.Parent then pcall(function() part.Transparency = orig end) end
@@ -1800,8 +1801,9 @@ _G.LYNEX_CLEANUP = function()
     if spectate.active then pcall(function() stopSpectating("silent") end) end
     if _G.LYNEX_CLEANUP_MISC then pcall(_G.LYNEX_CLEANUP_MISC) end
 end
+
 --==================================================================
--- 16.6) fetchUrl (FIXED for Delta)
+-- 16.6) fetchUrl
 --==================================================================
 local function fetchUrl(url)
     local body = nil
@@ -3011,7 +3013,6 @@ do
         end
     end
 end
-
 --==================================================================
 -- 16.8d) ⭐ Transfers Page
 --==================================================================
@@ -4119,143 +4120,139 @@ do
         local chIconFrame = create("Frame", {
             Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
             BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-        }, chHeader
-local chIconFrame = create("Frame", {
-    Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
-    BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-}, chHeaderCard)
-addCorner(30, chIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, chIconFrame)
-addGradient(chIconFrame, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
-}, 45)
-create("TextLabel", {
-    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-    Text = "✎", Font = FONT.Logo, TextSize = 26,
-    TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-}, chIconFrame)
+        }, chHeaderCard)
+        addCorner(30, chIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, chIconFrame)
+        addGradient(chIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "✎", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, chIconFrame)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Chat Script",
-    Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, chHeaderCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
-    BackgroundTransparency = 1, Text = "Show and run the Chat Script.",
-    Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, chHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Chat Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Show and run the Chat Script.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chHeaderCard)
 
-local chActionCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 114), BackgroundColor3 = THEME.BG_CARD,
-    BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
-}, chatPage)
-addCorner(12, chActionCard); addStroke(THEME.BORDER, 1, 0.15, chActionCard)
+        local chActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, chatPage)
+        addCorner(12, chActionCard); addStroke(THEME.BORDER, 1, 0.15, chActionCard)
 
-local chStatus = create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
-    BackgroundTransparency = 1, Text = "⏸  Status: Idle",
-    Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, chActionCard)
+        local chStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chActionCard)
 
-local chLoadBtn = create("TextButton", {
-    Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
-    Text = "◈  Show Chat Script",
-    Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
-}, chActionCard)
-addCorner(10, chLoadBtn)
-local chLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, chLoadBtn)
-addGradient(chLoadBtn, {
-    ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-    ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
-    ColorSequenceKeypoint.new(1, THEME.P_MAIN),
-}, 90)
+        local chLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Show Chat Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, chActionCard)
+        addCorner(10, chLoadBtn)
+        local chLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, chLoadBtn)
+        addGradient(chLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
-    BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, chActionCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chActionCard)
 
-local chInstrCard = create("Frame", {
-    Size = UDim2.new(1, 0, 0, 146), BackgroundColor3 = THEME.BG_CARD,
-    BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
-}, chatPage)
-addCorner(12, chInstrCard); addStroke(THEME.BORDER, 1, 0.15, chInstrCard)
+        local chInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146), BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05, BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, chatPage)
+        addCorner(12, chInstrCard); addStroke(THEME.BORDER, 1, 0.15, chInstrCard)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
-    Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
-    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
-}, chInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
-    BackgroundTransparency = 1, Text = "Press the button above to show and run the Chat Script.",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, chInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
-    BackgroundTransparency = 1, Text = "لتفعيل السكربت اضغط على هذا الزر",
-    Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, chInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-    BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to show and run the Chat Script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "لتفعيل السكربت اضغط على هذا الزر",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
+            BackgroundTransparency = 1, Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, chInstrCard)
 
-local chLoadBusy = false
-local function setChStatus(text, color)
-    chStatus.Text = text
-    chStatus.TextColor3 = color or THEME.TX_DIM
-end
-
-chLoadBtn.MouseButton1Click:Connect(function()
-    if chLoadBusy then return end
-    chLoadBusy = true
-    local origText, origBg = "◈  Show Chat Script", THEME.P_MAIN
-    chLoadBtn.Text = "⏳  Loading…"
-    chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
-    setChStatus("⏳  Fetching script…", THEME.TX_DIM)
-    task.spawn(function()
-        local success, errMsg = false, nil
-        local ok, ret1, ret2 = pcall(function()
-            local body = fetchUrl(CHAT_URL)
-            if not body then return false, "Download failed" end
-            if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
-            local fn, compileErr = loadstring(body)
-            if not fn then return false, "Compile error: " .. tostring(compileErr) end
-            local runOk, runErr = pcall(fn)
-            if not runOk then return false, "Runtime error: " .. tostring(runErr) end
-            return true
-        end)
-        if ok then
-            if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
-        else errMsg = tostring(ret1) end
-        task.wait(0.25)
-        chLoadBusy = false
-        chLoadBtn.Text = origText
-        chLoadBtn.BackgroundColor3 = origBg
-        if success then
-            setChStatus("✓  Chat Script executed successfully", THEME.OK)
-            showToast("✓  Chat Script loaded")
-        else
-            warn("[LYNEX Chat] Failed:", errMsg)
-            setChStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
-            showToast("✕  " .. (errMsg or "Unknown error"))
+        local chLoadBusy = false
+        local function setChStatus(text, color)
+            chStatus.Text = text
+            chStatus.TextColor3 = color or THEME.TX_DIM
         end
-    end)
-end)
-styleActionButton(chLoadBtn, chLoadStroke)
+
+        chLoadBtn.MouseButton1Click:Connect(function()
+            if chLoadBusy then return end
+            chLoadBusy = true
+            local origText, origBg = "◈  Show Chat Script", THEME.P_MAIN
+            chLoadBtn.Text = "⏳  Loading…"
+            chLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setChStatus("⏳  Fetching script…", THEME.TX_DIM)
+            task.spawn(function()
+                local success, errMsg = false, nil
+                local ok, ret1, ret2 = pcall(function()
+                    local body = fetchUrl(CHAT_URL)
+                    if not body then return false, "Download failed" end
+                    if typeof(loadstring) ~= "function" then return false, "loadstring unavailable" end
+                    local fn, compileErr = loadstring(body)
+                    if not fn then return false, "Compile error: " .. tostring(compileErr) end
+                    local runOk, runErr = pcall(fn)
+                    if not runOk then return false, "Runtime error: " .. tostring(runErr) end
+                    return true
+                end)
+                if ok then
+                    if ret1 == true then success = true else errMsg = ret2 or "Unknown error" end
+                else errMsg = tostring(ret1) end
+                task.wait(0.25)
+                chLoadBusy = false
+                chLoadBtn.Text = origText
+                chLoadBtn.BackgroundColor3 = origBg
+                if success then
+                    setChStatus("✓  Chat Script executed successfully", THEME.OK)
+                    showToast("✓  Chat Script loaded")
+                else
+                    warn("[LYNEX Chat] Failed:", errMsg)
+                    setChStatus("✕  " .. (errMsg or "Unknown error"), THEME.DANGER_HI)
+                    showToast("✕  " .. (errMsg or "Unknown error"))
+                end
+            end)
+        end)
+        styleActionButton(chLoadBtn, chLoadStroke)
     end)
 
     if okChat then print("[LYNEX] ✓ Chat section loaded OK")
@@ -4672,5 +4669,5 @@ do
     end
 end
 
-print("[LYNEX HUB v3.9] ✦ Ready — Tools + Handcuff + Infinite Cash tabs added (🔧 🔗 💵)")
-print("[LYNEX HUB v3.9] ✦ Infinite Jump + Flight fixed for PC & Mobile ✅")
+print("[LYNEX HUB v3.9] ✦ Ready — PC + Mobile Patch applied (Infinite Jump + Flight)")
+print("[LYNEX HUB v3.9] ✦ Tools + Handcuff + Infinite Cash tabs (🔧 🔗 💵)")
