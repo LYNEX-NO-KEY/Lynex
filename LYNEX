@@ -337,7 +337,7 @@ local TABS = {
     { id = "car",           name = "تحكم بالسياره",     icon = "🚗" },
     { id = "unclemazrouk",  name = "المهمة العم مرزوق", icon = "✦"  },
     { id = "admin",         name = "كشف الادمن",        icon = "★"  },
-    { id = "view",          name = "View",              icon = "◎"  },
+    { id = "view",          name = "مشاهده اللاعبين",              icon = "◎"  },
     { id = "dances",        name = "رقصات",             icon = "💃" },
     { id = "animationpacks",name = "جميع المشيات",   icon = "🎬" },
     { id = "autopiano",     name = "عزف البيانو تلقائي",        icon = "🎹" },
