@@ -5,12 +5,22 @@ local LocalPlayer = Players.LocalPlayer
 -- // متغيرات
 local isRecording = false
 local allLogs = {}
-local lastLogText = "" -- لمنع تكرار نفس الرسالة بسرعة
+local lastLogText = ""
+
+-- // دالة النسخ (تدعم الكمبيوتر والهاتف)
+local function copyText(text)
+    if setclipboard then
+        setclipboard(text)
+    elseif toclipboard then
+        toclipboard(text)
+    end
+end
 
 -- // 1. صنع الواجهة (UI)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DeltaLoggerUI"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true -- يضمن ظهورها بشكل صحيح على شاشات الكمبيوتر
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
@@ -21,12 +31,8 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
-
--- عنوان
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
@@ -36,7 +42,6 @@ Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
 Title.Parent = MainFrame
 
--- زر بدء/إيقاف التسجيل
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0.45, 0, 0, 40)
 ToggleBtn.Position = UDim2.new(0.03, 0, 0, 50)
@@ -46,12 +51,8 @@ ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextSize = 14
 ToggleBtn.Parent = MainFrame
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 5)
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 5)
-ToggleCorner.Parent = ToggleBtn
-
--- زر مسح السجل
 local ClearBtn = Instance.new("TextButton")
 ClearBtn.Size = UDim2.new(0.45, 0, 0, 40)
 ClearBtn.Position = UDim2.new(0.52, 0, 0, 50)
@@ -61,12 +62,8 @@ ClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ClearBtn.Font = Enum.Font.GothamBold
 ClearBtn.TextSize = 14
 ClearBtn.Parent = MainFrame
+Instance.new("UICorner", ClearBtn).CornerRadius = UDim.new(0, 5)
 
-local ClearCorner = Instance.new("UICorner")
-ClearCorner.CornerRadius = UDim.new(0, 5)
-ClearCorner.Parent = ClearBtn
-
--- منطقة السجل (Logs)
 local LogFrame = Instance.new("ScrollingFrame")
 LogFrame.Size = UDim2.new(0.94, 0, 0, 180)
 LogFrame.Position = UDim2.new(0.03, 0, 0, 100)
@@ -81,7 +78,6 @@ LogLayout.Padding = UDim.new(0, 5)
 LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
 LogLayout.Parent = LogFrame
 
--- زر نسخ الكل
 local CopyBtn = Instance.new("TextButton")
 CopyBtn.Size = UDim2.new(0.94, 0, 0, 35)
 CopyBtn.Position = UDim2.new(0.03, 0, 0, 295)
@@ -91,19 +87,16 @@ CopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CopyBtn.Font = Enum.Font.GothamBold
 CopyBtn.TextSize = 14
 CopyBtn.Parent = MainFrame
-
-local CopyCorner = Instance.new("UICorner")
-CopyCorner.CornerRadius = UDim.new(0, 5)
-CopyCorner.Parent = CopyBtn
+Instance.new("UICorner", CopyBtn).CornerRadius = UDim.new(0, 5)
 
 -- // 2. دالة إضافة نص للسجل
 local function addLog(text)
-    -- لمنع تكرار نفس الأمر بسرعة (يسبب لاق)
     if text == lastLogText then return end
     lastLogText = text
     task.delay(0.5, function() lastLogText = "" end)
 
     table.insert(allLogs, text)
+    print("[كاشف الأوامر]: " .. text) -- تطبع في الكونسول كخطة بديلة للكمبيوتر
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -10, 0, 30)
@@ -143,28 +136,37 @@ end)
 
 CopyBtn.MouseButton1Click:Connect(function()
     if #allLogs > 0 then
-        setclipboard(table.concat(allLogs, "\n"))
+        copyText(table.concat(allLogs, "\n"))
         CopyBtn.Text = "تم النسخ!"
         task.wait(2)
         CopyBtn.Text = "نسخ الكل"
     end
 end)
 
--- // 4. التقاط الأوامر (فقط عندما يكون التسجيل مفعل)
+-- // 4. التقاط الأوامر (نسخة محسنة للكمبيوتر)
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    if isRecording and getnamecallmethod() == "FireServer" then
+    local method = getnamecallmethod()
+    
+    -- التحقق مما إذا كان التسجيل مفعل، وأن الأمر هو FireServer، وأنه من اللاعب وليس من اللعبة
+    if isRecording and method == "FireServer" and not checkcaller() then
         local args = {...}
-        
-        -- نأخذ اسم الأمر فقط بدون المسار الطويل
         local remoteName = self.Name 
         
-        local argsString = ""
-        for i, v in pairs(args) do
-            argsString = argsString .. tostring(v) .. ", "
+        -- استثناء الأوامر المزعجة
+        if remoteName ~= "ClientHeartbeat" and remoteName ~= "ServerListAction" then
+            local argsString = ""
+            for i, v in pairs(args) do
+                if typeof(v) ~= "Instance" then 
+                    argsString = argsString .. tostring(v) .. ", "
+                end
+            end
+            
+            -- استخدام task.spawn لمنع تجميد السكربت أو تعليقه أثناء الالتقاط
+            task.spawn(function()
+                addLog("الأمر: " .. remoteName .. " | القيم: " .. argsString)
+            end)
         end
-        
-        addLog("الأمر: " .. remoteName .. " | القيم: " .. argsString)
     end
     
     return oldNamecall(self, ...)
