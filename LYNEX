@@ -1,6 +1,6 @@
 --!nonstrict
 --==================================================================
---  ✦ LYNEX HUB v3.9 ✦  — TOOLS + HANDCUFF + INFINITE CASH + ESP + BOMB + DANCES + ANIMATION PACKS + AUTO PIANO
+--  ✦ LYNEX HUB v4.0 ✦
 --==================================================================
 
 local Players          = game:GetService("Players")
@@ -21,12 +21,7 @@ local settings = { animations = true, transparency = 15, glow = true }
 local windowHidden = false
 local screenGui, blurObj
 
---==================================================================
--- 1) Root resolver
---==================================================================
-local function resolveGuiParent()
-    return playerGui
-end
+local function resolveGuiParent() return playerGui end
 
 --==================================================================
 -- 2) Theme
@@ -332,7 +327,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH ANIMATION PACKS + AUTO PIANO)
+-- 10) Tabs (WITH VIEW)
 --==================================================================
 local TABS = {
     { id = "home",          name = "المنزل",            icon = "⌂"  },
@@ -342,6 +337,7 @@ local TABS = {
     { id = "car",           name = "تحكم بالسياره",     icon = "🚗" },
     { id = "unclemazrouk",  name = "المهمة العم مرزوق", icon = "✦"  },
     { id = "admin",         name = "كشف الادمن",        icon = "★"  },
+    { id = "view",          name = "View",              icon = "◎"  },
     { id = "dances",        name = "رقصات",             icon = "💃" },
     { id = "animationpacks",name = "جميع المشيات",   icon = "🎬" },
     { id = "autopiano",     name = "عزف البيانو تلقائي",        icon = "🎹" },
@@ -394,7 +390,7 @@ end
 for i, tab in ipairs(TABS) do createTabButton(tab, i) end
 
 --==================================================================
--- 11) Pages
+-- 11) Pages Factory
 --==================================================================
 local function createPage(id, scrolling)
     local class = scrolling and "ScrollingFrame" or "Frame"
@@ -415,7 +411,7 @@ local function createPage(id, scrolling)
 end
 
 --==================================================================
--- 12) Home
+-- 12) Home Page
 --==================================================================
 local homePage = createPage("home", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, homePage)
@@ -1099,6 +1095,7 @@ local NEWS_DATA = {
     { title = "Chat Tab", body = "New Chat tab added.", date = "2025-04-12" },
     { title = "Uncle Mazrouk Tab", body = "New Mazrouk tab added.", date = "2025-04-19" },
     { title = "Admin Tab", body = "New Admin tab added.", date = "2025-05-01" },
+    { title = "View Tab", body = "New View tab added (◎).", date = "2025-05-03" },
     { title = "ESP Tab", body = "New ESP tab added (👁️).", date = "2025-05-02" },
     { title = "Bomb Tab", body = "New Bomb tab added (💣).", date = "2025-05-02" },
     { title = "Mobile & fetchUrl Fixes", body = "UI forced to PlayerGui and fetchUrl fixed for Delta Mobile.", date = "2025-04-26" },
@@ -1901,13 +1898,6 @@ create("TextLabel", {
     Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, afInstrCard)
-create("TextLabel", {
-    Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 12, 1, -28),
-    BackgroundTransparency = 1,
-    Text = "⚠ Loading is disabled in Studio without HttpEnabled.",
-    Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-    TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
-}, afInstrCard)
 
 local loadBusy = false
 local function setAfStatus(text, color)
@@ -2433,6 +2423,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, adminPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c0) ◎ VIEW Page — NEW!
+--==================================================================
+print("[LYNEX] Section 16.8c0 — View loading...")
+
+do
+    local VIEW_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/View"
+    local viewPage
+    local okView, errView = pcall(function()
+        viewPage = createPage("view", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, viewPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, viewPage)
+
+        local vwHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, viewPage)
+        addCorner(12, vwHeaderCard); addStroke(THEME.BORDER, 1, 0.15, vwHeaderCard)
+
+        local vwIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, vwHeaderCard)
+        addCorner(30, vwIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, vwIconFrame)
+        addGradient(vwIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "◎", Font = FONT.Logo, TextSize = 28,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, vwIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "View Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, vwHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "View Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, vwHeaderCard)
+
+        local vwActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, viewPage)
+        addCorner(12, vwActionCard); addStroke(THEME.BORDER, 1, 0.15, vwActionCard)
+
+        local vwStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, vwActionCard)
+
+        local vwLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load View Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, vwActionCard)
+        addCorner(10, vwLoadBtn)
+        local vwLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, vwLoadBtn)
+        addGradient(vwLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, vwActionCard)
+
+        local vwInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, viewPage)
+        addCorner(12, vwInstrCard); addStroke(THEME.BORDER, 1, 0.15, vwInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, vwInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the View script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, vwInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت العرض.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, vwInstrCard)
+
+        local vwLoadBusy = false
+        local function setVwStatus(text, color)
+            vwStatus.Text = text
+            vwStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        vwLoadBtn.MouseButton1Click:Connect(function()
+            if vwLoadBusy then return end
+            vwLoadBusy = true
+            local origText = "◈  Load View Script"
+            local origBg = THEME.P_MAIN
+            vwLoadBtn.Text = "⏳  Loading…"
+            vwLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setVwStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(VIEW_URL))()
+                end)
+                task.wait(0.3)
+                vwLoadBusy = false
+                vwLoadBtn.Text = origText
+                vwLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setVwStatus("✓  View Script executed successfully", THEME.OK)
+                    showToast("✓  View Script loaded")
+                else
+                    warn("[LYNEX View] Failed:", err)
+                    setVwStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(vwLoadBtn, vwLoadStroke)
+    end)
+
+    if okView then
+        print("[LYNEX] ✓ View section loaded OK")
+    else
+        warn("[LYNEX] ✗ View section FAILED:", errView)
+        if not viewPage then
+            viewPage = createPage("view", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load View tab:\n\n" .. tostring(errView),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, viewPage)
         end
     end
 end
@@ -4058,7 +4210,7 @@ do
 end
 
 --==================================================================
--- 16.14) 🎹 Auto Piano Page — NEW!
+-- 16.14) 🎹 Auto Piano Page
 --==================================================================
 print("[LYNEX] Section 16.14 — Auto Piano loading...")
 
@@ -5377,4 +5529,5 @@ do
     end
 end
 
-print("[LYNEX HUB v3.9] ✦ Ready — 23 tabs (Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
+print("[LYNEX HUB v4.0] ✦ Ready — 24 tabs (View ◎ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
+showToast("◎  LYNEX HUB v4.0 loaded")
