@@ -5,22 +5,18 @@ local LocalPlayer = Players.LocalPlayer
 -- // متغيرات
 local isRecording = false
 local allLogs = {}
-local lastLogText = ""
 
--- // دالة النسخ (تدعم الكمبيوتر والهاتف)
+-- // دالة النسخ
 local function copyText(text)
-    if setclipboard then
-        setclipboard(text)
-    elseif toclipboard then
-        toclipboard(text)
-    end
+    if setclipboard then setclipboard(text)
+    elseif toclipboard then toclipboard(text) end
 end
 
--- // 1. صنع الواجهة (UI)
+-- // 1. صنع الواجهة
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DeltaLoggerUI"
+ScreenGui.Name = "LoggerPC_Fix"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true -- يضمن ظهورها بشكل صحيح على شاشات الكمبيوتر
+ScreenGui.DisplayOrder = 999 -- لضمان ظهورها فوق كل شيء
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
@@ -36,7 +32,7 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "كاشف أوامر الضرب"
+Title.Text = "كاشف الأوامر (نسخة البي سي)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -89,20 +85,24 @@ CopyBtn.TextSize = 14
 CopyBtn.Parent = MainFrame
 Instance.new("UICorner", CopyBtn).CornerRadius = UDim.new(0, 5)
 
--- // 2. دالة إضافة نص للسجل
+-- // 2. دالة إضافة نص للسجل (معدلة للبي سي)
 local function addLog(text)
-    if text == lastLogText then return end
-    lastLogText = text
-    task.delay(0.5, function() lastLogText = "" end)
-
     table.insert(allLogs, text)
-    print("[كاشف الأوامر]: " .. text) -- تطبع في الكونسول كخطة بديلة للكمبيوتر
+    print("[LOG]: " .. text) -- تطبع في الكونسول كضمانة ثانية
     
+    -- الحد الأقصى 50 رسالة عشان ما يعلق الكمبيوتر
+    if #allLogs > 50 then
+        allLogs = {text} 
+        for _, v in pairs(LogFrame:GetChildren()) do
+            if v:IsA("TextLabel") then v:Destroy() end
+        end
+    end
+
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -10, 0, 30)
     label.BackgroundTransparency = 1
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.TextColor3 = Color3.fromRGB(150, 255, 150)
     label.Font = Enum.Font.Code
     label.TextSize = 12
     label.TextWrapped = true
@@ -143,13 +143,12 @@ CopyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- // 4. التقاط الأوامر (نسخة محسنة للكمبيوتر)
+-- // 4. التقاط الأوامر (نسخة آمنة للبي سي)
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     
-    -- التحقق مما إذا كان التسجيل مفعل، وأن الأمر هو FireServer، وأنه من اللاعب وليس من اللعبة
-    if isRecording and method == "FireServer" and not checkcaller() then
+    if isRecording and method == "FireServer" then
         local args = {...}
         local remoteName = self.Name 
         
@@ -162,7 +161,7 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
                 end
             end
             
-            -- استخدام task.spawn لمنع تجميد السكربت أو تعليقه أثناء الالتقاط
+            -- استخدام task.spawn هنا هو السر لمنع تعليق واجهة الكمبيوتر
             task.spawn(function()
                 addLog("الأمر: " .. remoteName .. " | القيم: " .. argsString)
             end)
