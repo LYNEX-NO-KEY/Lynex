@@ -1,207 +1,198 @@
 --[[
-    كاشف أمر الضرب (FireServer Detector)
-    يعمل على Delta Executor
-    الاستخدام:
-    1. شغّل السكربت.
-    2. اضغط زر "بدء الكشف".
-    3. اضرب اللاعب في المضرب.
-    4. سيظهر الأمر في المربع، اضغط "نسخ".
+    Simple Hit Logger - PC
+    يعرض كل الأوامر على الشاشة مباشرة
 ]]
 
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local LP = Players.LocalPlayer
 
--- ======================= إنشاء الواجهة =======================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "HitRemoteDetector"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- ===== واجهة =====
+local sg = Instance.new("ScreenGui")
+sg.Name = "HitLogger"
+sg.ResetOnSpawn = false
+sg.DisplayOrder = 999
+sg.IgnoreGuiInset = true
+sg.Parent = LP:WaitForChild("PlayerGui")
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 380, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -190, 0.5, -160)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
+local f = Instance.new("Frame")
+f.Size = UDim2.new(0, 400, 0, 400)
+f.Position = UDim2.new(0, 15, 0, 15)
+f.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+f.BorderSizePixel = 0
+f.Active = true
+f.Draggable = true
+f.Parent = sg
+Instance.new("UICorner", f).CornerRadius = UDim.new(0, 10)
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = MainFrame
+-- العنوان
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+title.BorderSizePixel = 0
+title.Text = "🔍 كاشف الأوامر - اضرب اللاعب"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 15
+title.Parent = f
+Instance.new("UICorner", title).CornerRadius = UDim.new(0, 10)
 
-local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 35)
-TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-TitleBar.BorderSizePixel = 0
-TitleBar.Parent = MainFrame
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 8)
-TitleCorner.Parent = TitleBar
+-- منطقة السجل
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(0.95, 0, 0, 290)
+scroll.Position = UDim2.new(0.025, 0, 0, 42)
+scroll.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+scroll.BorderSizePixel = 0
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.ScrollBarThickness = 5
+scroll.Parent = f
+Instance.new("UICorner", scroll).CornerRadius = UDim.new(0, 6)
 
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -20, 1, 0)
-TitleLabel.Position = UDim2.new(0, 10, 0, 0)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "كاشف أمر الضرب - FireServer Detector"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 14
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = TitleBar
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 2)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = scroll
 
--- زر بدء/إيقاف الكشف
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(1, -20, 0, 36)
-ToggleBtn.Position = UDim2.new(0, 10, 0, 45)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 200)
-ToggleBtn.BorderSizePixel = 0
-ToggleBtn.Text = "بدء الكشف (Start Spy)"
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 14
-ToggleBtn.Parent = MainFrame
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 6)
-ToggleCorner.Parent = ToggleBtn
+-- زر مسح + زر نسخ
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0.46, 0, 0, 30)
+clearBtn.Position = UDim2.new(0.025, 0, 0, 345)
+clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+clearBtn.Text = "🗑 مسح"
+clearBtn.TextColor3 = Color3.new(1, 1, 1)
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 13
+clearBtn.Parent = f
+Instance.new("UICorner", clearBtn).CornerRadius = UDim.new(0, 6)
 
--- مربع عرض النتيجة
-local LogBox = Instance.new("TextBox")
-LogBox.Size = UDim2.new(1, -20, 0, 140)
-LogBox.Position = UDim2.new(0, 10, 0, 90)
-LogBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-LogBox.BorderSizePixel = 1
-LogBox.BorderColor3 = Color3.fromRGB(60, 60, 70)
-LogBox.TextColor3 = Color3.fromRGB(0, 255, 150)
-LogBox.Font = Enum.Font.Code
-LogBox.TextSize = 12
-LogBox.TextXAlignment = Enum.TextXAlignment.Left
-LogBox.TextYAlignment = Enum.TextYAlignment.Top
-LogBox.TextWrapped = true
-LogBox.ClearTextOnFocus = false
-LogBox.MultiLine = true
-LogBox.Text = "في انتظار بدء الكشف..."
-LogBox.Parent = MainFrame
+local copyBtn = Instance.new("TextButton")
+copyBtn.Size = UDim2.new(0.46, 0, 0, 30)
+copyBtn.Position = UDim2.new(0.515, 0, 0, 345)
+copyBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 220)
+copyBtn.Text = "📋 نسخ الكل"
+copyBtn.TextColor3 = Color3.new(1, 1, 1)
+copyBtn.Font = Enum.Font.GothamBold
+copyBtn.TextSize = 13
+copyBtn.Parent = f
+Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 6)
 
--- زر نسخ
-local CopyBtn = Instance.new("TextButton")
-CopyBtn.Size = UDim2.new(1, -20, 0, 36)
-CopyBtn.Position = UDim2.new(0, 10, 0, 240)
-CopyBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 80)
-CopyBtn.BorderSizePixel = 0
-CopyBtn.Text = "نسخ الأمر (Copy to Clipboard)"
-CopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CopyBtn.Font = Enum.Font.GothamBold
-CopyBtn.TextSize = 14
-CopyBtn.Parent = MainFrame
-local CopyCorner = Instance.new("UICorner")
-CopyCorner.CornerRadius = UDim.new(0, 6)
-CopyCorner.Parent = CopyBtn
+-- ===== دالة إضافة سطر =====
+local counter = 0
+local allText = {}
 
--- ======================= منطق الكشف =======================
-local isSpying = false
-local oldNamecall
-local capturedLine = ""
+local function addLine(text, color)
+    counter = counter + 1
+    table.insert(allText, text)
 
--- دالة لتنسيق الوسائط (Arguments) بشكل مقروء
-local function formatArg(v)
-    local t = typeof(v)
-    if t == "string" then
-        return string.format("%q", v)
-    elseif t == "Instance" then
-        return v:GetFullName()
-    elseif t == "Vector3" then
-        return string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z)
-    elseif t == "CFrame" then
-        return "CFrame.new(...)"
-    elseif t == "number" then
-        return tostring(v)
-    elseif t == "boolean" then
-        return tostring(v)
-    elseif t == "table" then
-        return "{...}"
-    else
-        return tostring(v)
-    end
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -6, 0, 0)
+    lbl.AutomaticSize = Enum.AutomaticSize.Y
+    lbl.BackgroundTransparency = 1
+    lbl.Text = counter .. ". " .. text
+    lbl.TextColor3 = color or Color3.fromRGB(120, 255, 120)
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = 11
+    lbl.TextWrapped = true
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.LayoutOrder = counter
+    lbl.Parent = scroll
+
+    scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
+    scroll.CanvasPosition = Vector2.new(0, layout.AbsoluteContentSize.Y)
 end
 
-local function startSpy()
-    if isSpying then return end
-    isSpying = true
-    ToggleBtn.Text = "إيقاف الكشف (Stop Spy)"
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    LogBox.Text = "الكشف شغال... اضرب اللاعب الآن."
+clearBtn.MouseButton1Click:Connect(function()
+    for _, c in ipairs(scroll:GetChildren()) do
+        if c:IsA("TextLabel") then c:Destroy() end
+    end
+    allText = {}
+    counter = 0
+    addLine("تم المسح", Color3.fromRGB(200, 200, 200))
+end)
 
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
+copyBtn.MouseButton1Click:Connect(function()
+    local txt = table.concat(allText, "\n")
+    if setclipboard then
+        pcall(setclipboard, txt)
+        copyBtn.Text = "✅ تم النسخ"
+        task.wait(1.5)
+        copyBtn.Text = "📋 نسخ الكل"
+    else
+        copyBtn.Text = "❌ غير مدعوم"
+        task.wait(1.5)
+        copyBtn.Text = "📋 نسخ الكل"
+    end
+end)
 
-        -- نلتقط فقط استدعاءات FireServer
-        if method == "FireServer" and not checkcaller() then
-            local args = {...}
-            local formattedArgs = {}
-            for i, v in ipairs(args) do
-                formattedArgs[i] = formatArg(v)
+-- ===== الفحص =====
+addLine("=== بدء الفحص ===", Color3.fromRGB(255, 200, 100))
+
+-- نتحقق من الدوال
+local hasHook = (hookmetamethod ~= nil)
+local hasCheck = (checkcaller ~= nil)
+
+addLine("hookmetamethod: " .. tostring(hookmetamethod ~= nil), hasHook and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,80,80))
+addLine("checkcaller: " .. tostring(hasCheck), hasCheck and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,80,80))
+addLine("setclipboard: " .. tostring(setclipboard ~= nil), Color3.fromRGB(200,200,255))
+
+-- ===== Hook FireServer =====
+if hasHook then
+    local success = pcall(function()
+        local old
+        old = hookmetamethod(game, "__namecall", function(self, ...)
+            local m = getnamecallmethod()
+            if m == "FireServer" or m == "InvokeServer" then
+                local args = {...}
+                local parts = {}
+                for i, v in ipairs(args) do
+                    local ty = typeof(v)
+                    if ty == "Instance" then
+                        parts[i] = v:GetFullName()
+                    elseif ty == "string" then
+                        parts[i] = '"'..v..'"'
+                    elseif ty == "number" then
+                        parts[i] = tostring(v)
+                    elseif ty == "boolean" or ty == "nil" then
+                        parts[i] = tostring(v)
+                    else
+                        parts[i] = "<"..ty..">"
+                    end
+                end
+                local path = self:GetFullName()
+                local line = "["..m.."] "..path.."("..table.concat(parts, ", ")..")"
+                task.spawn(addLine, "🎯 "..line, Color3.fromRGB(255, 130, 255))
             end
+            return old(self, ...)
+        end)
+    end)
+    addLine("Hook: "..(success and "✅ شغال" or "❌ فشل"), success and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,80,80))
+else
+    addLine("❌ hookmetamethod غير مدعوم!", Color3.fromRGB(255,80,80))
+end
 
-            local path = self:GetFullName()
-            capturedLine = string.format('%s:FireServer(%s)', path, table.concat(formattedArgs, ", "))
-
-            -- عرض في الواجهة (على Thread رئيسي)
-            task.spawn(function()
-                LogBox.Text = capturedLine
-            end)
-
-            -- (اختياري) إيقاف الكشف تلقائياً بعد أول التقاط
-            -- يمكنك تعطيل هذا السطر إذا أردت التقاط عدة أوامر
-            -- stopSpy() 
-        end
-
-        return oldNamecall(self, ...)
+-- ===== مراقبة Tools =====
+local function watchTool(tool)
+    if not tool:IsA("Tool") then return end
+    addLine("👁 Tool: "..tool.Name, Color3.fromRGB(150,200,255))
+    tool.Activated:Connect(function()
+        task.spawn(addLine, "🖱 ضربة! Tool: "..tool.Name, Color3.fromRGB(255,255,100))
     end)
 end
 
-local function stopSpy()
-    if not isSpying then return end
-    isSpying = false
-    ToggleBtn.Text = "بدء الكشف (Start Spy)"
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 200)
+for _, c in ipairs(LP:GetChildren()) do watchTool(c) end
+LP.ChildAdded:Connect(watchTool)
+LP.CharacterAdded:Connect(function(char)
+    for _, c in ipairs(char:GetChildren()) do watchTool(c) end
+    char.ChildAdded:Connect(watchTool)
+end)
 
-    if oldNamecall then
-        hookmetamethod(game, "__namecall", oldNamecall)
-        oldNamecall = nil
-    end
-
-    if LogBox.Text == "الكشف شغال... اضرب اللاعب الآن." then
-        LogBox.Text = "تم إيقاف الكشف."
-    end
-end
-
-ToggleBtn.MouseButton1Click:Connect(function()
-    if isSpying then
-        stopSpy()
-    else
-        startSpy()
+-- ===== مراقبة ضغطات الماوس =====
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        task.spawn(addLine, "🖱 ضغطة ماوس", Color3.fromRGB(255,255,150))
     end
 end)
 
--- زر النسخ
-CopyBtn.MouseButton1Click:Connect(function()
-    if capturedLine ~= "" and setclipboard then
-        setclipboard(capturedLine)
-        CopyBtn.Text = "تم النسخ ✔"
-        task.wait(1.5)
-        CopyBtn.Text = "نسخ الأمر (Copy to Clipboard)"
-    elseif capturedLine == "" then
-        CopyBtn.Text = "لا يوجد أمر لنسخه"
-        task.wait(1.5)
-        CopyBtn.Text = "نسخ الأمر (Copy to Clipboard)"
-    else
-        CopyBtn.Text = "setclipboard غير مدعوم"
-        task.wait(1.5)
-        CopyBtn.Text = "نسخ الأمر (Copy to Clipboard)"
-    end
-end)
-
--- إغلاق السكربت عند إعادة التحميل (اختياري)
--- game:BindToClose(function() stopSpy() end)
+addLine("=== ✅ جاهز ===", Color3.fromRGB(120,255,120))
+addLine("👉 اضرب اللاعب الآن", Color3.fromRGB(255,200,100))
