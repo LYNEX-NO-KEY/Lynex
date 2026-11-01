@@ -1,0 +1,208 @@
+-- // الخدمات
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+-- // متغيرات
+local isRecording = false
+local isAutoAttacking = false
+local ATTACK_RANGE = 15
+local allLogs = {}
+
+-- // 1. صنع الواجهة
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DeltaLoggerUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Text = "كاشف وضارب تلقائي"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
+
+-- أزرار التسجيل
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0.45, 0, 0, 40)
+ToggleBtn.Position = UDim2.new(0.03, 0, 0, 50)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+ToggleBtn.Text = "بدء التسجيل"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Parent = MainFrame
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 5)
+
+local ClearBtn = Instance.new("TextButton")
+ClearBtn.Size = UDim2.new(0.45, 0, 0, 40)
+ClearBtn.Position = UDim2.new(0.52, 0, 0, 50)
+ClearBtn.BackgroundColor3 = Color3.fromRGB(200, 100, 50)
+ClearBtn.Text = "مسح السجل"
+ClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearBtn.Font = Enum.Font.GothamBold
+ClearBtn.Parent = MainFrame
+Instance.new("UICorner", ClearBtn).CornerRadius = UDim.new(0, 5)
+
+-- زر الضرب التلقائي بالأدوات
+local AutoBtn = Instance.new("TextButton")
+AutoBtn.Size = UDim2.new(0.94, 0, 0, 40)
+AutoBtn.Position = UDim2.new(0.03, 0, 0, 95)
+AutoBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+AutoBtn.Text = "الضرب التلقائي (بالأداة): مغلق"
+AutoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoBtn.Font = Enum.Font.GothamBold
+AutoBtn.Parent = MainFrame
+Instance.new("UICorner", AutoBtn).CornerRadius = UDim.new(0, 5)
+
+-- منطقة السجل
+local LogFrame = Instance.new("ScrollingFrame")
+LogFrame.Size = UDim2.new(0.94, 0, 0, 180)
+LogFrame.Position = UDim2.new(0.03, 0, 0, 145)
+LogFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+LogFrame.BorderSizePixel = 0
+LogFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+LogFrame.ScrollBarThickness = 5
+LogFrame.Parent = MainFrame
+
+local LogLayout = Instance.new("UIListLayout")
+LogLayout.Padding = UDim.new(0, 5)
+LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+LogLayout.Parent = LogFrame
+
+local CopyBtn = Instance.new("TextButton")
+CopyBtn.Size = UDim2.new(0.94, 0, 0, 35)
+CopyBtn.Position = UDim2.new(0.03, 0, 0, 335)
+CopyBtn.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
+CopyBtn.Text = "نسخ الكل"
+CopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CopyBtn.Font = Enum.Font.GothamBold
+CopyBtn.Parent = MainFrame
+Instance.new("UICorner", CopyBtn).CornerRadius = UDim.new(0, 5)
+
+local function addLog(text)
+    table.insert(allLogs, text)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -10, 0, 30)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Code
+    label.TextSize = 12
+    label.TextWrapped = true
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = LogFrame
+    LogFrame.CanvasSize = UDim2.new(0, 0, 0, LogLayout.AbsoluteContentSize.Y + 10)
+    LogFrame.CanvasPosition = Vector2.new(0, LogLayout.AbsoluteContentSize.Y)
+end
+
+-- أزرار التحكم
+ToggleBtn.MouseButton1Click:Connect(function()
+    isRecording = not isRecording
+    if isRecording then
+        ToggleBtn.Text = "إيقاف التسجيل"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        addLog("[النظام] جاهز.. اضرب اللاعب الآن!")
+    else
+        ToggleBtn.Text = "بدء التسجيل"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        addLog("[النظام] تم إيقاف التسجيل.")
+    end
+end)
+
+ClearBtn.MouseButton1Click:Connect(function()
+    allLogs = {}
+    for _, v in pairs(LogFrame:GetChildren()) do if v:IsA("TextLabel") then v:Destroy() end end
+end)
+
+CopyBtn.MouseButton1Click:Connect(function()
+    if #allLogs > 0 then
+        setclipboard(table.concat(allLogs, "\n"))
+        CopyBtn.Text = "تم النسخ!"
+        task.wait(2) CopyBtn.Text = "نسخ الكل"
+    end
+end)
+
+AutoBtn.MouseButton1Click:Connect(function()
+    isAutoAttacking = not isAutoAttacking
+    if isAutoAttacking then
+        AutoBtn.Text = "الضرب التلقائي (بالأداة): مفتوح"
+        AutoBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    else
+        AutoBtn.Text = "الضرب التلقائي (بالأداة): مغلق"
+        AutoBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    end
+end)
+
+-- // التقاط الأوامر (باستثناء Heartbeat و Character)
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    if isRecording then
+        local method = getnamecallmethod()
+        -- استثناء الأوامر المزعجة فقط
+        if (method == "FireServer" or method == "InvokeServer") and self.Name ~= "ClientHeartbeat" and self.Name ~= "Character" then
+            local args = {...}
+            local argsString = ""
+            for i, v in pairs(args) do
+                if typeof(v) ~= "Instance" then -- تجاهل الكائنات الطويلة
+                    argsString = argsString .. tostring(v) .. ", "
+                end
+            end
+            addLog("الأمر: " .. self.Name .. " | القيم: " .. argsString)
+        end
+    end
+    return oldNamecall(self, ...)
+end)
+
+-- // الضرب التلقائي (عبر الأدوات)
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local targetChar = player.Character
+            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") and targetChar:FindFirstChild("Humanoid") and targetChar.Humanoid.Health > 0 then
+                local distance = (myChar.HumanoidRootPart.Position - targetChar.HumanoidRootPart.Position).Magnitude
+                if distance < shortestDistance and distance <= ATTACK_RANGE then
+                    shortestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+RunService.Heartbeat:Connect(function()
+    if not isAutoAttacking then return end
+    
+    local target = getClosestPlayer()
+    if target then
+        -- محاولة تفعيل الأداة (إذا كنت تحمل أداة ضرب)
+        local myChar = LocalPlayer.Character
+        local tool = myChar and myChar:FindFirstChildOfClass("Tool")
+        
+        if tool then
+            -- محاكاة النقر على الأداة
+            tool:Activate()
+            task.wait(0.3) -- سرعة الضرب (يمكنك تقليلها)
+        else
+            -- إذا لم تكن تحمل أداة، جرّب محاكاة الضغط العادي (اللمس)
+            -- بعض الألعاب تتطلب إرسال أمر هنا، سنعرفه من التسجيل
+        end
+    end
+end)
