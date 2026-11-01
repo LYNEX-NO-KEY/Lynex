@@ -327,7 +327,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH VIEW)
+-- 10) Tabs (WITH VIEW + FLY PC)
 --==================================================================
 local TABS = {
     { id = "home",          name = "المنزل",            icon = "⌂"  },
@@ -338,13 +338,14 @@ local TABS = {
     { id = "unclemazrouk",  name = "المهمة العم مرزوق", icon = "✦"  },
     { id = "admin",         name = "كشف الادمن",        icon = "★"  },
     { id = "view",          name = "مشاهده اللاعبين",              icon = "◎"  },
+    { id = "flypc",         name = "طيران بالبي سي",                        icon = "✈"  },
     { id = "dances",        name = "رقصات",             icon = "💃" },
     { id = "animationpacks",name = "جميع المشيات",   icon = "🎬" },
     { id = "autopiano",     name = "عزف البيانو تلقائي",        icon = "🎹" },
     { id = "esp",           name = "كشف اللاعبين",               icon = "👁️" },
     { id = "bomb",          name = "القنبله تلقائي",              icon = "💣" },
     { id = "tools",         name = "اعطاء جميع ادوات",  icon = "🔧" },
-    { id = "handcuff",      name = "كلبشه ورمي تلقائي", icon = "🔗" },
+    { id = "handcuff",      name = "رمي تلقائي", icon = "🔗" },
     { id = "infinitecash",  name = "فلوس و ستريك لانهائي", icon = "💵" },
     { id = "transfers",     name = "انتقالات",          icon = "⇄"  },
     { id = "pumpkin",       name = "تجميع اليقطين تلقائي", icon = "🎃" },
@@ -1108,6 +1109,7 @@ local NEWS_DATA = {
     { title = "Dances Tab", body = "New Dances tab added (💃).", date = "2025-10-30" },
     { title = "Animation Packs Tab", body = "New Animation Packs tab added (🎬).", date = "2025-10-30" },
     { title = "Auto Piano Tab", body = "New Auto Piano tab added (🎹).", date = "2025-10-30" },
+    { title = "Fly PC Tab", body = "New Fly PC tab added (✈).", date = "2025-11-01" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2428,7 +2430,7 @@ do
 end
 
 --==================================================================
--- 16.8c0) ◎ VIEW Page — NEW!
+-- 16.8c0) ◎ VIEW Page
 --==================================================================
 print("[LYNEX] Section 16.8c0 — View loading...")
 
@@ -2585,6 +2587,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, viewPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c0b) ✈ Fly PC Page — NEW!
+--==================================================================
+print("[LYNEX] Section 16.8c0b — Fly PC loading...")
+
+do
+    local FLYPC_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Fly%20PC"
+    local flypcPage
+    local okFlyPC, errFlyPC = pcall(function()
+        flypcPage = createPage("flypc", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, flypcPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, flypcPage)
+
+        local fpHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, flypcPage)
+        addCorner(12, fpHeaderCard); addStroke(THEME.BORDER, 1, 0.15, fpHeaderCard)
+
+        local fpIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, fpHeaderCard)
+        addCorner(30, fpIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, fpIconFrame)
+        addGradient(fpIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "✈", Font = FONT.Logo, TextSize = 28,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, fpIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Fly PC Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, fpHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Fly PC Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, fpHeaderCard)
+
+        local fpActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, flypcPage)
+        addCorner(12, fpActionCard); addStroke(THEME.BORDER, 1, 0.15, fpActionCard)
+
+        local fpStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, fpActionCard)
+
+        local fpLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Fly PC Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, fpActionCard)
+        addCorner(10, fpLoadBtn)
+        local fpLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, fpLoadBtn)
+        addGradient(fpLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, fpActionCard)
+
+        local fpInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, flypcPage)
+        addCorner(12, fpInstrCard); addStroke(THEME.BORDER, 1, 0.15, fpInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, fpInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Fly PC script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, fpInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Fly PC.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, fpInstrCard)
+
+        local fpLoadBusy = false
+        local function setFpStatus(text, color)
+            fpStatus.Text = text
+            fpStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        fpLoadBtn.MouseButton1Click:Connect(function()
+            if fpLoadBusy then return end
+            fpLoadBusy = true
+            local origText = "◈  Load Fly PC Script"
+            local origBg = THEME.P_MAIN
+            fpLoadBtn.Text = "⏳  Loading…"
+            fpLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setFpStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(FLYPC_URL))()
+                end)
+                task.wait(0.3)
+                fpLoadBusy = false
+                fpLoadBtn.Text = origText
+                fpLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setFpStatus("✓  Fly PC Script executed successfully", THEME.OK)
+                    showToast("✓  Fly PC Script loaded")
+                else
+                    warn("[LYNEX Fly PC] Failed:", err)
+                    setFpStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(fpLoadBtn, fpLoadStroke)
+    end)
+
+    if okFlyPC then
+        print("[LYNEX] ✓ Fly PC section loaded OK")
+    else
+        warn("[LYNEX] ✗ Fly PC section FAILED:", errFlyPC)
+        if not flypcPage then
+            flypcPage = createPage("flypc", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Fly PC tab:\n\n" .. tostring(errFlyPC),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, flypcPage)
         end
     end
 end
@@ -5529,5 +5693,5 @@ do
     end
 end
 
-print("[LYNEX HUB v4.0] ✦ Ready — 24 tabs (View ◎ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
+print("[LYNEX HUB v4.0] ✦ Ready — 25 tabs (View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
 showToast("◎  LYNEX HUB v4.0 loaded")
