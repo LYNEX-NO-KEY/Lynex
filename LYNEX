@@ -327,7 +327,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs (WITH VIEW + FLY PC)
+-- 10) Tabs
 --==================================================================
 local TABS = {
     { id = "home",          name = "المنزل",            icon = "⌂"  },
@@ -346,6 +346,7 @@ local TABS = {
     { id = "bomb",          name = "القنبله تلقائي",              icon = "💣" },
     { id = "tools",         name = "اعطاء جميع ادوات",  icon = "🔧" },
     { id = "handcuff",      name = "رمي تلقائي", icon = "🔗" },
+    { id = "autohandcuff",  name = "auto Handcuff", icon = "🔗" },
     { id = "infinitecash",  name = "فلوس و ستريك لانهائي", icon = "💵" },
     { id = "transfers",     name = "انتقالات",          icon = "⇄"  },
     { id = "pumpkin",       name = "تجميع اليقطين تلقائي", icon = "🎃" },
@@ -1110,6 +1111,7 @@ local NEWS_DATA = {
     { title = "Animation Packs Tab", body = "New Animation Packs tab added (🎬).", date = "2025-10-30" },
     { title = "Auto Piano Tab", body = "New Auto Piano tab added (🎹).", date = "2025-10-30" },
     { title = "Fly PC Tab", body = "New Fly PC tab added (✈).", date = "2025-11-01" },
+    { title = "auto Handcuff Tab", body = "New auto Handcuff tab added (🔗).", date = "2025-11-04" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -2268,7 +2270,7 @@ do
 end
 
 --==================================================================
--- 16.8c) ⭐ Admin Page
+-- 16.8c) Admin Page
 --==================================================================
 print("[LYNEX] Section 16.8c — Admin loading...")
 
@@ -2592,7 +2594,7 @@ do
 end
 
 --==================================================================
--- 16.8c0b) ✈ Fly PC Page — NEW!
+-- 16.8c0b) ✈ Fly PC Page
 --==================================================================
 print("[LYNEX] Section 16.8c0b — Fly PC loading...")
 
@@ -3397,6 +3399,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, handcuffPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c3b) 🔗 auto Handcuff Page ⬅️ التاب الجديد
+--==================================================================
+print("[LYNEX] Section 16.8c3b — auto Handcuff loading...")
+
+do
+    local AUTO_HANDCUFF_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/auto%20Handcuff"
+    local autoHandcuffPage
+    local okAutoHandcuff, errAutoHandcuff = pcall(function()
+        autoHandcuffPage = createPage("autohandcuff", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, autoHandcuffPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, autoHandcuffPage)
+
+        local ahHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, autoHandcuffPage)
+        addCorner(12, ahHeaderCard); addStroke(THEME.BORDER, 1, 0.15, ahHeaderCard)
+
+        local ahIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, ahHeaderCard)
+        addCorner(30, ahIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, ahIconFrame)
+        addGradient(ahIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "🔗", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, ahIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "auto Handcuff Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, ahHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "auto Handcuff Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, ahHeaderCard)
+
+        local ahActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, autoHandcuffPage)
+        addCorner(12, ahActionCard); addStroke(THEME.BORDER, 1, 0.15, ahActionCard)
+
+        local ahStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, ahActionCard)
+
+        local ahLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load auto Handcuff Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, ahActionCard)
+        addCorner(10, ahLoadBtn)
+        local ahLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, ahLoadBtn)
+        addGradient(ahLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, ahActionCard)
+
+        local ahInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, autoHandcuffPage)
+        addCorner(12, ahInstrCard); addStroke(THEME.BORDER, 1, 0.15, ahInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, ahInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the auto Handcuff script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, ahInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت auto Handcuff.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, ahInstrCard)
+
+        local ahLoadBusy = false
+        local function setAhStatus(text, color)
+            ahStatus.Text = text
+            ahStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        ahLoadBtn.MouseButton1Click:Connect(function()
+            if ahLoadBusy then return end
+            ahLoadBusy = true
+            local origText = "◈  Load auto Handcuff Script"
+            local origBg = THEME.P_MAIN
+            ahLoadBtn.Text = "⏳  Loading…"
+            ahLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setAhStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(AUTO_HANDCUFF_URL))()
+                end)
+                task.wait(0.3)
+                ahLoadBusy = false
+                ahLoadBtn.Text = origText
+                ahLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setAhStatus("✓  auto Handcuff Script executed successfully", THEME.OK)
+                    showToast("✓  auto Handcuff Script loaded")
+                else
+                    warn("[LYNEX auto Handcuff] Failed:", err)
+                    setAhStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(ahLoadBtn, ahLoadStroke)
+    end)
+
+    if okAutoHandcuff then
+        print("[LYNEX] ✓ auto Handcuff section loaded OK")
+    else
+        warn("[LYNEX] ✗ auto Handcuff section FAILED:", errAutoHandcuff)
+        if not autoHandcuffPage then
+            autoHandcuffPage = createPage("autohandcuff", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load auto Handcuff tab:\n\n" .. tostring(errAutoHandcuff),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, autoHandcuffPage)
         end
     end
 end
@@ -5693,5 +5857,5 @@ do
     end
 end
 
-print("[LYNEX HUB v4.0] ✦ Ready — 25 tabs (View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
+print("[LYNEX HUB v4.0] ✦ Ready — 26 tabs (auto Handcuff 🔗 جديد + View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
 showToast("◎  LYNEX HUB v4.0 loaded")
