@@ -327,7 +327,7 @@ local pagesContainer = create("Frame", {
 }, content)
 
 --==================================================================
--- 10) Tabs
+-- 10) Tabs  ← ✨ تمت إضافة Automatic strike هنا
 --==================================================================
 local TABS = {
     { id = "home",          name = "المنزل",            icon = "⌂"  },
@@ -354,6 +354,7 @@ local TABS = {
     { id = "autocash",      name = "سرقه فلوس تلقائي",  icon = "💰" },
     { id = "misc",          name = "متنوع",             icon = "⚒"  },
     { id = "antistrike",    name = "مضادات",            icon = "⛨"  },
+    { id = "automaticstrike", name = "Automatic strike", icon = "⚡" },
     { id = "chat",          name = "شات",               icon = "✎"  },
     { id = "news",          name = "الاخبار",           icon = "✉"  },
     { id = "settings",      name = "اعدادات",           icon = "⚙"  },
@@ -1114,6 +1115,7 @@ local NEWS_DATA = {
     { title = "Fly PC Tab", body = "New Fly PC tab added (✈).", date = "2025-11-01" },
     { title = "auto Handcuff Tab", body = "New auto Handcuff tab added (🔗).", date = "2025-11-04" },
     { title = "auto Rope Tab", body = "New auto Rope tab added (🪢).", date = "2025-11-04" },
+    { title = "Automatic strike Tab", body = "New Automatic strike tab added (⚡).", date = "2025-11-04" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -3568,7 +3570,7 @@ do
 end
 
 --==================================================================
--- 16.8c3c) 🪢 auto Rope Page ⬅️ التاب الجديد
+-- 16.8c3c) 🪢 auto Rope Page
 --==================================================================
 print("[LYNEX] Section 16.8c3c — auto Rope loading...")
 
@@ -5454,6 +5456,168 @@ do
 end
 
 --==================================================================
+-- 16.10b) ⚡ Automatic strike Page  ← ✨ التاب الجديد
+--==================================================================
+print("[LYNEX] Section 16.10b — Automatic strike loading...")
+
+do
+    local AUTOMATIC_STRIKE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Automatic%20strike"
+    local automaticStrikePage
+    local okAutomaticStrike, errAutomaticStrike = pcall(function()
+        automaticStrikePage = createPage("automaticstrike", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, automaticStrikePage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, automaticStrikePage)
+
+        local astHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, automaticStrikePage)
+        addCorner(12, astHeaderCard); addStroke(THEME.BORDER, 1, 0.15, astHeaderCard)
+
+        local astIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, astHeaderCard)
+        addCorner(30, astIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, astIconFrame)
+        addGradient(astIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "⚡", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, astIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "Automatic strike Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, astHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "Automatic strike Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, astHeaderCard)
+
+        local astActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, automaticStrikePage)
+        addCorner(12, astActionCard); addStroke(THEME.BORDER, 1, 0.15, astActionCard)
+
+        local astStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, astActionCard)
+
+        local astLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load Automatic strike Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, astActionCard)
+        addCorner(10, astLoadBtn)
+        local astLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, astLoadBtn)
+        addGradient(astLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, astActionCard)
+
+        local astInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, automaticStrikePage)
+        addCorner(12, astInstrCard); addStroke(THEME.BORDER, 1, 0.15, astInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, astInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the Automatic strike script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, astInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت Automatic strike.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, astInstrCard)
+
+        local astLoadBusy = false
+        local function setAstStatus(text, color)
+            astStatus.Text = text
+            astStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        astLoadBtn.MouseButton1Click:Connect(function()
+            if astLoadBusy then return end
+            astLoadBusy = true
+            local origText = "◈  Load Automatic strike Script"
+            local origBg = THEME.P_MAIN
+            astLoadBtn.Text = "⏳  Loading…"
+            astLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setAstStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(AUTOMATIC_STRIKE_URL))()
+                end)
+                task.wait(0.3)
+                astLoadBusy = false
+                astLoadBtn.Text = origText
+                astLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setAstStatus("✓  Automatic strike Script executed successfully", THEME.OK)
+                    showToast("✓  Automatic strike Script loaded")
+                else
+                    warn("[LYNEX Automatic strike] Failed:", err)
+                    setAstStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(astLoadBtn, astLoadStroke)
+    end)
+
+    if okAutomaticStrike then
+        print("[LYNEX] ✓ Automatic strike section loaded OK")
+    else
+        warn("[LYNEX] ✗ Automatic strike section FAILED:", errAutomaticStrike)
+        if not automaticStrikePage then
+            automaticStrikePage = createPage("automaticstrike", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load Automatic strike tab:\n\n" .. tostring(errAutomaticStrike),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, automaticStrikePage)
+        end
+    end
+end
+
+--==================================================================
 -- 16.11) Chat Page
 --==================================================================
 print("[LYNEX] Section 16.11 — Chat loading...")
@@ -6021,5 +6185,5 @@ do
     end
 end
 
-print("[LYNEX HUB v4.0] ✦ Ready — 27 tabs (auto Rope 🪢 + auto Handcuff 🔗 + View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
+print("[LYNEX HUB v4.0] ✦ Ready — 28 tabs (Automatic strike ⚡ + auto Rope 🪢 + auto Handcuff 🔗 + View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
 showToast("◎  LYNEX HUB v4.0 loaded")
