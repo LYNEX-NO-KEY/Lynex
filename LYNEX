@@ -337,16 +337,17 @@ local TABS = {
     { id = "car",           name = "تحكم بالسياره",     icon = "🚗" },
     { id = "unclemazrouk",  name = "المهمة العم مرزوق", icon = "✦"  },
     { id = "admin",         name = "كشف الادمن",        icon = "★"  },
-    { id = "view",          name = "مشاهده اللاعبين",              icon = "◎"  },
-    { id = "flypc",         name = "طيران بالبي سي",                        icon = "✈"  },
+    { id = "view",          name = "مشاهده اللاعبين",   icon = "◎"  },
+    { id = "flypc",         name = "طيران بالبي سي",    icon = "✈"  },
     { id = "dances",        name = "رقصات",             icon = "💃" },
-    { id = "animationpacks",name = "جميع المشيات",   icon = "🎬" },
-    { id = "autopiano",     name = "عزف البيانو تلقائي",        icon = "🎹" },
-    { id = "esp",           name = "كشف اللاعبين",               icon = "👁️" },
-    { id = "bomb",          name = "القنبله تلقائي",              icon = "💣" },
+    { id = "animationpacks",name = "جميع المشيات",      icon = "🎬" },
+    { id = "autopiano",     name = "عزف البيانو تلقائي",icon = "🎹" },
+    { id = "esp",           name = "كشف اللاعبين",      icon = "👁️" },
+    { id = "bomb",          name = "القنبله تلقائي",    icon = "💣" },
     { id = "tools",         name = "اعطاء جميع ادوات",  icon = "🔧" },
-    { id = "handcuff",      name = "رمي تلقائي", icon = "🔗" },
-    { id = "autohandcuff",  name = "auto Handcuff", icon = "🔗" },
+    { id = "handcuff",      name = "رمي تلقائي",        icon = "🔗" },
+    { id = "autohandcuff",  name = "auto Handcuff",     icon = "🔗" },
+    { id = "autorope",      name = "auto Rope",         icon = "🪢" },
     { id = "infinitecash",  name = "فلوس و ستريك لانهائي", icon = "💵" },
     { id = "transfers",     name = "انتقالات",          icon = "⇄"  },
     { id = "pumpkin",       name = "تجميع اليقطين تلقائي", icon = "🎃" },
@@ -1112,6 +1113,7 @@ local NEWS_DATA = {
     { title = "Auto Piano Tab", body = "New Auto Piano tab added (🎹).", date = "2025-10-30" },
     { title = "Fly PC Tab", body = "New Fly PC tab added (✈).", date = "2025-11-01" },
     { title = "auto Handcuff Tab", body = "New auto Handcuff tab added (🔗).", date = "2025-11-04" },
+    { title = "auto Rope Tab", body = "New auto Rope tab added (🪢).", date = "2025-11-04" },
 }
 local newsCards = {}
 for i, item in ipairs(NEWS_DATA) do
@@ -3404,7 +3406,7 @@ do
 end
 
 --==================================================================
--- 16.8c3b) 🔗 auto Handcuff Page ⬅️ التاب الجديد
+-- 16.8c3b) 🔗 auto Handcuff Page
 --==================================================================
 print("[LYNEX] Section 16.8c3b — auto Handcuff loading...")
 
@@ -3561,6 +3563,168 @@ do
                 Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
                 TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
             }, autoHandcuffPage)
+        end
+    end
+end
+
+--==================================================================
+-- 16.8c3c) 🪢 auto Rope Page ⬅️ التاب الجديد
+--==================================================================
+print("[LYNEX] Section 16.8c3c — auto Rope loading...")
+
+do
+    local AUTO_ROPE_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Auto%20Rope"
+    local autoRopePage
+    local okAutoRope, errAutoRope = pcall(function()
+        autoRopePage = createPage("autorope", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, autoRopePage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10), PaddingRight = UDim.new(0, 6),
+        }, autoRopePage)
+
+        local arHeaderCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 86),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 4,
+        }, autoRopePage)
+        addCorner(12, arHeaderCard); addStroke(THEME.BORDER, 1, 0.15, arHeaderCard)
+
+        local arIconFrame = create("Frame", {
+            Size = UDim2.fromOffset(60, 60), Position = UDim2.new(0, 12, 0.5, -30),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, arHeaderCard)
+        addCorner(30, arIconFrame); addStroke(THEME.P_GLOW, 1.5, 0.2, arIconFrame)
+        addGradient(arIconFrame, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            Text = "🪢", Font = FONT.Logo, TextSize = 26,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, arIconFrame)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
+            BackgroundTransparency = 1, Text = "auto Rope Script",
+            Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, arHeaderCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
+            BackgroundTransparency = 1, Text = "auto Rope Script — click load to run.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, arHeaderCard)
+
+        local arActionCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 114),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 2, ZIndex = 4,
+        }, autoRopePage)
+        addCorner(12, arActionCard); addStroke(THEME.BORDER, 1, 0.15, arActionCard)
+
+        local arStatus = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "⏸  Status: Idle",
+            Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, arActionCard)
+
+        local arLoadBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 48), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "◈  Load auto Rope Script",
+            Font = FONT.Bold, TextSize = 14, TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, arActionCard)
+        addCorner(10, arLoadBtn)
+        local arLoadStroke = addStroke(THEME.P_GLOW, 2, 0.2, arLoadBtn)
+        addGradient(arLoadBtn, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(0.5, THEME.P_BRIGHT),
+            ColorSequenceKeypoint.new(1, THEME.P_MAIN),
+        }, 90)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 92),
+            BackgroundTransparency = 1, Text = "⚠ Requires HTTP + loadstring",
+            Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, arActionCard)
+
+        local arInstrCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 146),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 3, ZIndex = 4,
+        }, autoRopePage)
+        addCorner(12, arInstrCard); addStroke(THEME.BORDER, 1, 0.15, arInstrCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  INSTRUCTIONS",
+            Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, arInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 34), Position = UDim2.new(0, 12, 0, 36),
+            BackgroundTransparency = 1, Text = "Press the button above to load and run the auto Rope script.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, arInstrCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 12, 0, 76),
+            BackgroundTransparency = 1, Text = "اضغط على الزر أعلاه لتحميل وتشغيل سكربت auto Rope.",
+            Font = FONT.Regular, TextSize = 11, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
+        }, arInstrCard)
+
+        local arLoadBusy = false
+        local function setArStatus(text, color)
+            arStatus.Text = text
+            arStatus.TextColor3 = color or THEME.TX_DIM
+        end
+
+        arLoadBtn.MouseButton1Click:Connect(function()
+            if arLoadBusy then return end
+            arLoadBusy = true
+            local origText = "◈  Load auto Rope Script"
+            local origBg = THEME.P_MAIN
+            arLoadBtn.Text = "⏳  Loading…"
+            arLoadBtn.BackgroundColor3 = THEME.BG_CARD_HI
+            setArStatus("⏳  Loading script…", THEME.TX_DIM)
+            task.spawn(function()
+                local ok, err = pcall(function()
+                    loadstring(game:HttpGet(AUTO_ROPE_URL))()
+                end)
+                task.wait(0.3)
+                arLoadBusy = false
+                arLoadBtn.Text = origText
+                arLoadBtn.BackgroundColor3 = origBg
+                if ok then
+                    setArStatus("✓  auto Rope Script executed successfully", THEME.OK)
+                    showToast("✓  auto Rope Script loaded")
+                else
+                    warn("[LYNEX auto Rope] Failed:", err)
+                    setArStatus("✕  " .. tostring(err), THEME.DANGER_HI)
+                    showToast("✕  " .. tostring(err))
+                end
+            end)
+        end)
+        styleActionButton(arLoadBtn, arLoadStroke)
+    end)
+
+    if okAutoRope then
+        print("[LYNEX] ✓ auto Rope section loaded OK")
+    else
+        warn("[LYNEX] ✗ auto Rope section FAILED:", errAutoRope)
+        if not autoRopePage then
+            autoRopePage = createPage("autorope", true)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+                Text = "⚠ Failed to load auto Rope tab:\n\n" .. tostring(errAutoRope),
+                Font = FONT.Medium, TextSize = 11, TextColor3 = THEME.DANGER_HI,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
+            }, autoRopePage)
         end
     end
 end
@@ -5857,5 +6021,5 @@ do
     end
 end
 
-print("[LYNEX HUB v4.0] ✦ Ready — 26 tabs (auto Handcuff 🔗 جديد + View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
+print("[LYNEX HUB v4.0] ✦ Ready — 27 tabs (auto Rope 🪢 + auto Handcuff 🔗 + View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
 showToast("◎  LYNEX HUB v4.0 loaded")
