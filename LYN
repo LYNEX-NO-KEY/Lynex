@@ -1150,9 +1150,9 @@ Players.PlayerRemoving:Connect(updateServerInfo)
 do
     pcall(function()
         local DEV_ROWS = {
-            { icon = "★", role = "اونر ديسكورد",  name = "غيث",    discord = "oday9734",   canCopy = true  },
+            { icon = "★", role = "اونر ديسكورد",  name = "Ghaith", discord = "oday9734",   canCopy = true  },
             { icon = "⚒", role = "مطور السكربت",  name = "Habash", discord = "غير معروف", canCopy = false },
-            { icon = "✦", role = "مصمم الواجهة",  name = "hamza",  discord = "غير معروف", canCopy = false },
+            { icon = "✦", role = "مصمم الواجهة",  name = "hamza",  discord = "hamza.abc0", canCopy = true  },
         }
 
         local devRowH = 44
