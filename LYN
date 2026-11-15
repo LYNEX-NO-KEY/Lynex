@@ -16,22 +16,19 @@ local localPlayer = Players.LocalPlayer
 local playerGui   = localPlayer:WaitForChild("PlayerGui")
 
 --==================================================================
---  📋 AUTO COPY DISCORD ON STARTUP
+--  📋 AUTO COPY DISCORD ON STARTUP (آمن ولا يعطل السكربت)
 --==================================================================
-local LYNEX_DISCORD_SERVER = "https://discord.gg/wkugtpfnj"
-
-local function copyToClipboard(text)
-    local clipFn = (typeof(setclipboard) == "function" and setclipboard)
-        or (typeof(toclipboard) == "function" and toclipboard)
-        or (typeof(Clipboard) == "table" and typeof(Clipboard.set) == "function" and Clipboard.set)
-    if clipFn then
-        local ok = pcall(clipFn, text)
-        if ok then return true end
-    end
-    return false
-end
-
-pcall(copyToClipboard, LYNEX_DISCORD_SERVER)
+task.spawn(function()
+    task.wait(0.2)
+    pcall(function()
+        local invite = "https://discord.gg/wkugtpfnj"
+        if typeof(setclipboard) == "function" then
+            setclipboard(invite)
+        elseif typeof(toclipboard) == "function" then
+            toclipboard(invite)
+        end
+    end)
+end)
 
 --==================================================================
 --  🎬 LOADING SCREEN (موازي — ما يعطّل السكربت الأساسي)
@@ -1150,100 +1147,110 @@ updateServerInfo()
 Players.PlayerAdded:Connect(updateServerInfo)
 Players.PlayerRemoving:Connect(updateServerInfo)
 
-local DEV_ROWS = {
-    { icon = "★", role = "اونر ديسكورد",  name = "غيث",    discord = "oday9734",   canCopy = true  },
-    { icon = "⚒", role = "مطور السكربت",  name = "Habash", discord = "غير معروف", canCopy = false },
-    { icon = "✦", role = "مصمم الواجهة",  name = "hamza",  discord = "غير معروف", canCopy = false },
-}
+do
+    pcall(function()
+        local DEV_ROWS = {
+            { icon = "★", role = "اونر ديسكورد",  name = "غيث",    discord = "oday9734",   canCopy = true  },
+            { icon = "⚒", role = "مطور السكربت",  name = "Habash", discord = "غير معروف", canCopy = false },
+            { icon = "✦", role = "مصمم الواجهة",  name = "hamza",  discord = "غير معروف", canCopy = false },
+        }
 
-local devRowH = 44
-local devRowGap = 6
-local devCardHeight = 36 + (#DEV_ROWS * devRowH) + ((#DEV_ROWS - 1) * devRowGap) + 12
-local devCard = create("Frame", {
-    Name = "DeveloperCard", Size = UDim2.new(1, 0, 0, devCardHeight),
-    BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-    BorderSizePixel = 0, LayoutOrder = 4, ZIndex = 4,
-}, homePage)
-addCorner(12, devCard); addStroke(THEME.BORDER, 1, 0.15, devCard)
+        local devRowH = 44
+        local devRowGap = 6
+        local devCardHeight = 36 + (#DEV_ROWS * devRowH) + ((#DEV_ROWS - 1) * devRowGap) + 12
+        local devCard = create("Frame", {
+            Name = "DeveloperCard", Size = UDim2.new(1, 0, 0, devCardHeight),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 4, ZIndex = 4,
+        }, homePage)
+        addCorner(12, devCard); addStroke(THEME.BORDER, 1, 0.15, devCard)
 
-create("TextLabel", {
-    Size = UDim2.new(1, -24, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  معلومات المطور",
-    Font = FONT.Bold, TextSize = 13, TextColor3 = THEME.P_GLOW,
-    TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
-}, devCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  معلومات المطور",
+            Font = FONT.Bold, TextSize = 13, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, devCard)
 
-for i, dev in ipairs(DEV_ROWS) do
-    local yPos = 36 + (i - 1) * (devRowH + devRowGap)
-    local rowClass = dev.canCopy and "TextButton" or "Frame"
-    local rowProps = {
-        Name = "DevRow_" .. i,
-        Size = UDim2.new(1, -20, 0, devRowH),
-        Position = UDim2.new(0, 10, 0, yPos),
-        BackgroundColor3 = THEME.BG_CARD_HI,
-        BackgroundTransparency = 0.15,
-        BorderSizePixel = 0,
-        ZIndex = 5,
-    }
-    if dev.canCopy then
-        rowProps.AutoButtonColor = false
-        rowProps.Text = ""
-    end
-    local row = create(rowClass, rowProps, devCard)
-    addCorner(8, row)
-    local rowStroke = addStroke(THEME.BORDER, 1, 0.35, row)
-
-    local accent = create("Frame", {
-        Size = UDim2.new(0, 3, 1, -12),
-        Position = UDim2.new(1, -3, 0, 6),
-        BackgroundColor3 = THEME.P_BRIGHT,
-        BorderSizePixel = 0,
-        ZIndex = 6,
-    }, row)
-    addCorner(2, accent)
-
-    create("TextLabel", {
-        Size = UDim2.new(1, -22, 0, 18),
-        Position = UDim2.new(0, 10, 0, 4),
-        BackgroundTransparency = 1,
-        Text = dev.icon .. "  " .. dev.role .. " :  " .. dev.name,
-        Font = FONT.Bold,
-        TextSize = 11,
-        TextColor3 = THEME.TX_MAIN,
-        TextXAlignment = Enum.TextXAlignment.Right,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        ZIndex = 6,
-    }, row)
-
-    create("TextLabel", {
-        Size = UDim2.new(1, -22, 0, 16),
-        Position = UDim2.new(0, 10, 0, 23),
-        BackgroundTransparency = 1,
-        Text = "◈  الديسكورد :  " .. dev.discord,
-        Font = FONT.Medium,
-        TextSize = 10,
-        TextColor3 = dev.canCopy and THEME.P_GLOW or THEME.TX_DIM,
-        TextXAlignment = Enum.TextXAlignment.Right,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        ZIndex = 6,
-    }, row)
-
-    if dev.canCopy then
-        row.MouseButton1Click:Connect(function()
-            if copyToClipboard(dev.discord) then
-                showToast("◈ تم نسخ حساب الديسكورد: " .. dev.discord)
-            else
-                showToast("◈ الديسكورد: " .. dev.discord)
+        for i, dev in ipairs(DEV_ROWS) do
+            local yPos = 36 + (i - 1) * (devRowH + devRowGap)
+            local rowClass = dev.canCopy and "TextButton" or "Frame"
+            local rowProps = {
+                Name = "DevRow_" .. i,
+                Size = UDim2.new(1, -20, 0, devRowH),
+                Position = UDim2.new(0, 10, 0, yPos),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                BackgroundTransparency = 0.15,
+                BorderSizePixel = 0,
+                ZIndex = 5,
+            }
+            if dev.canCopy then
+                rowProps.AutoButtonColor = false
+                rowProps.Text = ""
             end
-        end)
-        if UserInputService.MouseEnabled then
-            row.MouseEnter:Connect(function() tween(rowStroke, TweenInfo.new(0.18), { Transparency = 0.05 }) end)
-            row.MouseLeave:Connect(function() tween(rowStroke, TweenInfo.new(0.18), { Transparency = 0.35 }) end)
+            local row = create(rowClass, rowProps, devCard)
+            addCorner(8, row)
+            local rowStroke = addStroke(THEME.BORDER, 1, 0.35, row)
+
+            local accent = create("Frame", {
+                Size = UDim2.new(0, 3, 1, -12),
+                Position = UDim2.new(1, -3, 0, 6),
+                BackgroundColor3 = THEME.P_BRIGHT,
+                BorderSizePixel = 0,
+                ZIndex = 6,
+            }, row)
+            addCorner(2, accent)
+
+            create("TextLabel", {
+                Size = UDim2.new(1, -22, 0, 18),
+                Position = UDim2.new(0, 10, 0, 4),
+                BackgroundTransparency = 1,
+                Text = dev.icon .. "  " .. dev.role .. " :  " .. dev.name,
+                Font = FONT.Bold,
+                TextSize = 11,
+                TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 6,
+            }, row)
+
+            create("TextLabel", {
+                Size = UDim2.new(1, -22, 0, 16),
+                Position = UDim2.new(0, 10, 0, 23),
+                BackgroundTransparency = 1,
+                Text = "◈  الديسكورد :  " .. dev.discord,
+                Font = FONT.Medium,
+                TextSize = 10,
+                TextColor3 = dev.canCopy and THEME.P_GLOW or THEME.TX_DIM,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 6,
+            }, row)
+
+            if dev.canCopy then
+                row.MouseButton1Click:Connect(function()
+                    local copied = false
+                    if typeof(setclipboard) == "function" then
+                        copied = pcall(setclipboard, dev.discord)
+                    elseif typeof(toclipboard) == "function" then
+                        copied = pcall(toclipboard, dev.discord)
+                    end
+                    if copied then
+                        showToast("◈ تم نسخ حساب الديسكورد: " .. dev.discord)
+                    else
+                        showToast("◈ الديسكورد: " .. dev.discord)
+                    end
+                end)
+                if UserInputService.MouseEnabled then
+                    row.MouseEnter:Connect(function() tween(rowStroke, TweenInfo.new(0.18), { Transparency = 0.05 }) end)
+                    row.MouseLeave:Connect(function() tween(rowStroke, TweenInfo.new(0.18), { Transparency = 0.35 }) end)
+                end
+            end
         end
-    end
+    end)
 end
 
-local DISCORD_URL = LYNEX_DISCORD_SERVER
+local DISCORD_URL = "https://discord.gg/wkugtpfnj"
 local discordBtn = create("TextButton", {
     Name = "DiscordBtn", Size = UDim2.new(1, 0, 0, 52),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false, Text = "",
@@ -1263,7 +1270,13 @@ create("TextLabel", {
     TextStrokeTransparency = 0.7, ZIndex = 5,
 }, discordBtn)
 discordBtn.MouseButton1Click:Connect(function()
-    if copyToClipboard(DISCORD_URL) then
+    local copied = false
+    if typeof(setclipboard) == "function" then
+        copied = pcall(setclipboard, DISCORD_URL)
+    elseif typeof(toclipboard) == "function" then
+        copied = pcall(toclipboard, DISCORD_URL)
+    end
+    if copied then
         showToast("◈ تم نسخ رابط سيرفر الديسكورد!")
     else
         openURL(DISCORD_URL)
@@ -2501,6 +2514,7 @@ end
 --==================================================================
 -- 16.7) Auto Fish Page
 --==================================================================
+do
 local AUTO_FISH_URL = "https://raw.githubusercontent.com/coronavip100-max/Auto-fish/refs/heads/main/Auto%20fish"
 
 local autoFishPage = createPage("autofish", true)
@@ -2655,10 +2669,12 @@ afLoadBtn.MouseButton1Click:Connect(function()
     end)
 end)
 styleActionButton(afLoadBtn, afLoadStroke)
+end
 
 --==================================================================
 -- 16.8) Car Page
 --==================================================================
+do
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
 
 local carPage = createPage("car", true)
@@ -2813,6 +2829,7 @@ carLoadBtn.MouseButton1Click:Connect(function()
     end)
 end)
 styleActionButton(carLoadBtn, carLoadStroke)
+end
 
 --==================================================================
 -- 16.8b) Uncle Mazrouk Page
@@ -5571,6 +5588,7 @@ end
 --==================================================================
 -- 16.9) Misc Page
 --==================================================================
+do
 local miscPage = createPage("misc", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, miscPage)
 create("UIPadding", {
@@ -5987,6 +6005,7 @@ _G.LYNEX_CLEANUP_MISC = function()
         local s = getUserGameSettings()
         if s then pcall(function() s.SavedQualityLevel = miscState.qualityOriginal end) end
     end
+end
 end
 
 --==================================================================
@@ -6889,7 +6908,6 @@ do
 end
 
 print("[LYNEX HUB v4.1] ✦ Ready — 28 tabs + 🎬 Loading Screen (Automatic strike ⚡ + auto Rope 🪢 + auto Handcuff 🔗 + View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
-pcall(copyToClipboard, LYNEX_DISCORD_SERVER)
 showToast("◎  LYNEX HUB v4.1 loaded")
 task.delay(1.5, function()
     showToast("◈  تم نسخ سيرفر الديسكورد تلقائياً")
