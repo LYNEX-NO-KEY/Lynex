@@ -1,12 +1,13 @@
 --[[
 =====================================================================
-  LYNEX  ·  v1.0.0
+  LYNEX  ·  v1.1.0
   "Never Just a Script. Always a Solution."
   ---------------------------------------------------------------
-  Full UI rebuilt in pure Roblox Lua (ScreenGui based)
-  - PC  : windowed dashboard + drag + keybind (RightShift)
-  - Phone: fullscreen layout + drawer menu + floating button
-  Style: dark / purple accent / rounded cards  (LYNEX dashboard)
+  • Professional loading screen (animated logo, progress bar, phases)
+  • Deterministic layout engine -> content ALWAYS renders
+    (no AutomaticSize dependency inside ScrollingFrames)
+  • Phone + PC responsive (drawer menu, floating button, 2x2 cards)
+  • Dark / purple dashboard UI
 =====================================================================
 ]]
 
@@ -30,6 +31,7 @@ local RunService  = cloneref(game:GetService("RunService"))
 local Lighting    = cloneref(game:GetService("Lighting"))
 local HttpService = cloneref(game:GetService("HttpService"))
 local Stats       = cloneref(game:GetService("Stats"))
+local GuiService  = cloneref(game:GetService("GuiService"))
 
 local LP = Players.LocalPlayer
 local function cam() return workspace.CurrentCamera end
@@ -51,11 +53,11 @@ end
 -- 2.  Theme
 --============================================================
 local C = {
-	bg      = Color3.fromRGB(11, 11, 15),
-	sidebar = Color3.fromRGB(15, 15, 20),
+	bg      = Color3.fromRGB(10, 10, 14),
+	sidebar = Color3.fromRGB(14, 14, 19),
 	card    = Color3.fromRGB(19, 19, 25),
 	card2   = Color3.fromRGB(25, 25, 33),
-	card3   = Color3.fromRGB(30, 30, 40),
+	card3   = Color3.fromRGB(32, 32, 42),
 	stroke  = Color3.fromRGB(38, 38, 50),
 	text    = Color3.fromRGB(238, 238, 244),
 	sub     = Color3.fromRGB(148, 148, 166),
@@ -89,22 +91,23 @@ local IS_MOBILE = UIS.TouchEnabled and not UIS.KeyboardEnabled
 local vp = Vector2.new(1280, 720)
 do
 	local c = cam()
-	if c then vp = c.ViewportSize end
+	if c and c.ViewportSize.X > 0 then vp = c.ViewportSize end
 end
 
-local S = 1
-local function computeScale()
-	if vp.X <= 0 or vp.Y <= 0 then S = 1; return end
+-- Desktop: keeps the dashboard proportion. Mobile: keeps tap targets readable.
+local S
+if IS_MOBILE then
+	S = math.clamp(math.min(vp.X / 700, vp.Y / 480), 0.9, 1.2)
+else
 	S = math.clamp(math.min(vp.X / 1150, vp.Y / 720), 0.62, 1.2)
 end
-computeScale()
 
-local function px(n)   return math.max(1, math.floor(n * S + 0.5)) end
-local function fs(n)   return math.max(9, math.floor(n * S + 0.5)) end
+local function px(n) return math.max(1, math.floor(n * S + 0.5)) end
+local function fs(n) return math.max(9, math.floor(n * S + 0.5)) end
 local function touch(n) return math.max(px(n), 40) end
 
 --============================================================
--- 4.  Small builders
+-- 4.  Instance builders
 --============================================================
 local function make(class, props, parent)
 	local o = Instance.new(class)
@@ -122,20 +125,16 @@ local function corner(obj, r)
 end
 
 local function stroke(obj, color, thick, transparency)
-	local s = make("UIStroke", {
+	return make("UIStroke", {
 		Color = color or C.stroke,
 		Thickness = thick or 1,
 		Transparency = transparency or 0,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}, obj)
-	return s
 end
 
 local function gradient(obj, c1, c2, rotation)
-	return make("UIGradient", {
-		Color = ColorSequence.new(c1, c2),
-		Rotation = rotation or 0,
-	}, obj)
+	return make("UIGradient", { Color = ColorSequence.new(c1, c2), Rotation = rotation or 0 }, obj)
 end
 
 local function label(parent, props)
@@ -146,7 +145,7 @@ local function label(parent, props)
 		TextSize = fs(13),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Center,
-		RichText = false,
+		Text = "",
 	}
 	if props then
 		for k, v in pairs(props) do base[k] = v end
@@ -155,13 +154,11 @@ local function label(parent, props)
 end
 
 local function tween(obj, time, props, style, dir)
-	local info = TweenInfo.new(time or 0.18, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out)
-	local t = Tween:Create(obj, info, props)
+	local t = Tween:Create(obj, TweenInfo.new(time or 0.18, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), props)
 	t:Play()
 	return t
 end
 
--- clicking helper that works with mouse + touch
 local function onTap(obj, fn)
 	obj.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -172,15 +169,44 @@ local function onTap(obj, fn)
 end
 
 --============================================================
--- 5.  State  (flags / options / callbacks)
+-- 5.  Layout engine  (explicit heights, no AutomaticSize)
 --============================================================
-local Flags    = {}
-local Options  = {}
-local FlagUI   = {}
-local SliderUI = {}
-local Callbacks = {}
+local LM = {}   -- [frame] = {h = number, n = number, gap = number}
+local Conns = {}
+local function conn(signal, fn)
+	local c = signal:Connect(fn)
+	table.insert(Conns, c)
+	return c
+end
+
+local function track(frame, gap)
+	LM[frame] = { h = 0, n = 0, gap = gap or px(8) }
+	return frame
+end
+
+-- register a child of known height inside a tracked container
+local function grow(frame, h)
+	local t = LM[frame]
+	if not t then return 0 end
+	t.h = t.h + h
+	t.n = t.n + 1
+	return h
+end
+
+local function totalH(frame)
+	local t = LM[frame]
+	if not t then return 0 end
+	return t.h + math.max(0, (t.n or 0) - 1) * t.gap
+end
+
+--============================================================
+-- 6.  State
+--============================================================
+local Flags, Options, FlagUI, SliderUI, Callbacks = {}, {}, {}, {}, {}
+local accentListeners = {}
 
 local function onChange(name, fn) Callbacks[name] = fn end
+local function onAccent(fn) table.insert(accentListeners, fn) end
 
 local function setFlag(name, value, silent)
 	Flags[name] = value
@@ -207,21 +233,18 @@ local function setOption(name, value)
 end
 local function getOption(name) return Options[name] end
 
--- accent listeners (themes)
-local accentListeners = {}
-local function onAccent(fn) table.insert(accentListeners, fn) end
 local function applyAccent(c)
 	C.accent = c
 	C.accent2 = Color3.new(
-		math.min(1, c.R * 1.25 + 0.06),
-		math.min(1, c.G * 1.25 + 0.06),
-		math.min(1, c.B * 1.25 + 0.06)
+		math.min(1, c.R * 1.22 + 0.06),
+		math.min(1, c.G * 1.22 + 0.06),
+		math.min(1, c.B * 1.22 + 0.06)
 	)
 	for _, fn in ipairs(accentListeners) do pcall(fn, C.accent, C.accent2) end
 end
 
 --============================================================
--- 6.  ScreenGui + window shell
+-- 7.  Root ScreenGui
 --============================================================
 local GUI = make("ScreenGui", {
 	Name = "LYNEX_UI_" .. tostring(math.random(100000, 999999)),
@@ -231,14 +254,166 @@ local GUI = make("ScreenGui", {
 	DisplayOrder = 999,
 }, guiParent())
 
--- dim background (used only when the window is floating)
+local screenSize = UDim2.fromScale(1, 1)
+
+--============================================================
+-- 8.  Loading screen
+--============================================================
+local Load
+do
+	local root = make("Frame", {
+		Name = "LYNEX_Loading",
+		BackgroundColor3 = C.bg,
+		BorderSizePixel = 0,
+		Size = screenSize,
+		ZIndex = 500,
+	}, GUI)
+
+	-- soft radial-ish glow made of 3 stacked frames
+	for i = 3, 1, -1 do
+		local glow = make("Frame", {
+			BackgroundColor3 = C.accent,
+			BackgroundTransparency = 0.86 + i * 0.02,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.42),
+			Size = UDim2.fromOffset(px(150) * i, px(150) * i),
+			ZIndex = 500,
+		}, root)
+		corner(glow, 9999)
+	end
+
+	local center = make("Frame", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.44),
+		Size = UDim2.fromOffset(px(340), px(200)),
+		ZIndex = 501,
+	}, root)
+
+	-- logo tile
+	local tile = make("Frame", {
+		BackgroundColor3 = C.accent,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 0),
+		Size = UDim2.fromOffset(px(58), px(58)),
+		ZIndex = 502,
+	}, center)
+	corner(tile, px(15))
+	gradient(tile, C.accent2, C.accent, 45)
+	local tileX = label(tile, {
+		Text = "X", Font = FONT_BLACK, TextSize = fs(30), TextColor3 = Color3.new(1, 1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 503,
+	})
+
+	-- wordmark
+	local word = label(center, {
+		Text = "LYNEX", Font = FONT_BLACK, TextSize = fs(34), TextColor3 = C.text,
+		TextXAlignment = Enum.TextXAlignment.Center, RichText = true,
+		Position = UDim2.new(0, 0, 0, px(72)), Size = UDim2.new(1, 0, 0, px(40)),
+		ZIndex = 502,
+	})
+	local tagline = label(center, {
+		Text = "Never Just a Script. Always a Solution.",
+		TextColor3 = C.sub, TextSize = fs(11),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Position = UDim2.new(0, 0, 0, px(112)), Size = UDim2.new(1, 0, 0, px(18)),
+		ZIndex = 502,
+	})
+
+	-- progress bar
+	local barBg = make("Frame", {
+		BackgroundColor3 = C.card2, BorderSizePixel = 0,
+		Position = UDim2.new(0, px(30), 0, px(146)),
+		Size = UDim2.new(1, -px(60), 0, px(6)),
+		ZIndex = 502,
+	}, center)
+	corner(barBg, px(3))
+	stroke(barBg, C.stroke, 1, 0.5)
+	local barFill = make("Frame", {
+		BackgroundColor3 = C.accent, BorderSizePixel = 0,
+		Size = UDim2.new(0, 0, 1, 0), ZIndex = 503,
+	}, barBg)
+	corner(barFill, px(3))
+	gradient(barFill, C.accent, C.accent2, 0)
+
+	local statusLbl = label(center, {
+		Text = "Initializing...", TextColor3 = C.sub, TextSize = fs(11),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.new(0, px(30), 0, px(160)), Size = UDim2.new(0.6, 0, 0, px(18)),
+		ZIndex = 502,
+	})
+	local pctLbl = label(center, {
+		Text = "0%", TextColor3 = C.accent2, TextSize = fs(11), Font = FONT_BOLD,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Position = UDim2.new(0.5, 0, 0, px(160)), Size = UDim2.new(0.5, -px(30), 0, px(18)),
+		ZIndex = 502,
+	})
+
+	local versionLbl = label(root, {
+		Text = "v1.1.0  ·  secure loader", TextColor3 = C.muted, TextSize = fs(10),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Position = UDim2.new(0, 0, 1, -px(30)), Size = UDim2.new(1, 0, 0, px(16)),
+		ZIndex = 502,
+	})
+	_ = versionLbl
+
+	Load = {
+		root = root, barFill = barFill, statusLbl = statusLbl, pctLbl = pctLbl,
+		tile = tile, word = word, tagline = tagline, wordTileX = tileX,
+	}
+
+	-- idle animations: pulse the tile + shimmer the wordmark
+	task.spawn(function()
+		while Load.root and Load.root.Parent do
+			pcall(function()
+				tween(tile, 1.1, { Size = UDim2.fromOffset(px(62), px(62)) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+				task.wait(1.1)
+				tween(tile, 1.1, { Size = UDim2.fromOffset(px(56), px(56)) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+				task.wait(1.1)
+			end)
+			task.wait(0.05)
+		end
+	end)
+end
+
+local function setLoading(pct, text)
+	pct = math.clamp(pct, 0, 1)
+	if Load.barFill then
+		pcall(function()
+			tween(Load.barFill, 0.25, { Size = UDim2.new(pct, 0, 1, 0) })
+		end)
+	end
+	if Load.pctLbl then pcall(function() Load.pctLbl.Text = tostring(math.floor(pct * 100)) .. "%" end) end
+	if text and Load.statusLbl then pcall(function() Load.statusLbl.Text = text end) end
+end
+
+local function closeLoading()
+	if not Load.root then return end
+	local r = Load.root
+	Load.root = nil
+	pcall(function()
+		local t = tween(r, 0.35, { BackgroundTransparency = 1 })
+		t.Completed:Connect(function()
+			pcall(function() r:Destroy() end)
+		end)
+	end)
+end
+
+setLoading(0.05, "Initializing environment...")
+
+--============================================================
+-- 9.  Window shell
+--============================================================
 local Dim = make("Frame", {
 	Name = "Dim",
 	BackgroundColor3 = Color3.new(0, 0, 0),
 	BackgroundTransparency = 1,
 	BorderSizePixel = 0,
-	Size = UDim2.fromScale(1, 1),
+	Size = screenSize,
 	Visible = false,
+	ZIndex = 1,
 }, GUI)
 
 local Shell = make("Frame", {
@@ -249,179 +424,138 @@ local Shell = make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	ClipsDescendants = true,
 	Visible = false,
+	ZIndex = 2,
 }, GUI)
-local shellCorner = corner(Shell, 16)
+local shellCorner = corner(Shell, px(16))
 local shellStroke = stroke(Shell, C.stroke, 1)
 
-local App = {}          -- forward-declared references
-local Pages = {}        -- page name -> ScrollingFrame
-local NavList = {}      -- nav buttons
+local App = {}
+local Pages = {}
+local NavList = {}
 local CurrentPage = "Dashboard"
-local State = { accent = ACCENTS[1].c, uiOpen = true }
-
+local State = { accent = ACCENTS[1].c, uiOpen = true, dragOffset = Vector2.new(0, 0), drawer = false }
 local isSmall = false
-local function recomputeLayout()
-	local c = cam()
-	if c then vp = c.ViewportSize end
-	computeScale()
-	isSmall = (vp.X < 780) or (IS_MOBILE and vp.X < vp.Y * 1.35)
-
-	if isSmall then
-		Shell.Size = UDim2.fromScale(1, 1)
-		shellCorner.CornerRadius = UDim.new(0, 0)
-	else
-		local w = math.min(px(1240), math.floor(vp.X * 0.93))
-		local h = math.min(px(780), math.floor(vp.Y * 0.9))
-		Shell.Size = UDim2.fromOffset(w, h)
-		shellCorner.CornerRadius = UDim.new(0, px(16))
-	end
-end
-recomputeLayout()
 
 --============================================================
--- 7.  Sidebar
+-- 10.  Sidebar
 --============================================================
+local SIDEBAR_W = 0.205
 local Sidebar = make("Frame", {
 	Name = "Sidebar",
 	BackgroundColor3 = C.sidebar,
 	BorderSizePixel = 0,
-	Size = UDim2.new(0.205, 0, 1, 0),
+	Size = UDim2.new(SIDEBAR_W, 0, 1, 0),
 	ZIndex = 5,
 }, Shell)
 
-local SidebarDivider = make("Frame", {
-	BackgroundColor3 = C.stroke,
-	BorderSizePixel = 0,
-	Size = UDim2.new(0, 1, 1, 0),
-	Position = UDim2.new(1, -1, 0, 0),
-	ZIndex = 6,
+make("Frame", {
+	BackgroundColor3 = C.stroke, BorderSizePixel = 0,
+	Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(1, -1, 0, 0), ZIndex = 6,
 }, Sidebar)
 
--- brand row  -------------------------------------------------
 local BrandRow = make("Frame", {
 	BackgroundTransparency = 1,
 	Size = UDim2.new(1, -px(24), 0, px(56)),
-	Position = UDim2.new(0, px(14), 0, px(10)),
+	Position = UDim2.new(0, px(16), 0, px(10)),
+	ZIndex = 6,
 }, Sidebar)
-
 make("UIListLayout", {
 	FillDirection = Enum.FillDirection.Horizontal,
 	VerticalAlignment = Enum.VerticalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder,
-	Padding = UDim.new(0, 0),
 }, BrandRow)
 
-local BrandL = label(BrandRow, {
-	Text = "LYNE",
-	Font = FONT_BLACK,
-	TextSize = fs(24),
-	TextColor3 = C.text,
-	AutomaticSize = Enum.AutomaticSize.X,
-	Size = UDim2.new(0, 0, 1, 0),
-	LayoutOrder = 1,
+label(BrandRow, {
+	Text = "LYNE", Font = FONT_BLACK, TextSize = fs(24),
+	AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0),
+	LayoutOrder = 1, ZIndex = 6,
 })
 local BrandX = label(BrandRow, {
-	Text = "X",
-	Font = FONT_BLACK,
-	TextSize = fs(24),
-	AutomaticSize = Enum.AutomaticSize.X,
-	Size = UDim2.new(0, 0, 1, 0),
-	LayoutOrder = 2,
-	TextColor3 = Color3.new(1, 1, 1),
+	Text = "X", Font = FONT_BLACK, TextSize = fs(24),
+	AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0),
+	LayoutOrder = 2, ZIndex = 6,
 })
 local brandGrad = gradient(BrandX, Color3.fromRGB(196, 160, 255), C.accent, 90)
 onAccent(function(a, b) brandGrad.Color = ColorSequence.new(b, a) end)
-BrandL.TextXAlignment = Enum.TextXAlignment.Left
-BrandX.TextXAlignment = Enum.TextXAlignment.Left
 
--- nav scroll -------------------------------------------------
-local NAV_H = px(410)
 local NavScroll = make("ScrollingFrame", {
 	BackgroundTransparency = 1,
 	BorderSizePixel = 0,
-	Position = UDim2.new(0, px(10), 0, px(64)),
-	Size = UDim2.new(1, -px(20), 1, -(px(64) + px(180))),
+	Position = UDim2.new(0, px(10), 0, px(66)),
+	Size = UDim2.new(1, -px(20), 1, -(px(66) + px(182))),
 	CanvasSize = UDim2.new(0, 0, 0, 0),
 	AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	ScrollBarThickness = 0,
 	ScrollBarImageTransparency = 1,
 	ScrollingDirection = Enum.ScrollingDirection.Y,
-	ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
+	ZIndex = 6,
 }, Sidebar)
+make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, px(2)) }, NavScroll)
 
-make("UIListLayout", {
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Padding = UDim.new(0, px(2)),
-}, NavScroll)
-
--- sidebar footer card ---------------------------------------
 local SideFooter = make("Frame", {
 	BackgroundColor3 = C.card,
 	BorderSizePixel = 0,
-	Position = UDim2.new(0, px(10), 1, -px(168)),
-	Size = UDim2.new(1, -px(20), 0, px(158)),
-	ZIndex = 4,
+	Position = UDim2.new(0, px(10), 1, -px(170)),
+	Size = UDim2.new(1, -px(20), 0, px(160)),
+	ZIndex = 6,
 }, Sidebar)
 corner(SideFooter, px(12))
 stroke(SideFooter, C.stroke, 1)
 
 local footTile = make("Frame", {
-	BackgroundColor3 = C.accent,
-	BorderSizePixel = 0,
+	BackgroundColor3 = C.accent, BorderSizePixel = 0,
 	Position = UDim2.new(0, px(10), 0, px(10)),
 	Size = UDim2.fromOffset(px(38), px(38)),
+	ZIndex = 7,
 }, SideFooter)
 corner(footTile, px(9))
 gradient(footTile, C.accent2, C.accent, 45)
-local footTileX = label(footTile, {
+label(footTile, {
 	Text = "X", Font = FONT_BLACK, TextSize = fs(20), TextColor3 = Color3.new(1, 1, 1),
-	Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center,
+	TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 7,
 })
 
-local footName = label(SideFooter, {
+label(SideFooter, {
 	Text = "LYNEX", Font = FONT_BOLD, TextSize = fs(14),
-	Position = UDim2.new(0, px(56), 0, px(10)), Size = UDim2.new(1, -px(62), 0, px(18)),
+	Position = UDim2.new(0, px(56), 0, px(10)), Size = UDim2.new(1, -px(62), 0, px(18)), ZIndex = 7,
 })
-local footTag = label(SideFooter, {
+label(SideFooter, {
 	Text = "Never Just a Script.\nAlways a Solution.",
 	TextColor3 = C.sub, TextSize = fs(11), TextWrapped = true,
 	TextYAlignment = Enum.TextYAlignment.Top,
-	Position = UDim2.new(0, px(56), 0, px(28)), Size = UDim2.new(1, -px(64), 0, px(30)),
+	Position = UDim2.new(0, px(56), 0, px(28)), Size = UDim2.new(1, -px(64), 0, px(32)), ZIndex = 7,
 })
-
-local footDivider = make("Frame", {
+make("Frame", {
 	BackgroundColor3 = C.stroke, BorderSizePixel = 0,
-	Position = UDim2.new(0, px(10), 0, px(78)), Size = UDim2.new(1, -px(20), 0, 1),
+	Position = UDim2.new(0, px(10), 0, px(80)), Size = UDim2.new(1, -px(20), 0, 1), ZIndex = 7,
 }, SideFooter)
-
-local footVer = label(SideFooter, {
-	Text = "v1.0.0", TextColor3 = C.sub, TextSize = fs(11),
-	Position = UDim2.new(0, px(10), 0, px(88)), Size = UDim2.new(0, px(70), 0, px(20)),
+label(SideFooter, {
+	Text = "v1.1.0", TextColor3 = C.sub, TextSize = fs(11),
+	Position = UDim2.new(0, px(10), 0, px(92)), Size = UDim2.new(0, px(70), 0, px(20)), ZIndex = 7,
 })
-
 local footDot = make("Frame", {
 	BackgroundColor3 = C.green, BorderSizePixel = 0,
-	Position = UDim2.new(0, px(12), 0, px(120)), Size = UDim2.fromOffset(px(8), px(8)),
+	Position = UDim2.new(0, px(12), 0, px(128)), Size = UDim2.fromOffset(px(8), px(8)), ZIndex = 7,
 }, SideFooter)
 corner(footDot, 999)
-
-local footOnline = label(SideFooter, {
+label(SideFooter, {
 	Text = "Online", TextColor3 = C.green, TextSize = fs(12),
-	Position = UDim2.new(0, px(26), 0, px(113)), Size = UDim2.new(0, px(90), 0, px(22)),
+	Position = UDim2.new(0, px(26), 0, px(121)), Size = UDim2.new(0, px(90), 0, px(22)), ZIndex = 7,
 })
 
--- toast area lives at shell level
+--============================================================
+-- 11.  Toasts
+--============================================================
 local Toast = make("Frame", {
 	Name = "Toasts",
 	BackgroundTransparency = 1,
-	Position = UDim2.new(1, -px(16), 0, px(16)),
 	AnchorPoint = Vector2.new(1, 0),
-	Size = UDim2.fromOffset(px(270), px(200)),
-	ZIndex = 50,
+	Position = UDim2.new(1, -px(16), 0, px(16)),
+	Size = UDim2.fromOffset(px(260), px(180)),
+	ZIndex = 60,
 }, Shell)
 make("UIListLayout", {
 	SortOrder = Enum.SortOrder.LayoutOrder,
-	VerticalAlignment = Enum.VerticalAlignment.Top,
 	HorizontalAlignment = Enum.HorizontalAlignment.Right,
 	Padding = UDim.new(0, px(6)),
 }, Toast)
@@ -429,97 +563,105 @@ make("UIListLayout", {
 local function notify(text, color)
 	local toast = make("Frame", {
 		BackgroundColor3 = C.card2,
-		BorderSizePixel = 0,
-		Size = UDim2.fromOffset(px(250), px(42)),
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = UDim2.fromOffset(px(248), px(42)),
 		ClipsDescendants = true,
+		ZIndex = 60,
 	}, Toast)
 	corner(toast, px(10))
 	local st = stroke(toast, color or C.accent, 1, 1)
 	local bar = make("Frame", {
 		BackgroundColor3 = color or C.accent, BorderSizePixel = 0,
-		Size = UDim2.new(0, px(3), 1, 0), BackgroundTransparency = 1,
+		Size = UDim2.new(0, px(3), 1, 0), BackgroundTransparency = 1, ZIndex = 61,
 	}, toast)
 	local txt = label(toast, {
-		Text = tostring(text), TextSize = fs(12), TextColor3 = C.text,
+		Text = tostring(text), TextSize = fs(12),
 		Position = UDim2.new(0, px(12), 0, 0), Size = UDim2.new(1, -px(20), 1, 0),
 		TextWrapped = true, TextTruncate = Enum.TextTruncate.AtEnd,
-		TextTransparency = 1,
+		TextTransparency = 1, ZIndex = 61,
 	})
-	tween(toast, 0.2, { BackgroundTransparency = 0.06 })
-	tween(st, 0.2, { Transparency = 0.5 })
+	tween(toast, 0.2, { BackgroundTransparency = 0.05 })
+	tween(st, 0.2, { Transparency = 0.45 })
 	tween(bar, 0.2, { BackgroundTransparency = 0 })
 	tween(txt, 0.2, { TextTransparency = 0 })
 	task.delay(2.6, function()
+		if not toast.Parent then return end
 		tween(toast, 0.25, { BackgroundTransparency = 1 })
 		tween(st, 0.25, { Transparency = 1 })
 		tween(bar, 0.25, { BackgroundTransparency = 1 })
 		local t = tween(txt, 0.25, { TextTransparency = 1 })
-		t.Completed:Connect(function() toast:Destroy() end)
+		t.Completed:Connect(function() pcall(function() toast:Destroy() end) end)
 	end)
 end
 
 --============================================================
--- 8.  Content area + topbar
+-- 12.  Content area + topbar
 --============================================================
 local Content = make("Frame", {
 	Name = "Content",
 	BackgroundTransparency = 1,
-	Position = UDim2.new(0.205, 0, 0, 0),
-	Size = UDim2.new(0.795, 0, 1, 0),
+	Position = UDim2.new(SIDEBAR_W, 0, 0, 0),
+	Size = UDim2.new(1 - SIDEBAR_W, 0, 1, 0),
+	ZIndex = 3,
 }, Shell)
+
+local TOPBAR_H = px(64)
 
 local Topbar = make("Frame", {
 	Name = "Topbar",
 	BackgroundTransparency = 1,
-	Size = UDim2.new(1, 0, 0, px(64)),
+	Size = UDim2.new(1, 0, 0, TOPBAR_H),
+	ZIndex = 4,
 }, Content)
 
-local topDivider = make("Frame", {
+make("Frame", {
 	BackgroundColor3 = C.stroke, BorderSizePixel = 0,
-	Position = UDim2.new(0, 0, 0, px(63)), Size = UDim2.new(1, 0, 0, 1),
+	Position = UDim2.new(0, 0, 0, TOPBAR_H - 1), Size = UDim2.new(1, 0, 0, 1), ZIndex = 4,
 }, Topbar)
 
 local PageTitle = label(Topbar, {
 	Text = "Dashboard", Font = FONT_BOLD, TextSize = fs(18),
-	Position = UDim2.new(0, px(20), 0, px(12)), Size = UDim2.new(0.5, 0, 0, px(24)),
+	Position = UDim2.new(0, px(20), 0, px(12)), Size = UDim2.new(0.55, 0, 0, px(24)), ZIndex = 5,
 })
 local PageSub = label(Topbar, {
 	Text = "Welcome to LYNEX", TextColor3 = C.sub, TextSize = fs(12),
-	Position = UDim2.new(0, px(20), 0, px(34)), Size = UDim2.new(0.5, 0, 0, px(20)),
+	Position = UDim2.new(0, px(20), 0, px(34)), Size = UDim2.new(0.55, 0, 0, px(20)), ZIndex = 5,
 })
 
--- injected pill ------------------------------------------------
 local Pill = make("Frame", {
 	BackgroundColor3 = C.card, BorderSizePixel = 0,
-	Position = UDim2.new(1, -px(300), 0, px(20)), Size = UDim2.fromOffset(px(104), px(26)),
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -px(196), 0, px(20)),
+	Size = UDim2.fromOffset(px(104), px(26)), ZIndex = 5,
 }, Topbar)
 corner(Pill, px(13))
 stroke(Pill, C.stroke, 1)
 local pillDot = make("Frame", {
 	BackgroundColor3 = C.green, BorderSizePixel = 0,
-	Position = UDim2.new(0, px(8), 0.5, -px(3)), Size = UDim2.fromOffset(px(6), px(6)),
+	Position = UDim2.new(0, px(9), 0.5, -px(3)), Size = UDim2.fromOffset(px(6), px(6)), ZIndex = 6,
 }, Pill)
 corner(pillDot, 999)
 label(Pill, {
-	Text = "Injected", TextSize = fs(12), TextColor3 = C.text,
-	Position = UDim2.new(0, px(20), 0, 0), Size = UDim2.new(1, -px(24), 1, 0),
+	Text = "Injected", TextSize = fs(12),
+	Position = UDim2.new(0, px(21), 0, 0), Size = UDim2.new(1, -px(25), 1, 0), ZIndex = 6,
 })
 
 local TopBrand = label(Topbar, {
 	Text = "LYNEX", Font = FONT_BOLD, TextSize = fs(15), TextColor3 = C.accent,
 	TextXAlignment = Enum.TextXAlignment.Right,
-	Position = UDim2.new(1, -px(186), 0, px(20)), Size = UDim2.fromOffset(px(80), px(26)),
+	AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -px(186), 0, px(20)),
+	Size = UDim2.fromOffset(px(76), px(26)), ZIndex = 5,
 })
 onAccent(function(a) TopBrand.TextColor3 = a end)
 
--- window buttons ----------------------------------------------
 local function winButton(offsetX, glyph, hoverColor, fn)
 	local b = make("TextButton", {
 		BackgroundTransparency = 1, Text = glyph, Font = FONT_BOLD,
-		TextSize = fs(15), TextColor3 = C.sub, TextXAlignment = Enum.TextXAlignment.Center,
-		Position = UDim2.new(1, -offsetX, 0, px(20)), Size = UDim2.fromOffset(px(26), px(26)),
-		AutoButtonColor = false, Visible = not IS_MOBILE,
+		TextSize = fs(15), TextColor3 = C.sub, AutoButtonColor = false,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -offsetX, 0, px(20)),
+		Size = UDim2.fromOffset(px(26), px(26)), ZIndex = 5,
 	}, Topbar)
 	onTap(b, function()
 		b.TextColor3 = hoverColor or C.text
@@ -529,62 +671,76 @@ local function winButton(offsetX, glyph, hoverColor, fn)
 	return b
 end
 
+local Hamburger = make("TextButton", {
+	BackgroundColor3 = C.card, BorderSizePixel = 0, AutoButtonColor = false,
+	Text = "≡", Font = FONT_BOLD, TextSize = fs(18), TextColor3 = C.text,
+	Position = UDim2.new(0, px(14), 0, px(16)),
+	Size = UDim2.fromOffset(px(32), px(32)), Visible = false, ZIndex = 5,
+}, Topbar)
+corner(Hamburger, px(8))
+stroke(Hamburger, C.stroke, 1)
+
 --============================================================
--- 9.  Page scaffolding
+-- 13.  Page scaffolding
 --============================================================
-local Conns = {}
-local function conn(signal, fn) table.insert(Conns, signal:Connect(fn)) end
+local PAGE_TOP = TOPBAR_H + px(12)
+local PAGE_BOTTOM = px(18)
+
+local PAGE_META = {
+	Dashboard = "Welcome to LYNEX",
+	Main      = "Quick access to your main toggles",
+	Player    = "Player related features",
+	Visuals   = "Visual enhancements",
+	Combat    = "Aimbot, hitbox, mute & more",
+	Movement  = "Speed, fly, noclip & more",
+	World     = "World modifications",
+	Misc      = "Utility and fun features",
+	Config    = "Save & load your settings",
+	Keybinds  = "Manage your keybinds",
+	Themes    = "Change the accent color",
+	Settings  = "UI preferences & unload",
+}
 
 local function newPage(name)
-	local p = make("ScrollingFrame", {
+	local page = make("ScrollingFrame", {
 		Name = "Page_" .. name,
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Position = UDim2.new(0, px(18), 0, px(76)),
-		Size = UDim2.new(1, -px(36), 1, -px(94)),
+		Position = UDim2.new(0, px(18), 0, PAGE_TOP),
+		Size = UDim2.new(1, -px(36), 1, -(PAGE_TOP + PAGE_BOTTOM)),
 		CanvasSize = UDim2.new(0, 0, 0, 0),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		ScrollBarThickness = 0,
-		ScrollBarImageTransparency = 1,
+		ScrollBarThickness = px(4),
+		ScrollBarImageColor3 = C.card3,
+		ScrollBarImageTransparency = 0.2,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
+		ClipsDescendants = true,
 		Visible = false,
+		ZIndex = 3,
 	}, Content)
-	make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, px(12)) }, p)
-	return p
+	make("UIListLayout", {
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, px(12)),
+	}, page)
+	track(page, px(12))
+	Pages[name] = page
+	return page
 end
 
-local PAGE_META = {
-	Dashboard = { sub = "Welcome to LYNEX" },
-	Main      = { sub = "Quick access to your main toggles" },
-	Player    = { sub = "Player related features" },
-	Visuals   = { sub = "Visual enhancements" },
-	Combat    = { sub = "Aimbot, hitbox, mute & more" },
-	Movement  = { sub = "Speed, fly, noclip & more" },
-	World     = { sub = "World modifications" },
-	Misc      = { sub = "Utility and fun features" },
-	Config    = { sub = "Save & load your settings" },
-	Keybinds  = { sub = "Manage your keybinds" },
-	Themes    = { sub = "Change the accent color" },
-	Settings  = { sub = "UI preferences & unload" },
-}
+-- finalize: convert tracked heights into real sizes
+local function finalizePage(page)
+	local h = totalH(page) + px(14)
+	page.CanvasSize = UDim2.new(0, 0, 0, h)
+	return h
+end
 
 local function refreshNav()
 	for _, item in ipairs(NavList) do
 		local active = (item.name == CurrentPage)
-		if active then
-			item.button.BackgroundColor3 = C.accent
-			item.button.BackgroundTransparency = 0.82
-			item.label.TextColor3 = C.text
-			item.icon.TextColor3 = C.accent2
-			item.stroke.Transparency = 0.6
-		else
-			item.button.BackgroundColor3 = C.accent
-			item.button.BackgroundTransparency = 1
-			item.label.TextColor3 = C.sub
-			item.icon.TextColor3 = C.muted
-			item.stroke.Transparency = 1
-		end
+		item.button.BackgroundTransparency = active and 0.82 or 1
+		item.label.TextColor3 = active and C.text or C.sub
+		item.icon.TextColor3 = active and C.accent2 or C.muted
+		item.stroke.Transparency = active and 0.55 or 1
 	end
 end
 onAccent(function() refreshNav() end)
@@ -596,163 +752,198 @@ local function navigate(name)
 		page.Visible = (n == name)
 	end
 	PageTitle.Text = name
-	PageSub.Text = (PAGE_META[name] and PAGE_META[name].sub) or ""
+	PageSub.Text = PAGE_META[name] or ""
 	refreshNav()
 	if isSmall then App.closeDrawer() end
 end
 
 --============================================================
--- 10.  Control builders
+-- 14.  Section + control builders (explicit heights)
 --============================================================
+local H = {
+	toggle    = math.max(touch(52), px(52)),
+	toggleSub = math.max(touch(56), px(56)),
+	slider    = math.max(touch(58), px(58)),
+	button    = math.max(touch(44), px(44)),
+	textbox   = math.max(touch(42), px(42)),
+	note      = px(22),
+	title     = px(26),
+	rowGap    = px(8),
+	secPad    = px(13),
+}
+
+local pendingSections = {}
+
 local function section(parent, title, layoutOrder)
 	local card = make("Frame", {
 		BackgroundColor3 = C.card,
 		BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		Size = UDim2.new(1, 0, 0, px(80)),   -- provisional, fixed in finalize
 		LayoutOrder = layoutOrder or 1,
+		ZIndex = 4,
 	}, parent)
 	corner(card, px(12))
 	stroke(card, C.stroke, 1)
 
 	local inner = make("Frame", {
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, px(14), 0, px(12)),
-		Size = UDim2.new(1, -px(28), 0, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		Position = UDim2.new(0, px(14), 0, H.secPad),
+		Size = UDim2.new(1, -px(28), 0, px(10)),
+		ZIndex = 5,
 	}, card)
-	make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, px(8)) }, inner)
+	make("UIListLayout", {
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, H.rowGap),
+	}, inner)
+	track(inner, H.rowGap)
 
 	if title then
 		label(inner, {
 			Text = title, TextColor3 = C.accent, Font = FONT_BOLD, TextSize = fs(15),
-			Size = UDim2.new(1, 0, 0, px(24)), LayoutOrder = 0,
+			Size = UDim2.new(1, 0, 0, H.title), LayoutOrder = 0, ZIndex = 6,
 		})
+		grow(inner, H.title)
 	end
+
+	table.insert(pendingSections, { inner = inner, card = card, parent = parent })
 	return inner, card
+end
+
+-- apply tracked heights of all sections that belong to `parent`
+local function finalize(parent)
+	for _, s in ipairs(pendingSections) do
+		if s.parent == parent and not s.done then
+			s.done = true
+			local innerH = totalH(s.inner)
+			if innerH < px(20) then innerH = px(20) end
+			s.inner.Size = UDim2.new(1, -px(28), 0, innerH)
+			local cardH = innerH + H.secPad * 2
+			s.card.Size = UDim2.new(1, 0, 0, cardH)
+			grow(parent, cardH)
+		end
+	end
 end
 
 -- toggle ------------------------------------------------------
 local function addToggle(parent, data)
 	local name = data.name
+	local h = data.sub and H.toggleSub or H.toggle
 	local row = make("Frame", {
 		BackgroundColor3 = C.card2, BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, math.max(touch(50), px(50))),
+		Size = UDim2.new(1, 0, 0, h), ZIndex = 5,
 	}, parent)
 	corner(row, px(10))
 	stroke(row, C.stroke, 1, 0.4)
 
 	local l = label(row, {
-		Text = data.title or name, TextSize = fs(13),
-		Position = UDim2.new(0, px(12), 0, 0), Size = UDim2.new(1, -px(80), 1, 0),
+		Text = data.title or name, TextSize = fs(13), ZIndex = 6,
+		Position = UDim2.new(0, px(12), 0, 0), Size = UDim2.new(1, -px(76), 1, 0),
 	})
 	if data.sub then
-		l.Position = UDim2.new(0, px(12), 0, px(6))
-		l.Size = UDim2.new(1, -px(80), 0, px(18))
+		l.Position = UDim2.new(0, px(12), 0, px(7))
+		l.Size = UDim2.new(1, -px(76), 0, px(18))
 		label(row, {
-			Text = data.sub, TextColor3 = C.muted, TextSize = fs(11),
-			Position = UDim2.new(0, px(12), 0, px(24)), Size = UDim2.new(1, -px(80), 0, px(16)),
+			Text = data.sub, TextColor3 = C.muted, TextSize = fs(11), ZIndex = 6,
+			Position = UDim2.new(0, px(12), 0, px(26)), Size = UDim2.new(1, -px(76), 0, px(16)),
 		})
 	end
 
-	local track = make("Frame", {
+	local track_ = make("Frame", {
 		BackgroundColor3 = C.card3, BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -px(12), 0.5, 0),
-		Size = UDim2.fromOffset(px(44), px(24)),
+		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -px(12), 0.5, 0),
+		Size = UDim2.fromOffset(px(44), px(24)), ZIndex = 6,
 	}, row)
-	corner(track, px(12))
-
+	corner(track_, px(12))
 	local knob = make("Frame", {
 		BackgroundColor3 = C.text, BorderSizePixel = 0,
 		Position = UDim2.new(0, px(3), 0.5, -px(9)),
-		Size = UDim2.fromOffset(px(18), px(18)),
-	}, track)
+		Size = UDim2.fromOffset(px(18), px(18)), ZIndex = 7,
+	}, track_)
 	corner(knob, 999)
 
 	local function render(state)
 		if state then
-			tween(track, 0.16, { BackgroundColor3 = C.accent })
-			tween(knob, 0.16, { Position = UDim2.new(1, -px(21), 0.5, -px(9)), BackgroundColor3 = Color3.new(1, 1, 1) })
+			tween(track_, 0.16, { BackgroundColor3 = C.accent })
+			tween(knob, 0.16, { Position = UDim2.new(1, -px(21), 0.5, -px(9)) })
 		else
-			tween(track, 0.16, { BackgroundColor3 = C.card3 })
-			tween(knob, 0.16, { Position = UDim2.new(0, px(3), 0.5, -px(9)), BackgroundColor3 = C.text })
+			tween(track_, 0.16, { BackgroundColor3 = C.card3 })
+			tween(knob, 0.16, { Position = UDim2.new(0, px(3), 0.5, -px(9)) })
 		end
 	end
-	onAccent(function(a)
-		if Flags[name] then track.BackgroundColor3 = a end
-	end)
+	onAccent(function(a) if Flags[name] then track_.BackgroundColor3 = a end end)
 
 	local function flip()
 		setFlag(name, not getFlag(name))
 		if data.callback then data.callback(getFlag(name)) end
 	end
-	onTap(track, flip)
-	onTap(row, function(input)
-		local pos = input.Position
-		local ap = row.AbsolutePosition
-		if pos.X > ap.X + row.AbsoluteSize.X - px(60) then return end
-		flip()
-	end)
+	onTap(track_, flip)
+
+	local hit = make("TextButton", {
+		BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
+		Size = UDim2.new(1, -px(66), 1, 0), ZIndex = 7,
+	}, row)
+	onTap(hit, flip)
 
 	Flags[name] = data.default == true
 	FlagUI[name] = FlagUI[name] or {}
 	table.insert(FlagUI[name], { render = render })
 	render(Flags[name])
+
+	grow(parent, h)
 	return row
 end
 
 -- slider ------------------------------------------------------
 local function addSlider(parent, data)
 	local name = data.name
-	local minv = data.min or 0
-	local maxv = data.max or 100
+	local minv, maxv = data.min or 0, data.max or 100
 	local step = data.step or 1
 	local value = data.default or minv
+	local h = H.slider
 
 	local row = make("Frame", {
 		BackgroundColor3 = C.card2, BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, math.max(touch(56), px(54))),
+		Size = UDim2.new(1, 0, 0, h), ZIndex = 5,
 	}, parent)
 	corner(row, px(10))
 	stroke(row, C.stroke, 1, 0.4)
 
 	label(row, {
-		Text = data.title or name, TextSize = fs(13),
-		Position = UDim2.new(0, px(12), 0, px(6)), Size = UDim2.new(1, -px(90), 0, px(18)),
+		Text = data.title or name, TextSize = fs(13), ZIndex = 6,
+		Position = UDim2.new(0, px(12), 0, px(7)), Size = UDim2.new(1, -px(90), 0, px(18)),
 	})
 	local valLbl = label(row, {
 		Text = "", TextSize = fs(12), TextColor3 = C.accent, Font = FONT_BOLD,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Position = UDim2.new(1, -px(84), 0, px(6)), Size = UDim2.new(0, px(72), 0, px(18)),
+		TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 6,
+		Position = UDim2.new(1, -px(86), 0, px(7)), Size = UDim2.new(0, px(74), 0, px(18)),
 	})
 	onAccent(function(a) valLbl.TextColor3 = a end)
 
-	local track = make("Frame", {
+	local track_ = make("Frame", {
 		BackgroundColor3 = C.card3, BorderSizePixel = 0,
-		Position = UDim2.new(0, px(12), 0, px(36)),
-		Size = UDim2.new(1, -px(24), 0, px(6)),
+		Position = UDim2.new(0, px(12), 0, px(40)),
+		Size = UDim2.new(1, -px(24), 0, px(6)), ZIndex = 6,
 	}, row)
-	corner(track, px(3))
+	corner(track_, px(3))
 
-	local fill = make("Frame", { BackgroundColor3 = C.accent, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0) }, track)
+	local fill = make("Frame", { BackgroundColor3 = C.accent, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0), ZIndex = 7 }, track_)
 	corner(fill, px(3))
 	onAccent(function(a) fill.BackgroundColor3 = a end)
 
 	local knob = make("Frame", {
 		BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, 0, 0.5, 0),
-		Size = UDim2.fromOffset(px(14), px(14)),
-	}, track)
+		Size = UDim2.fromOffset(px(14), px(14)), ZIndex = 8,
+	}, track_)
 	corner(knob, 999)
-	stroke(knob, C.accent, px(2))
+	local knobStroke = stroke(knob, C.accent, px(2))
+	onAccent(function(a) knobStroke.Color = a end)
 
-	-- bigger invisible hit area for fingers
-	local hit = make("Frame", {
-		BackgroundTransparency = 1,
-		Position = UDim2.new(0, -px(6), 0.5, -px(16)),
-		Size = UDim2.new(1, px(12), 0, px(32)),
-	}, track)
+	local hit = make("TextButton", {
+		BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
+		Position = UDim2.new(0, -px(8), 0.5, -px(18)),
+		Size = UDim2.new(1, px(16), 0, px(36)), ZIndex = 9,
+	}, track_)
 
 	local function apply(v, fire)
 		value = math.clamp(v, minv, maxv)
@@ -767,7 +958,7 @@ local function addSlider(parent, data)
 
 	local dragging = false
 	local function fromX(x)
-		local rel = (x - track.AbsolutePosition.X) / math.max(1, track.AbsoluteSize.X)
+		local rel = (x - track_.AbsolutePosition.X) / math.max(1, track_.AbsoluteSize.X)
 		local v = minv + (maxv - minv) * math.clamp(rel, 0, 1)
 		v = math.floor(v / step + 0.5) * step
 		apply(v, true)
@@ -788,28 +979,27 @@ local function addSlider(parent, data)
 	SliderUI[name] = SliderUI[name] or {}
 	table.insert(SliderUI[name], apply)
 	apply(value, false)
+
+	grow(parent, h)
 	return row
 end
 
 -- button ------------------------------------------------------
 local function addButton(parent, data)
 	local danger = data.style == "danger"
+	local h = H.button
 	local b = make("TextButton", {
 		BackgroundColor3 = danger and Color3.fromRGB(46, 24, 28) or C.card2,
-		BorderSizePixel = 0, AutoButtonColor = false,
-		Text = "", Size = UDim2.new(1, 0, 0, math.max(touch(44), px(44))),
+		BorderSizePixel = 0, AutoButtonColor = false, Text = "",
+		Size = UDim2.new(1, 0, 0, h), ZIndex = 5,
 	}, parent)
 	corner(b, px(10))
-	local st = stroke(b, danger and Color3.fromRGB(90, 40, 46) or C.stroke, 1, 0.3)
-
-	local l = label(b, {
+	stroke(b, danger and Color3.fromRGB(92, 42, 48) or C.stroke, 1, 0.3)
+	label(b, {
 		Text = (data.prefix or "") .. (data.title or data.name), TextSize = fs(13),
-		TextColor3 = danger and C.red or C.text,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Size = UDim2.fromScale(1, 1),
+		TextColor3 = danger and C.red or C.text, TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.fromScale(1, 1), ZIndex = 6,
 	})
-	l.Text = (data.prefix or "") .. (data.title or data.name)
-
 	b.MouseEnter:Connect(function()
 		if not IS_MOBILE then tween(b, 0.15, { BackgroundColor3 = danger and Color3.fromRGB(58, 28, 34) or C.card3 }) end
 	end)
@@ -818,39 +1008,462 @@ local function addButton(parent, data)
 	end)
 	onTap(b, function()
 		tween(b, 0.08, { BackgroundTransparency = 0.3 })
-		task.delay(0.08, function() tween(b, 0.15, { BackgroundTransparency = 0 }) end)
+		task.delay(0.1, function() tween(b, 0.15, { BackgroundTransparency = 0 }) end)
 		if data.callback then data.callback() end
 	end)
+	grow(parent, h)
 	return b
+end
+
+-- note --------------------------------------------------------
+local function addNote(parent, text, lines)
+	lines = lines or 2
+	local h = H.note * lines
+	label(parent, {
+		Text = text, TextColor3 = C.muted, TextSize = fs(11), TextWrapped = true,
+		Size = UDim2.new(1, 0, 0, h), TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 6,
+	})
+	grow(parent, h)
+	return h
 end
 
 -- textbox -----------------------------------------------------
 local function addTextBox(parent, data)
+	local h = H.textbox
 	local box = make("Frame", {
 		BackgroundColor3 = C.card2, BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, math.max(touch(40), px(40))),
+		Size = UDim2.new(1, 0, 0, h), ZIndex = 5,
 	}, parent)
 	corner(box, px(10))
 	stroke(box, C.stroke, 1, 0.3)
-
 	local tb = make("TextBox", {
 		BackgroundTransparency = 1, Text = data.default or "", PlaceholderText = data.placeholder or "",
 		PlaceholderColor3 = C.muted, TextColor3 = C.text, Font = FONT, TextSize = fs(13),
 		TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false,
-		Position = UDim2.new(0, px(12), 0, 0), Size = UDim2.new(1, -px(24), 1, 0),
+		Position = UDim2.new(0, px(12), 0, 0), Size = UDim2.new(1, -px(24), 1, 0), ZIndex = 6,
 	}, box)
+	grow(parent, h)
 	return tb
 end
 
-local function addNote(parent, text)
-	return label(parent, {
-		Text = text, TextColor3 = C.muted, TextSize = fs(11), TextWrapped = true,
-		Size = UDim2.new(1, 0, 0, px(30)), TextYAlignment = Enum.TextYAlignment.Top,
+--============================================================
+-- 15.  Navigation list
+--============================================================
+local NAV_ITEMS = {
+	{ "Dashboard", "◈" }, { "Main", "⌂" }, { "Player", "☺" }, { "Visuals", "◉" },
+	{ "Combat", "✛" }, { "Movement", "➤" }, { "World", "◎" }, { "Misc", "✦" },
+	{ "Config", "⚙" }, { "Keybinds", "⌨" }, { "Themes", "◐" }, { "Settings", "⚙" },
+}
+
+local NAV_ROW_H = math.max(touch(40), px(40))
+
+for i, data in ipairs(NAV_ITEMS) do
+	local name, glyph = data[1], data[2]
+	local btn = make("Frame", {
+		BackgroundColor3 = C.accent, BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, NAV_ROW_H), LayoutOrder = i, ZIndex = 6,
+	}, NavScroll)
+	corner(btn, px(9))
+	local st = stroke(btn, C.accent, 1, 1)
+
+	local icon = label(btn, {
+		Text = glyph, TextSize = fs(15), TextColor3 = C.muted,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Position = UDim2.new(0, px(4), 0, 0), Size = UDim2.new(0, px(28), 1, 0), ZIndex = 7,
 	})
+	local lbl = label(btn, {
+		Text = name, TextSize = fs(14), TextColor3 = C.sub,
+		Position = UDim2.new(0, px(38), 0, 0), Size = UDim2.new(1, -px(44), 1, 0), ZIndex = 7,
+	})
+	local hit = make("TextButton", {
+		BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
+		Size = UDim2.fromScale(1, 1), ZIndex = 8,
+	}, btn)
+	onTap(hit, function() navigate(name) end)
+
+	table.insert(NavList, { name = name, button = btn, label = lbl, icon = icon, stroke = st })
+end
+
+for _, item in ipairs(NAV_ITEMS) do
+	if item[1] ~= "Dashboard" then newPage(item[1]) end
 end
 
 --============================================================
--- 11.  Feature implementations
+-- 16.  Dashboard page  (fully explicit geometry)
+--============================================================
+local Dash = newPage("Dashboard")
+
+local CARDS_H_DESK  = px(86)
+local CARDS_H_SMALL = px(84) * 2 + px(8)
+local FEAT_HDR_H    = px(52)
+local FEAT_ROW_H    = math.max(touch(56), px(58))
+local FEAT_ROWS     = 6
+
+-- 16a. status cards ------------------------------------------
+local CardsRow = make("Frame", {
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1, 0, 0, CARDS_H_DESK),
+	LayoutOrder = 1, ZIndex = 4,
+}, Dash)
+local CardsGrid = make("UIGridLayout", {
+	CellSize = UDim2.new(0.25, -px(6), 0, CARDS_H_DESK),
+	CellPadding = UDim2.new(0, px(8), 0, px(8)),
+	SortOrder = Enum.SortOrder.LayoutOrder,
+}, CardsRow)
+grow(Dash, CARDS_H_DESK)
+
+local function statusCard(order, glyph, title, value, note, color)
+	local card = make("Frame", {
+		BackgroundColor3 = C.card, BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1), LayoutOrder = order, ZIndex = 5,
+	}, CardsRow)
+	corner(card, px(12))
+	stroke(card, C.stroke, 1)
+
+	local iconBox = make("Frame", {
+		BackgroundColor3 = C.accent, BackgroundTransparency = 0.86,
+		Position = UDim2.new(0, px(10), 0.5, -px(18)),
+		Size = UDim2.fromOffset(px(36), px(36)), ZIndex = 6,
+	}, card)
+	corner(iconBox, px(10))
+	label(iconBox, {
+		Text = glyph, TextSize = fs(16), TextColor3 = C.accent2,
+		TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 7,
+	})
+
+	label(card, {
+		Text = title, TextColor3 = C.sub, TextSize = fs(11), ZIndex = 6,
+		Position = UDim2.new(0, px(54), 0, px(12)), Size = UDim2.new(1, -px(58), 0, px(16)),
+	})
+	local val = label(card, {
+		Text = value, Font = FONT_BOLD, TextSize = fs(14), TextColor3 = color, ZIndex = 6,
+		Position = UDim2.new(0, px(54), 0, px(28)), Size = UDim2.new(1, -px(58), 0, px(20)),
+	})
+	label(card, {
+		Text = note, TextColor3 = C.muted, TextSize = fs(10), ZIndex = 6,
+		Position = UDim2.new(0, px(54), 0, px(50)), Size = UDim2.new(1, -px(56), 0, px(18)),
+	})
+	return val
+end
+
+statusCard(1, "〜", "Status", "Injected", "Script is running", C.green)
+statusCard(2, "⛨", "Protection", "Enabled", "Full protection active", C.green)
+statusCard(3, "➤", "Performance", "Optimal", "Low usage", C.green)
+local uptimeValue = statusCard(4, "◷", "Uptime", "00:00:00", "Session time", C.accent2)
+onAccent(function(a) uptimeValue.TextColor3 = a end)
+
+-- 16b. middle row --------------------------------------------
+local MidRow = make("Frame", {
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1, 0, 0, px(400)),
+	LayoutOrder = 2, ZIndex = 4,
+}, Dash)
+grow(Dash, px(400))
+
+local LeftCol = make("Frame", {
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(0.615, -px(6), 0, px(400)), ZIndex = 4,
+}, MidRow)
+
+local RightCol = make("Frame", {
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0.615, px(6), 0, 0),
+	Size = UDim2.new(0.385, -px(6), 0, px(400)), ZIndex = 4,
+}, MidRow)
+
+-- FEATURES CARD ----------------------------------------------
+local FEAT_H = FEAT_HDR_H + FEAT_ROWS * FEAT_ROW_H + px(6)
+local FeatCard = make("Frame", {
+	BackgroundColor3 = C.card, BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, FEAT_H), ZIndex = 5,
+}, LeftCol)
+corner(FeatCard, px(12))
+stroke(FeatCard, C.stroke, 1)
+
+local featHeader = make("Frame", {
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1, -px(28), 0, px(36)),
+	Position = UDim2.new(0, px(14), 0, px(12)), ZIndex = 6,
+}, FeatCard)
+local featTitle = label(featHeader, {
+	Text = "Features", Font = FONT_BOLD, TextSize = fs(15), TextColor3 = C.accent,
+	Size = UDim2.new(0.45, 0, 1, 0), ZIndex = 7,
+})
+onAccent(function(a) featTitle.TextColor3 = a end)
+
+local searchBox = make("Frame", {
+	BackgroundColor3 = C.card2, BorderSizePixel = 0,
+	AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0),
+	Size = UDim2.new(0.5, 0, 0, px(30)), ZIndex = 6,
+}, featHeader)
+corner(searchBox, px(8))
+stroke(searchBox, C.stroke, 1, 0.3)
+label(searchBox, {
+	Text = "⌕", TextSize = fs(13), TextColor3 = C.muted,
+	Position = UDim2.new(0, px(8), 0, 0), Size = UDim2.new(0, px(18), 1, 0), ZIndex = 7,
+})
+local searchInput = make("TextBox", {
+	BackgroundTransparency = 1, Text = "", PlaceholderText = "Search features...",
+	PlaceholderColor3 = C.muted, TextColor3 = C.text, TextSize = fs(12), Font = FONT,
+	TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false,
+	Position = UDim2.new(0, px(26), 0, 0), Size = UDim2.new(1, -px(32), 1, 0), ZIndex = 7,
+}, searchBox)
+
+local FeatList = make("Frame", {
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, FEAT_HDR_H),
+	Size = UDim2.new(1, 0, 0, FEAT_ROWS * FEAT_ROW_H),
+	ZIndex = 5,
+}, FeatCard)
+make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, FeatList)
+
+local featRows = {}
+local function featureRow(order, pageName, glyph, title, sub, flagName, defaultOn)
+	local row = make("Frame", {
+		BackgroundColor3 = C.card, BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, FEAT_ROW_H), LayoutOrder = order, ZIndex = 5,
+	}, FeatList)
+	make("Frame", {
+		BackgroundColor3 = C.stroke, BorderSizePixel = 0,
+		Size = UDim2.new(1, -px(28), 0, 1), Position = UDim2.new(0, px(14), 0, 0), ZIndex = 6,
+	}, row)
+
+	local iconBox = make("Frame", {
+		BackgroundColor3 = C.accent, BackgroundTransparency = 0.86,
+		Position = UDim2.new(0, px(16), 0.5, -px(15)),
+		Size = UDim2.fromOffset(px(30), px(30)), ZIndex = 6,
+	}, row)
+	corner(iconBox, px(9))
+	label(iconBox, {
+		Text = glyph, TextSize = fs(14), TextColor3 = C.accent2,
+		TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 7,
+	})
+
+	label(row, {
+		Text = title, Font = FONT_BOLD, TextSize = fs(14), ZIndex = 6,
+		Position = UDim2.new(0, px(58), 0, px(11)), Size = UDim2.new(1, -px(150), 0, px(20)),
+	})
+	label(row, {
+		Text = sub, TextColor3 = C.muted, TextSize = fs(11), TextWrapped = true, ZIndex = 6,
+		Position = UDim2.new(0, px(58), 0, px(30)), Size = UDim2.new(1, -px(146), 0, px(18)),
+	})
+
+	local tr = make("Frame", {
+		BackgroundColor3 = C.card3, BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -px(38), 0.5, 0),
+		Size = UDim2.fromOffset(px(40), px(22)), ZIndex = 6,
+	}, row)
+	corner(tr, px(11))
+	local knob = make("Frame", {
+		BackgroundColor3 = C.text, BorderSizePixel = 0,
+		Position = UDim2.new(0, px(3), 0.5, -px(8)),
+		Size = UDim2.fromOffset(px(16), px(16)), ZIndex = 7,
+	}, tr)
+	corner(knob, 999)
+
+	local function render(state)
+		if state then
+			tween(tr, 0.16, { BackgroundColor3 = C.accent })
+			tween(knob, 0.16, { Position = UDim2.new(1, -px(19), 0.5, -px(8)) })
+		else
+			tween(tr, 0.16, { BackgroundColor3 = C.card3 })
+			tween(knob, 0.16, { Position = UDim2.new(0, px(3), 0.5, -px(8)) })
+		end
+	end
+	onAccent(function(a) if Flags[flagName] then tr.BackgroundColor3 = a end end)
+
+	Flags[flagName] = defaultOn == true
+	FlagUI[flagName] = FlagUI[flagName] or {}
+	table.insert(FlagUI[flagName], { render = render })
+	render(Flags[flagName])
+
+	label(row, {
+		Text = "›", TextSize = fs(17), TextColor3 = C.muted,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -px(12), 0.5, 0),
+		Size = UDim2.fromOffset(px(16), px(20)), ZIndex = 6,
+	})
+
+	onTap(tr, function()
+		setFlag(flagName, not getFlag(flagName))
+		notify(title .. (getFlag(flagName) and " enabled" or " disabled"),
+			getFlag(flagName) and C.green or C.muted)
+	end)
+	local hit = make("TextButton", {
+		BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
+		Size = UDim2.new(1, -px(70), 1, 0), ZIndex = 8,
+	}, row)
+	onTap(hit, function() navigate(pageName) end)
+
+	table.insert(featRows, { row = row, title = title, sub = sub })
+	return row
+end
+
+featureRow(1, "Player",   "☺", "Player",   "Player related features",     "catPlayer",  true)
+featureRow(2, "Visuals",  "◉", "Visuals",  "Visual enhancements",         "catVisuals", true)
+featureRow(3, "Combat",   "✛", "Combat",   "Aimbot, hitbox, mute & more", "catCombat",  true)
+featureRow(4, "Movement", "➤", "Movement", "Speed, fly, noclip & more",   "catMovement",true)
+featureRow(5, "World",    "◎", "World",    "World modifications",         "catWorld",   false)
+featureRow(6, "Misc",     "✦", "Misc",     "Utility and fun features",    "catMisc",    true)
+
+conn(searchInput:GetPropertyChangedSignal("Text"), function()
+	local q = string.lower(searchInput.Text)
+	for _, item in ipairs(featRows) do
+		item.row.Visible = (q == "" or string.find(string.lower(item.title .. " " .. item.sub), q, 1, true) ~= nil)
+	end
+end)
+
+-- SYSTEM INFO CARD -------------------------------------------
+local INFO_ROWS = 7
+local INFO_ROW_H = px(28)
+local SYS_H = H.title + INFO_ROWS * INFO_ROW_H + H.secPad * 2 + px(6)
+
+local SysCard = make("Frame", {
+	BackgroundColor3 = C.card, BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, SYS_H), Position = UDim2.new(0, 0, 0, 0), ZIndex = 5,
+}, RightCol)
+corner(SysCard, px(12))
+stroke(SysCard, C.stroke, 1)
+local sysTitle = label(SysCard, {
+	Text = "System Information", Font = FONT_BOLD, TextSize = fs(15), TextColor3 = C.accent,
+	Position = UDim2.new(0, px(14), 0, H.secPad), Size = UDim2.new(1, -px(28), 0, H.title), ZIndex = 6,
+})
+onAccent(function(a) sysTitle.TextColor3 = a end)
+
+local SysList = make("Frame", {
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, px(14), 0, H.secPad + H.title),
+	Size = UDim2.new(1, -px(28), 0, INFO_ROWS * INFO_ROW_H), ZIndex = 6,
+}, SysCard)
+make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, SysList)
+
+local function infoRow(key, value, order)
+	local row = make("Frame", {
+		BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, INFO_ROW_H),
+		LayoutOrder = order, ZIndex = 6,
+	}, SysList)
+	label(row, {
+		Text = key, TextColor3 = C.sub, TextSize = fs(12), Size = UDim2.new(0.42, 0, 1, 0), ZIndex = 7,
+	})
+	local v = label(row, {
+		Text = value, TextSize = fs(12), TextXAlignment = Enum.TextXAlignment.Right,
+		Position = UDim2.new(0.42, 0, 0, 0), Size = UDim2.new(0.58, 0, 1, 0),
+		TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 7,
+	})
+	return v
+end
+
+local function platformName()
+	local ok, p = pcall(function() return UIS:GetPlatform() end)
+	if ok and p then
+		local s = string.gsub(tostring(p), "Enum.Platform.", "")
+		if s ~= "" and s ~= "Unknown" then return s end
+	end
+	return IS_MOBILE and "Mobile" or "PC"
+end
+
+infoRow("User", LP.DisplayName, 1)
+infoRow("Platform", platformName(), 2)
+local inputValue = infoRow("Input", IS_MOBILE and "Touch" or "Keyboard / Mouse", 3)
+local resValue = infoRow("Resolution", "0 x 0", 4)
+local fpsValue = infoRow("FPS", "60", 5)
+local pingValue = infoRow("Ping", "-- ms", 6)
+local uptimeRow = infoRow("Uptime", "00:00:00", 7)
+
+-- QUICK ACTIONS CARD -----------------------------------------
+local QA_BTN_H = math.max(touch(40), px(40))
+local QA_H = H.title + QA_BTN_H * 2 + H.rowGap + H.secPad * 2
+local QACard = make("Frame", {
+	BackgroundColor3 = C.card, BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, QA_H), ZIndex = 5,
+}, RightCol)
+corner(QACard, px(12))
+stroke(QACard, C.stroke, 1)
+local qaTitle = label(QACard, {
+	Text = "Quick Actions", Font = FONT_BOLD, TextSize = fs(15), TextColor3 = C.accent,
+	Position = UDim2.new(0, px(14), 0, H.secPad), Size = UDim2.new(1, -px(28), 0, H.title), ZIndex = 6,
+})
+onAccent(function(a) qaTitle.TextColor3 = a end)
+
+local QAGrid = make("Frame", {
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, px(14), 0, H.secPad + H.title),
+	Size = UDim2.new(1, -px(28), 0, QA_BTN_H * 2 + H.rowGap), ZIndex = 6,
+}, QACard)
+make("UIGridLayout", {
+	CellSize = UDim2.new(0.5, -px(4), 0, QA_BTN_H),
+	CellPadding = UDim2.new(0, px(8), 0, H.rowGap),
+	SortOrder = Enum.SortOrder.LayoutOrder,
+}, QAGrid)
+
+local function gridButton(order, title, danger, fn)
+	local holder = make("Frame", {
+		BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), LayoutOrder = order, ZIndex = 6,
+	}, QAGrid)
+	local b = make("TextButton", {
+		BackgroundColor3 = danger and Color3.fromRGB(46, 24, 28) or C.card2,
+		BorderSizePixel = 0, AutoButtonColor = false, Text = "",
+		Size = UDim2.fromScale(1, 1), ZIndex = 7,
+	}, holder)
+	corner(b, px(10))
+	stroke(b, danger and Color3.fromRGB(92, 42, 48) or C.stroke, 1, 0.3)
+	label(b, {
+		Text = title, TextSize = fs(12), TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = danger and C.red or C.text, Size = UDim2.fromScale(1, 1), ZIndex = 8,
+	})
+	onTap(b, function()
+		tween(b, 0.08, { BackgroundTransparency = 0.3 })
+		task.delay(0.1, function() tween(b, 0.15, { BackgroundTransparency = 0 }) end)
+		if fn then fn() end
+	end)
+	return b
+end
+
+-- BANNER -----------------------------------------------------
+local BANNER_H = px(96)
+local Banner = make("Frame", {
+	BackgroundColor3 = C.accent, BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, BANNER_H), ClipsDescendants = true, ZIndex = 5,
+}, RightCol)
+corner(Banner, px(12))
+local bannerGrad = gradient(Banner, Color3.fromRGB(46, 26, 82), Color3.fromRGB(24, 18, 44), 25)
+onAccent(function(a)
+	bannerGrad.Color = ColorSequence.new(
+		Color3.new(a.R * 0.34, a.G * 0.34, a.B * 0.34),
+		Color3.fromRGB(22, 16, 40)
+	)
+end)
+local bannerTile = make("Frame", {
+	BackgroundColor3 = C.accent, BorderSizePixel = 0,
+	Position = UDim2.new(0, px(16), 0.5, -px(22)),
+	Size = UDim2.fromOffset(px(44), px(44)), ZIndex = 6,
+}, Banner)
+corner(bannerTile, px(10))
+gradient(bannerTile, C.accent2, C.accent, 45)
+label(bannerTile, {
+	Text = "X", Font = FONT_BLACK, TextSize = fs(22), TextColor3 = Color3.new(1, 1, 1),
+	TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 7,
+})
+label(Banner, {
+	Text = "LYNEX", Font = FONT_BLACK, TextSize = fs(20),
+	Position = UDim2.new(0, px(74), 0, px(22)), Size = UDim2.new(1, -px(90), 0, px(26)), ZIndex = 6,
+})
+make("Frame", {
+	BackgroundColor3 = C.stroke, BorderSizePixel = 0,
+	Position = UDim2.new(0, px(74), 0, px(54)), Size = UDim2.new(1, -px(92), 0, 1), ZIndex = 6,
+}, Banner)
+label(Banner, {
+	Text = "Powerful. Reliable. Undetected.", TextSize = fs(10),
+	Position = UDim2.new(0, px(74), 0, px(60)), Size = UDim2.new(1, -px(90), 0, px(16)), ZIndex = 6,
+})
+label(Banner, {
+	Text = "Built to perform. Made to dominate.", TextColor3 = C.sub, TextSize = fs(9),
+	Position = UDim2.new(0, px(74), 0, px(75)), Size = UDim2.new(1, -px(90), 0, px(14)), ZIndex = 6,
+})
+
+--============================================================
+-- 17.  Feature engine
 --============================================================
 local function getHum()
 	local ch = LP.Character
@@ -863,16 +1476,9 @@ local function getRoot()
 end
 
 local DEFAULT = {
-	walkSpeed = 16,
-	jumpPower = 50,
-	gravity = workspace.Gravity,
-	health = 100,
-	fov = 70,
-	brightness = Lighting.Brightness,
-	ambient = Lighting.Ambient,
-	outdoor = Lighting.OutdoorAmbient,
-	fogEnd = Lighting.FogEnd,
-	clock = Lighting.ClockTime,
+	walkSpeed = 16, jumpPower = 50, gravity = workspace.Gravity, fov = 70,
+	brightness = Lighting.Brightness, ambient = Lighting.Ambient,
+	outdoor = Lighting.OutdoorAmbient, fogEnd = Lighting.FogEnd, clock = Lighting.ClockTime,
 }
 
 local function applyWalkspeed()
@@ -900,14 +1506,12 @@ conn(LP.CharacterAdded, function()
 	if getFlag("Fly") then setFlag("Fly", false, true) end
 end)
 
--- infinite jump ------------------------------------------------
 conn(UIS.JumpRequest, function()
 	if not getFlag("InfiniteJump") then return end
 	local h = getHum()
 	if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
 end)
 
--- anti afk ----------------------------------------------------
 conn(LP.Idled, function()
 	if not getFlag("AntiAFK") then return end
 	local vu = game:GetService("VirtualUser")
@@ -917,9 +1521,8 @@ conn(LP.Idled, function()
 	end)
 end)
 
--- fullbright --------------------------------------------------
-local function applyFullbright()
-	if getFlag("Fullbright") then
+onChange("Fullbright", function(on)
+	if on then
 		Lighting.Brightness = 3
 		Lighting.Ambient = Color3.fromRGB(178, 178, 178)
 		Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
@@ -930,27 +1533,21 @@ local function applyFullbright()
 		Lighting.OutdoorAmbient = DEFAULT.outdoor
 		Lighting.GlobalShadows = true
 	end
-end
-onChange("Fullbright", applyFullbright)
+end)
 
--- no fog ------------------------------------------------------
 onChange("NoFog", function(on)
 	Lighting.FogEnd = on and 100000 or DEFAULT.fogEnd
 end)
 
--- fov ---------------------------------------------------------
-local function applyFov()
+onChange("opt:FOV", function(v)
 	local c = cam()
-	if c then c.FieldOfView = getOption("FOV") or 70 end
-end
-onChange("opt:FOV", applyFov)
+	if c then c.FieldOfView = v end
+end)
 
--- gravity -----------------------------------------------------
 onChange("LowGravity", function(on)
 	workspace.Gravity = on and 50 or DEFAULT.gravity
 end)
 
--- time changer ------------------------------------------------
 local function applyClock()
 	if getFlag("TimeChanger") then
 		Lighting.ClockTime = getOption("ClockTime") or 14
@@ -961,9 +1558,9 @@ end
 onChange("TimeChanger", applyClock)
 onChange("opt:ClockTime", applyClock)
 
--- noclip ------------------------------------------------------
+-- noclip
 local noclipSaved = {}
-local function noclipStep()
+conn(RunService.Stepped, function()
 	if not getFlag("Noclip") then return end
 	local ch = LP.Character
 	if not ch then return end
@@ -973,7 +1570,7 @@ local function noclipStep()
 			part.CanCollide = false
 		end
 	end
-end
+end)
 onChange("Noclip", function(on)
 	if on then return end
 	for part in pairs(noclipSaved) do
@@ -983,20 +1580,17 @@ onChange("Noclip", function(on)
 	end
 	noclipSaved = {}
 end)
-conn(RunService.Stepped, noclipStep)
 
--- fly ---------------------------------------------------------
+-- fly
 local flyBV, flyBG
 local function stopFly()
-	if flyBV then flyBV:Destroy(); flyBV = nil end
-	if flyBG then flyBG:Destroy(); flyBG = nil end
+	if flyBV then pcall(function() flyBV:Destroy() end); flyBV = nil end
+	if flyBG then pcall(function() flyBG:Destroy() end); flyBG = nil end
 end
 
-local function flyStep(dt)
+conn(RunService.RenderStepped, function(dt)
 	if not getFlag("Fly") then return end
-	local hrp = getRoot()
-	local h = getHum()
-	local c = cam()
+	local hrp, h, c = getRoot(), getHum(), cam()
 	if not hrp or not h or not c then return end
 
 	if not flyBV then
@@ -1024,26 +1618,22 @@ local function flyStep(dt)
 	if move.Magnitude < 0.05 then dir = Vector3.zero end
 	flyBV.Velocity = dir * speed
 	flyBG.CFrame = CFrame.new(hrp.Position) * (c.CFrame - c.CFrame.Position)
-end
+end)
 
 onChange("Fly", function(on)
-	if on then
-		local h = getHum()
-		if h then h.PlatformStand = true end
-	else
-		local h = getHum()
-		if h then h.PlatformStand = false end
-		stopFly()
-	end
+	local h = getHum()
+	if h then h.PlatformStand = on end
+	if not on then stopFly() end
 end)
-conn(RunService.RenderStepped, flyStep)
-onChange("opt:FlySpeed", function() end)
 
--- ESP ---------------------------------------------------------
+-- ESP
 local espList = {}
 local function clearESP()
-	for _, hl in pairs(espList) do
-		if hl and hl.Parent then hl:Destroy() end
+	for char, hl in pairs(espList) do
+		pcall(function()
+			if hl and hl.Parent then hl:Destroy() end
+		end)
+		_ = char
 	end
 	espList = {}
 end
@@ -1077,24 +1667,22 @@ conn(Players.PlayerAdded, function(plr)
 	end)
 end)
 
--- aimbot (desktop orientated) ---------------------------------
-local function aimStep(dt)
+-- aimbot
+conn(RunService.RenderStepped, function(dt)
 	if not getFlag("Aimbot") then return end
 	local c = cam()
 	if not c then return end
 
 	local best, bestAngle = nil, math.rad(getOption("AimFOV") or 120) / 2
-
 	local mousePos = UIS:GetMouseLocation()
 	local ray = c:ViewportPointToRay(mousePos.X, mousePos.Y)
-	local origin = ray.Origin
-	local lookDir = ray.Direction.Unit
+	local origin, lookDir = ray.Origin, ray.Direction.Unit
 
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LP and plr.Character then
 			local head = plr.Character:FindFirstChild("Head")
 			if head then
-				local dir = (head.Position - origin)
+				local dir = head.Position - origin
 				local angle = math.deg(math.acos(math.clamp(dir.Unit:Dot(lookDir), -1, 1)))
 				if angle <= bestAngle then
 					bestAngle = angle
@@ -1103,366 +1691,18 @@ local function aimStep(dt)
 			end
 		end
 	end
+
 	if best then
 		local goal = CFrame.lookAt(c.CFrame.Position, best.Position)
 		local t = math.clamp(dt * (getOption("AimSmooth") or 8), 0, 1)
 		c.CFrame = c.CFrame:Lerp(goal, t)
 	end
-end
-conn(RunService.RenderStepped, aimStep)
-
---============================================================
--- 12.  Navigation list
---============================================================
-local NAV_ITEMS = {
-	{ "Dashboard", "◈" }, { "Main", "⌂" }, { "Player", "☺" }, { "Visuals", "◉" },
-	{ "Combat", "✛" }, { "Movement", "➤" }, { "World", "◎" }, { "Misc", "✦" },
-	{ "Config", "⚙" }, { "Keybinds", "⌨" }, { "Themes", "◐" }, { "Settings", "⚙" },
-}
-
-for i, data in ipairs(NAV_ITEMS) do
-	local name, glyph = data[1], data[2]
-	local btn = make("Frame", {
-		BackgroundColor3 = C.accent, BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, math.max(touch(40), px(40))),
-		LayoutOrder = i,
-	}, NavScroll)
-	corner(btn, px(9))
-	local st = stroke(btn, C.accent, 1, 1)
-
-	local icon = label(btn, {
-		Text = glyph, TextSize = fs(15), TextColor3 = C.muted,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Position = UDim2.new(0, px(4), 0, 0), Size = UDim2.new(0, px(28), 1, 0),
-	})
-	local lbl = label(btn, {
-		Text = name, TextSize = fs(14), TextColor3 = C.sub,
-		Position = UDim2.new(0, px(38), 0, 0), Size = UDim2.new(1, -px(44), 1, 0),
-	})
-	local hit = make("TextButton", {
-		BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
-		Size = UDim2.fromScale(1, 1),
-	}, btn)
-	onTap(hit, function() navigate(name) end)
-
-	table.insert(NavList, { name = name, button = btn, label = lbl, icon = icon, stroke = st })
-end
-
---============================================================
--- 13.  Build every page
---============================================================
-for _, item in ipairs(NAV_ITEMS) do
-	if item[1] ~= "Dashboard" then newPage(item[1]) end
-end
-
--- Dashboard page (custom layout) ------------------------------
-local Dashboard = newPage("Dashboard")
-
-local CardsRow = make("Frame", {
-	BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, px(86)), LayoutOrder = 1,
-}, Dashboard)
-local CardsGrid = make("UIGridLayout", {
-	CellSize = UDim2.new(0.25, -px(6), 0, px(86)),
-	CellPadding = UDim2.new(0, px(8), 0, px(8)),
-	SortOrder = Enum.SortOrder.LayoutOrder,
-}, CardsRow)
-
-local function statusCard(order, glyph, title, value, note, color)
-	local card = make("Frame", {
-		BackgroundColor3 = C.card, BorderSizePixel = 0,
-		Size = UDim2.fromScale(1, 1), LayoutOrder = order,
-	}, CardsRow)
-	corner(card, px(12))
-	stroke(card, C.stroke, 1)
-
-	local iconBox = make("Frame", {
-		BackgroundColor3 = C.accent, BackgroundTransparency = 0.86,
-		Position = UDim2.new(0, px(10), 0.5, -px(19)),
-		Size = UDim2.fromOffset(px(38), px(38)),
-	}, card)
-	corner(iconBox, px(10))
-	label(iconBox, {
-		Text = glyph, TextSize = fs(17), TextColor3 = C.accent2,
-		TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1),
-	})
-
-	label(card, {
-		Text = title, TextColor3 = C.sub, TextSize = fs(11),
-		Position = UDim2.new(0, px(56), 0, px(14)), Size = UDim2.new(1, -px(60), 0, px(16)),
-	})
-	local val = label(card, {
-		Text = value, Font = FONT_BOLD, TextSize = fs(14), TextColor3 = color,
-		Position = UDim2.new(0, px(56), 0, px(30)), Size = UDim2.new(1, -px(60), 0, px(20)),
-	})
-	label(card, {
-		Text = note, TextColor3 = C.muted, TextSize = fs(10),
-		Position = UDim2.new(0, px(56), 0, px(52)), Size = UDim2.new(1, -px(58), 0, px(18)),
-	})
-	return val
-end
-
-statusCard(1, "〜", "Status", "Injected", "Script is running", C.green)
-statusCard(2, "⛨", "Protection", "Enabled", "Full protection active", C.green)
-statusCard(3, "➤", "Performance", "Optimal", "Low usage", C.green)
-local uptimeValue = statusCard(4, "◷", "Uptime", "00:00:00", "Session time", C.accent2)
-onAccent(function(a) uptimeValue.TextColor3 = a end)
-
--- middle row --------------------------------------------------
-local MidRow = make("Frame", {
-	BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), LayoutOrder = 2,
-}, Dashboard)
-
-local LeftCol = make("Frame", { BackgroundTransparency = 1, Size = UDim2.new(0.615, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y }, MidRow)
-make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, px(12)) }, LeftCol)
-
-local RightCol = make("Frame", { BackgroundTransparency = 1, Size = UDim2.new(0.385, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y }, MidRow)
-make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, px(12)) }, RightCol)
-
--- FEATURES CARD
-local FeatCard = make("Frame", {
-	BackgroundColor3 = C.card, BorderSizePixel = 0,
-	Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-	LayoutOrder = 1,
-}, LeftCol)
-corner(FeatCard, px(12))
-stroke(FeatCard, C.stroke, 1)
-
-local featHeader = make("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -px(28), 0, px(38)), Position = UDim2.new(0, px(14), 0, px(12)) }, FeatCard)
-local featTitle = label(featHeader, {
-	Text = "Features", Font = FONT_BOLD, TextSize = fs(15), TextColor3 = C.accent,
-	Size = UDim2.new(0.5, 0, 1, 0),
-})
-onAccent(function(a) featTitle.TextColor3 = a end)
-
-local searchBox = make("Frame", {
-	BackgroundColor3 = C.card2, BorderSizePixel = 0,
-	AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0),
-	Size = UDim2.new(0.45, 0, 0, px(30)),
-}, featHeader)
-corner(searchBox, px(8))
-stroke(searchBox, C.stroke, 1, 0.3)
-label(searchBox, {
-	Text = "⌕", TextSize = fs(13), TextColor3 = C.muted,
-	Position = UDim2.new(0, px(8), 0, 0), Size = UDim2.new(0, px(18), 1, 0),
-})
-local searchInput = make("TextBox", {
-	BackgroundTransparency = 1, Text = "", PlaceholderText = "Search features...",
-	PlaceholderColor3 = C.muted, TextColor3 = C.text, TextSize = fs(12), Font = FONT,
-	TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false,
-	Position = UDim2.new(0, px(26), 0, 0), Size = UDim2.new(1, -px(32), 1, 0),
-}, searchBox)
-
-local FeatList = make("Frame", {
-	BackgroundTransparency = 1,
-	Position = UDim2.new(0, 0, 0, px(54)),
-	Size = UDim2.new(1, 0, 0, 0),
-	AutomaticSize = Enum.AutomaticSize.Y,
-}, FeatCard)
-make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, FeatList)
-make("UIPadding", { PaddingBottom = UDim.new(0, px(4)) }, FeatCard)
-
-local featRows = {}
-local function featureRow(order, pageName, glyph, title, sub, flagName, defaultOn)
-	local row = make("Frame", {
-		BackgroundColor3 = C.card, BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, math.max(touch(56), px(58))),
-		LayoutOrder = order,
-	}, FeatList)
-	local topLine = make("Frame", { BackgroundColor3 = C.stroke, BorderSizePixel = 0, Size = UDim2.new(1, -px(28), 0, 1), Position = UDim2.new(0, px(14), 0, 0) }, row)
-
-	local iconBox = make("Frame", {
-		BackgroundColor3 = C.accent, BackgroundTransparency = 0.86,
-		Position = UDim2.new(0, px(16), 0.5, -px(15)),
-		Size = UDim2.fromOffset(px(30), px(30)),
-	}, row)
-	corner(iconBox, px(9))
-	label(iconBox, {
-		Text = glyph, TextSize = fs(14), TextColor3 = C.accent2,
-		TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1),
-	})
-
-	label(row, {
-		Text = title, Font = FONT_BOLD, TextSize = fs(14),
-		Position = UDim2.new(0, px(58), 0, px(12)), Size = UDim2.new(1, -px(150), 0, px(20)),
-	})
-	label(row, {
-		Text = sub, TextColor3 = C.muted, TextSize = fs(11),
-		Position = UDim2.new(0, px(58), 0, px(31)), Size = UDim2.new(1, -px(150), 0, px(18)),
-	})
-
-	-- switch
-	local track = make("Frame", {
-		BackgroundColor3 = C.card3, BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -px(38), 0.5, 0),
-		Size = UDim2.fromOffset(px(40), px(22)),
-	}, row)
-	corner(track, px(11))
-	local knob = make("Frame", {
-		BackgroundColor3 = C.text, BorderSizePixel = 0,
-		Position = UDim2.new(0, px(3), 0.5, -px(8)),
-		Size = UDim2.fromOffset(px(16), px(16)),
-	}, track)
-	corner(knob, 999)
-
-	local function render(state)
-		if state then
-			tween(track, 0.16, { BackgroundColor3 = C.accent })
-			tween(knob, 0.16, { Position = UDim2.new(1, -px(19), 0.5, -px(8)), BackgroundColor3 = Color3.new(1, 1, 1) })
-		else
-			tween(track, 0.16, { BackgroundColor3 = C.card3 })
-			tween(knob, 0.16, { Position = UDim2.new(0, px(3), 0.5, -px(8)), BackgroundColor3 = C.text })
-		end
-	end
-	onAccent(function(a) if Flags[flagName] then track.BackgroundColor3 = a end end)
-
-	Flags[flagName] = defaultOn == true
-	FlagUI[flagName] = FlagUI[flagName] or {}
-	table.insert(FlagUI[flagName], { render = render })
-	render(Flags[flagName])
-
-	label(row, {
-		Text = "›", TextSize = fs(16), TextColor3 = C.muted,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -px(14), 0.5, 0),
-		Size = UDim2.fromOffset(px(16), px(20)),
-	})
-
-	onTap(track, function()
-		setFlag(flagName, not getFlag(flagName))
-		notify(title .. (getFlag(flagName) and " enabled" or " disabled"), getFlag(flagName) and C.green or C.muted)
-	end)
-	local hit = make("TextButton", {
-		BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
-		Size = UDim2.new(1, -px(70), 1, 0), Position = UDim2.new(0, 0, 0, 0),
-	}, row)
-	onTap(hit, function() navigate(pageName) end)
-
-	table.insert(featRows, { row = row, title = title, sub = sub, page = pageName })
-	return row
-end
-
-featureRow(1, "Player",   "☺", "Player",   "Player related features",  "catPlayer",  true)
-featureRow(2, "Visuals",  "◉", "Visuals",  "Visual enhancements",      "catVisuals", true)
-featureRow(3, "Combat",   "✛", "Combat",   "Aimbot, hitbox, mute & more", "catCombat", true)
-featureRow(4, "Movement", "➤", "Movement", "Speed, fly, noclip & more",   "catMovement", true)
-featureRow(5, "World",    "◎", "World",    "World modifications",      "catWorld",   false)
-featureRow(6, "Misc",     "✦", "Misc",     "Utility and fun features",  "catMisc",    true)
-
-conn(searchInput:GetPropertyChangedSignal("Text"), function()
-	local q = string.lower(searchInput.Text)
-	for _, item in ipairs(featRows) do
-		if q == "" or string.find(string.lower(item.title .. " " .. item.sub), q, 1, true) then
-			item.row.Visible = true
-		else
-			item.row.Visible = false
-		end
-	end
 end)
 
 --============================================================
--- 14.  Right column — system info / quick actions / banner
+-- 18.  Build pages
 --============================================================
-local SysInner = section(RightCol, "System Information", 1)
-
-local function infoRow(key, value)
-	local row = make("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, px(26)) }, SysInner)
-	label(row, {
-		Text = key, TextColor3 = C.sub, TextSize = fs(12),
-		Size = UDim2.new(0.45, 0, 1, 0),
-	})
-	local v = label(row, {
-		Text = value, TextColor3 = C.text, TextSize = fs(12),
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Position = UDim2.new(0.45, 0, 0, 0), Size = UDim2.new(0.55, 0, 1, 0),
-		TextTruncate = Enum.TextTruncate.AtEnd,
-	})
-	return v
-end
-
-local function platformName()
-	local ok, p = pcall(function() return UIS:GetPlatform() end)
-	if ok and p then
-		local s = tostring(p)
-		s = string.gsub(s, "Enum.Platform.", "")
-		if s ~= "" then return s end
-	end
-	if IS_MOBILE then return "Mobile" end
-	return "PC"
-end
-
-infoRow("User", LP.DisplayName)
-infoRow("Platform", platformName())
-infoRow("Input", IS_MOBILE and "Touch" or "Keyboard / Mouse")
-local resValue = infoRow("Resolution", "0 x 0")
-local fpsValue = infoRow("FPS", "60")
-local pingValue = infoRow("Ping", "-- ms")
-local uptimeRow = infoRow("Uptime", "00:00:00")
-
--- quick actions -----------------------------------------------
-local QAInner = section(RightCol, "Quick Actions", 2)
-local QAGrid = make("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y }, QAInner)
-make("UIGridLayout", {
-	CellSize = UDim2.new(0.5, -px(4), 0, px(40)),
-	CellPadding = UDim2.new(0, px(8), 0, px(8)),
-	SortOrder = Enum.SortOrder.LayoutOrder,
-}, QAGrid)
-
-local function gridButton(order, title, danger, fn)
-	local holder = make("Frame", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), LayoutOrder = order }, QAGrid)
-	addButton(holder, { title = title, style = danger and "danger" or nil, callback = fn })
-	return holder
-end
-
--- banner ------------------------------------------------------
-local Banner = make("Frame", {
-	BackgroundColor3 = C.accent, BorderSizePixel = 0,
-	Size = UDim2.new(1, 0, 0, px(96)), LayoutOrder = 3,
-	ClipsDescendants = true,
-}, RightCol)
-corner(Banner, px(12))
-local bannerGrad = gradient(Banner, Color3.fromRGB(46, 26, 82), Color3.fromRGB(24, 18, 44), 25)
-onAccent(function(a, b)
-	bannerGrad.Color = ColorSequence.new(
-		Color3.new(a.R * 0.35, a.G * 0.35, a.B * 0.35),
-		Color3.fromRGB(22, 16, 40)
-	)
-end)
-
-local bannerTile = make("Frame", {
-	BackgroundColor3 = C.accent, BorderSizePixel = 0,
-	Position = UDim2.new(0, px(16), 0.5, -px(22)),
-	Size = UDim2.fromOffset(px(44), px(44)),
-}, Banner)
-corner(bannerTile, px(10))
-gradient(bannerTile, C.accent2, C.accent, 45)
-label(bannerTile, {
-	Text = "X", Font = FONT_BLACK, TextSize = fs(22), TextColor3 = Color3.new(1, 1, 1),
-	TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1),
-})
-
-local bannerName = label(Banner, {
-	Text = "LYNEX", Font = FONT_BLACK, TextSize = fs(20), TextColor3 = C.text,
-	Position = UDim2.new(0, px(74), 0, px(24)), Size = UDim2.new(1, -px(90), 0, px(26)),
-})
-local bannerDivider = make("Frame", {
-	BackgroundColor3 = C.stroke, BorderSizePixel = 0,
-	Position = UDim2.new(0, px(74), 0, px(56)), Size = UDim2.new(1, -px(92), 0, 1),
-}, Banner)
-label(Banner, {
-	Text = "Powerful. Reliable. Undetected.", TextColor3 = C.text, TextSize = fs(10),
-	Position = UDim2.new(0, px(74), 0, px(62)), Size = UDim2.new(1, -px(90), 0, px(16)),
-})
-label(Banner, {
-	Text = "Built to perform. Made to dominate.", TextColor3 = C.sub, TextSize = fs(9),
-	Position = UDim2.new(0, px(74), 0, px(76)), Size = UDim2.new(1, -px(90), 0, px(14)),
-})
-_ = bannerName
-_ = bannerDivider
-
---============================================================
--- 15.  Remaining pages
---============================================================
--- MAIN --------------------------------------------------------
+-- MAIN
 do
 	local p = Pages["Main"]
 	local s = section(p, "Main Toggles", 1)
@@ -1472,14 +1712,16 @@ do
 	addToggle(s, { name = "Noclip", title = "Noclip", sub = "Walk through walls" })
 	addToggle(s, { name = "Fullbright", title = "Fullbright" })
 	addToggle(s, { name = "ESP", title = "Player ESP", sub = "Highlight all players" })
+	finalize(p)
+	finalizePage(p)
 end
 
--- PLAYER ------------------------------------------------------
+-- PLAYER
 do
 	local p = Pages["Player"]
 	local s = section(p, "Player", 1)
-	addSlider(s, { name = "WalkSpeed", title = "Walk Speed", min = 16, max = 300, default = 16, suffix = "" })
-	addToggle(s, { name = "SpeedHack", title = "Apply Walk Speed", sub = "Turns the speed value on" })
+	addSlider(s, { name = "WalkSpeed", title = "Walk Speed", min = 16, max = 300, default = 16 })
+	addToggle(s, { name = "SpeedHack", title = "Apply Walk Speed" })
 	addSlider(s, { name = "JumpPower", title = "Jump Power", min = 50, max = 500, default = 50 })
 	addToggle(s, { name = "JumpHack", title = "Apply Jump Power" })
 	addToggle(s, { name = "InfiniteJump", title = "Infinite Jump", sub = "Jump again in mid-air" })
@@ -1494,10 +1736,12 @@ do
 		local ts = game:GetService("TeleportService")
 		pcall(function() ts:Teleport(game.PlaceId, LP) end)
 	end })
-	addNote(s2, "Tip: values here apply instantly while the matching toggle is on.")
+	addNote(s2, "Values apply instantly while the matching toggle is enabled.", 2)
+	finalize(p)
+	finalizePage(p)
 end
 
--- VISUALS -----------------------------------------------------
+-- VISUALS
 do
 	local p = Pages["Visuals"]
 	local s = section(p, "Visuals", 1)
@@ -1505,20 +1749,24 @@ do
 	addToggle(s, { name = "NoFog", title = "No Fog" })
 	addToggle(s, { name = "ESP", title = "Player ESP", sub = "Highlight players through walls" })
 	addSlider(s, { name = "FOV", title = "Camera FOV", min = 70, max = 120, default = 70 })
-	addNote(s, "ESP color follows your accent color in Themes.")
+	addNote(s, "ESP color follows your accent color in Themes.", 1)
+	finalize(p)
+	finalizePage(p)
 end
 
--- COMBAT ------------------------------------------------------
+-- COMBAT
 do
 	local p = Pages["Combat"]
 	local s = section(p, "Combat", 1)
 	addToggle(s, { name = "Aimbot", title = "Aimbot", sub = "Locks the camera to the closest head" })
 	addSlider(s, { name = "AimFOV", title = "Aim FOV", min = 10, max = 360, default = 120 })
 	addSlider(s, { name = "AimSmooth", title = "Smoothing", min = 1, max = 20, default = 8 })
-	addNote(s, "Aimbot is tuned for desktop. On mobile use a low smoothing value.\nRespect the rules of the game you play on.")
+	addNote(s, "Aimbot is tuned for desktop. On phones keep smoothing high.\nRespect the rules of the game you play on.", 2)
+	finalize(p)
+	finalizePage(p)
 end
 
--- MOVEMENT ---------------------------------------------------
+-- MOVEMENT
 do
 	local p = Pages["Movement"]
 	local s = section(p, "Movement", 1)
@@ -1529,9 +1777,11 @@ do
 	addToggle(s, { name = "LowGravity", title = "Low Gravity" })
 	addSlider(s, { name = "WalkSpeed", title = "Walk Speed", min = 16, max = 300, default = 16 })
 	addToggle(s, { name = "SpeedHack", title = "Apply Walk Speed" })
+	finalize(p)
+	finalizePage(p)
 end
 
--- WORLD -------------------------------------------------------
+-- WORLD
 do
 	local p = Pages["World"]
 	local s = section(p, "World", 1)
@@ -1540,9 +1790,11 @@ do
 	addToggle(s, { name = "LowGravity", title = "Low Gravity" })
 	addToggle(s, { name = "Fullbright", title = "Fullbright" })
 	addToggle(s, { name = "NoFog", title = "No Fog" })
+	finalize(p)
+	finalizePage(p)
 end
 
--- MISC --------------------------------------------------------
+-- MISC
 do
 	local p = Pages["Misc"]
 	local s = section(p, "Misc", 1)
@@ -1563,29 +1815,37 @@ do
 			notify("Clipboard not supported here", C.red)
 		end
 	end })
-	addNote(s, "Add your own buttons here — the API is documented in the README.")
+	addNote(s, "Add your own buttons here — see README for the API.", 1)
+	finalize(p)
+	finalizePage(p)
 end
 
--- THEMES ------------------------------------------------------
+-- THEMES
 do
 	local p = Pages["Themes"]
 	local s = section(p, "Accent Color", 1)
-	local grid = make("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y }, s)
+	local CELL_H = math.max(touch(46), px(46))
+	local rows = math.ceil(#ACCENTS / 3)
+	local gridH = rows * CELL_H + (rows - 1) * H.rowGap
+	local grid = make("Frame", {
+		BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, gridH), ZIndex = 5,
+	}, s)
 	make("UIGridLayout", {
-		CellSize = UDim2.new(0.333, -px(6), 0, px(48)),
-		CellPadding = UDim2.new(0, px(8), 0, px(8)),
+		CellSize = UDim2.new(0.3333, -px(6), 0, CELL_H),
+		CellPadding = UDim2.new(0, px(8), 0, H.rowGap),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, grid)
+	grow(s, gridH)
 
 	for i, item in ipairs(ACCENTS) do
 		local b = make("TextButton", {
 			BackgroundColor3 = item.c, BorderSizePixel = 0, AutoButtonColor = false,
-			Text = "", LayoutOrder = i,
+			Text = "", LayoutOrder = i, ZIndex = 6,
 		}, grid)
 		corner(b, px(10))
 		label(b, {
 			Text = item.name, TextSize = fs(10), TextColor3 = Color3.new(1, 1, 1),
-			TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1),
+			TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), ZIndex = 7,
 		})
 		onTap(b, function()
 			State.accent = item.c
@@ -1594,10 +1854,12 @@ do
 			notify("Theme: " .. item.name, item.c)
 		end)
 	end
-	addNote(s, "The accent color is applied to buttons, switches, sliders and highlights.")
+	addNote(s, "The accent color applies to buttons, switches, sliders and ESP.", 2)
+	finalize(p)
+	finalizePage(p)
 end
 
--- SETTINGS ----------------------------------------------------
+-- SETTINGS
 do
 	local p = Pages["Settings"]
 	local s = section(p, "Interface", 1)
@@ -1605,14 +1867,14 @@ do
 	addButton(s, { title = "Notify Test", callback = function() notify("UI is alive", C.green) end })
 
 	local s2 = section(p, "Danger Zone", 2)
-	addButton(s2, { title = "Uninject LYNEX", style = "danger", callback = function()
-		LYNEX_UNINJECT()
-	end })
-	addNote(s2, "Uninject stops every feature, restores the original game values and removes the UI.")
+	addButton(s2, { title = "Uninject LYNEX", style = "danger", callback = function() LYNEX_UNINJECT() end })
+	addNote(s2, "Uninject stops every feature, restores the original game values and removes the UI.", 2)
+	finalize(p)
+	finalizePage(p)
 end
 
 --============================================================
--- 16.  Config save / load
+-- 19.  Config system
 --============================================================
 local CONFIG_FILE = "LYNEX_config.json"
 
@@ -1624,7 +1886,7 @@ local function buildConfig()
 	for k, v in pairs(Options) do
 		if type(v) == "number" then options[k] = v end
 	end
-	return { flags = flags, options = options, version = "1.0.0" }
+	return { flags = flags, options = options, version = "1.1.0" }
 end
 
 local function saveConfig()
@@ -1632,15 +1894,30 @@ local function saveConfig()
 	if not ok then notify("Could not encode config", C.red) return end
 	if type(writefile) == "function" then
 		local ok2 = pcall(writefile, CONFIG_FILE, json)
-		if ok2 then notify("Config saved to " .. CONFIG_FILE, C.green) else notify("writefile failed", C.red) end
+		if ok2 then notify("Config saved to " .. CONFIG_FILE, C.green)
+		else notify("writefile failed", C.red) end
 	else
 		_G.LYNEX_CONFIG_CACHE = json
-		notify("Executor has no writefile - saved in memory", C.yellow)
+		notify("No writefile here - saved in memory", C.yellow)
 	end
 end
 
-local function applyLoaded(data)
-	if type(data) ~= "table" then return end
+local function loadConfig()
+	local json
+	if type(readfile) == "function" and type(isfile) == "function" then
+		local okf, has = pcall(isfile, CONFIG_FILE)
+		if okf and has then
+			local okr, res = pcall(readfile, CONFIG_FILE)
+			if okr then json = res end
+		end
+	elseif _G.LYNEX_CONFIG_CACHE then
+		json = _G.LYNEX_CONFIG_CACHE
+	end
+	if not json then notify("No saved config found", C.yellow) return end
+
+	local ok, data = pcall(function() return HttpService:JSONDecode(json) end)
+	if not ok or type(data) ~= "table" then notify("Config is corrupted", C.red) return end
+
 	if type(data.options) == "table" then
 		for k, v in pairs(data.options) do
 			if type(v) == "number" then
@@ -1657,85 +1934,77 @@ local function applyLoaded(data)
 			if Flags[k] ~= nil then setFlag(k, v == true) end
 		end
 	end
-end
-
-local function loadConfig()
-	local json
-	if type(readfile) == "function" and type(isfile) == "function" and isfile(CONFIG_FILE) then
-		local ok, res = pcall(readfile, CONFIG_FILE)
-		if ok then json = res end
-	elseif _G.LYNEX_CONFIG_CACHE then
-		json = _G.LYNEX_CONFIG_CACHE
-	end
-	if not json then notify("No saved config found", C.yellow) return end
-	local ok, data = pcall(function() return HttpService:JSONDecode(json) end)
-	if not ok then notify("Config is corrupted", C.red) return end
-	applyLoaded(data)
 	notify("Config loaded", C.green)
 end
 
 do
 	local p = Pages["Config"]
 	local s = section(p, "Config", 1)
-	addNote(s, "Your toggles and slider values are stored as JSON.")
+	addNote(s, "Your toggles and slider values are stored as JSON.", 1)
 	addButton(s, { title = "Save Config", callback = saveConfig })
 	addButton(s, { title = "Load Config", callback = loadConfig })
 	addButton(s, { title = "Reset To Default", style = "danger", callback = function()
-		for k, v in pairs(Flags) do setFlag(k, false) end
+		for k in pairs(Flags) do setFlag(k, false) end
 		notify("Everything reset", C.yellow)
 	end })
+	finalize(p)
+	finalizePage(p)
 end
 
--- quick actions buttons ---------------------------------------
+-- dashboard quick actions
 gridButton(1, "Load Config", false, loadConfig)
 gridButton(2, "Save Config", false, saveConfig)
 gridButton(3, "Keybinds", false, function() navigate("Keybinds") end)
 gridButton(4, "Uninject", true, function() LYNEX_UNINJECT() end)
 
 --============================================================
--- 17.  Keybinds
+-- 20.  Keybinds
 --============================================================
 local TOGGLE_KEY = Enum.KeyCode.RightShift
 local waitingKey = false
-local keyValueLabels = {}
+local toggleKeyValue
 
 do
 	local p = Pages["Keybinds"]
 	local s = section(p, "Keybinds", 1)
 
-	local function keyRow(order, action, key)
+	local function keyRow(action, key)
+		local h = math.max(touch(42), px(42))
 		local row = make("Frame", {
 			BackgroundColor3 = C.card2, BorderSizePixel = 0,
-			Size = UDim2.new(1, 0, 0, math.max(touch(42), px(42))), LayoutOrder = order,
+			Size = UDim2.new(1, 0, 0, h), ZIndex = 5,
 		}, s)
 		corner(row, px(10))
 		stroke(row, C.stroke, 1, 0.4)
 		label(row, {
 			Text = action, TextSize = fs(13),
-			Position = UDim2.new(0, px(12), 0, 0), Size = UDim2.new(0.6, 0, 1, 0),
+			Position = UDim2.new(0, px(12), 0, 0), Size = UDim2.new(0.6, 0, 1, 0), ZIndex = 6,
 		})
 		local chip = make("Frame", {
 			BackgroundColor3 = C.card3, BorderSizePixel = 0,
 			AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -px(10), 0.5, 0),
-			Size = UDim2.fromOffset(px(80), px(24)),
+			Size = UDim2.fromOffset(px(86), px(24)), ZIndex = 6,
 		}, row)
 		corner(chip, px(7))
-		local value = label(chip, {
-			Text = key, TextSize = fs(11), TextColor3 = C.text,
-			TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1),
+		local v = label(chip, {
+			Text = key, TextSize = fs(11), TextXAlignment = Enum.TextXAlignment.Center,
+			Size = UDim2.fromScale(1, 1), ZIndex = 7,
 		})
-		return value
+		grow(s, h)
+		return v
 	end
 
-	keyValueLabels.toggle = keyRow(1, "Show / Hide UI", "RightShift")
-	keyValueLabels.floating = keyRow(2, "Mobile button", "Floating X")
+	toggleKeyValue = keyRow("Show / Hide UI", "RightShift")
+	keyRow("Mobile button", "Floating X")
 
 	addButton(s, { title = "Change Toggle Key", callback = function()
 		waitingKey = true
-		keyValueLabels.toggle.Text = "press a key..."
+		if toggleKeyValue then toggleKeyValue.Text = "press a key..." end
 		notify("Press any key on the keyboard", C.yellow)
 	end })
-	addNote(s, "Keybinds work on desktop. On phones use the floating X button.")
+	addNote(s, "Keybinds work on desktop. On phones use the floating X button.", 2)
+	finalize(p)
+	finalizePage(p)
 end
 
 conn(UIS.InputBegan, function(input, gameProcessed)
@@ -1743,7 +2012,7 @@ conn(UIS.InputBegan, function(input, gameProcessed)
 		waitingKey = false
 		TOGGLE_KEY = input.KeyCode
 		local nm = string.gsub(tostring(input.KeyCode), "Enum.KeyCode.", "")
-		if keyValueLabels.toggle then keyValueLabels.toggle.Text = nm end
+		if toggleKeyValue then toggleKeyValue.Text = nm end
 		notify("Toggle key set to " .. nm, C.green)
 		return
 	end
@@ -1754,18 +2023,18 @@ conn(UIS.InputBegan, function(input, gameProcessed)
 end)
 
 --============================================================
--- 18.  Window controls / floating button / drawer
+-- 21.  Window buttons, dragging, floating button, drawer
 --============================================================
-local openBtn = winButton(px(96), "—", C.text, function() LYNEX_TOGGLE_UI(false) end)
+local minBtn = winButton(px(96), "—", C.text, function() LYNEX_TOGGLE_UI(false) end)
 local maxBtn = winButton(px(68), "▢", C.text, function()
 	State.maximized = not State.maximized
 	State.dragOffset = Vector2.new(0, 0)
 	applyResponsive()
 end)
 local closeBtn = winButton(px(40), "✕", C.red, function() LYNEX_TOGGLE_UI(false) end)
+_ = minBtn _ = maxBtn _ = closeBtn
 
--- dragging the window (desktop) -------------------------------
-State.dragOffset = Vector2.new(0, 0)
+-- dragging (desktop)
 do
 	local dragging = false
 	local startInput, startOffset
@@ -1780,9 +2049,7 @@ do
 	end)
 	conn(UIS.InputEnded, function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
+			or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 	end)
 	conn(UIS.InputChanged, function(input)
 		if not dragging then return end
@@ -1795,13 +2062,14 @@ do
 	end)
 end
 
--- floating open button ---------------------------------------
+-- floating button
+local FLOAT_SIZE = px(46)
 local Float = make("TextButton", {
 	Name = "LYNEX_Float",
 	BackgroundColor3 = C.accent, BorderSizePixel = 0, AutoButtonColor = false,
 	Text = "X", Font = FONT_BLACK, TextSize = fs(18), TextColor3 = Color3.new(1, 1, 1),
 	Position = UDim2.new(0, px(16), 0.45, 0),
-	Size = UDim2.fromOffset(px(46), px(46)),
+	Size = UDim2.fromOffset(FLOAT_SIZE, FLOAT_SIZE),
 	Visible = false, ZIndex = 100,
 }, GUI)
 corner(Float, 999)
@@ -1843,23 +2111,13 @@ do
 	end)
 end
 
--- drawer (small screens) -------------------------------------
+-- drawer
 local DrawerDim = make("Frame", {
 	Name = "DrawerDim", BackgroundColor3 = Color3.new(0, 0, 0),
 	BackgroundTransparency = 1, BorderSizePixel = 0,
-	Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 4,
+	Size = screenSize, Visible = false, ZIndex = 3,
 }, Shell)
 onTap(DrawerDim, function() App.closeDrawer() end)
-
-local Hamburger = make("TextButton", {
-	BackgroundColor3 = C.card, BorderSizePixel = 0, AutoButtonColor = false,
-	Text = "≡", Font = FONT_BOLD, TextSize = fs(18), TextColor3 = C.text,
-	Position = UDim2.new(0, px(14), 0, px(16)),
-	Size = UDim2.fromOffset(px(32), px(32)),
-	Visible = false,
-}, Topbar)
-corner(Hamburger, px(8))
-stroke(Hamburger, C.stroke, 1)
 onTap(Hamburger, function()
 	if State.drawer then App.closeDrawer() else App.openDrawer() end
 end)
@@ -1885,96 +2143,121 @@ function App.closeDrawer()
 end
 
 --============================================================
--- 19.  Responsive layout
+-- 22.  Responsive layout
 --============================================================
-function applyResponsive()
-	recomputeLayout()
+local function computeIsSmall()
+	local c = cam()
+	if c and c.ViewportSize.X > 0 then vp = c.ViewportSize end
+	return (vp.X < 820) or (IS_MOBILE and vp.X < vp.Y * 1.25)
+end
 
-	if isSmall then
-		Content.Position = UDim2.new(0, 0, 0, 0)
-		Content.Size = UDim2.new(1, 0, 1, 0)
-		Sidebar.Size = UDim2.new(0.74, 0, 1, 0)
-		Sidebar.Position = UDim2.new(State.drawer and 0 or -1, 0, 0, 0)
-		CardsGrid.CellSize = UDim2.new(0.5, -px(4), 0, px(80))
-		CardsRow.Size = UDim2.new(1, 0, 0, px(80) * 2 + px(8))
+local function layoutDashboard(small)
+	local cardsH = small and CARDS_H_SMALL or CARDS_H_DESK
+	CardsRow.Size = UDim2.new(1, 0, 0, cardsH)
+	if small then
+		CardsGrid.CellSize = UDim2.new(0.5, -px(4), 0, px(84))
 	else
-		Content.Position = UDim2.new(0.205, 0, 0, 0)
-		Content.Size = UDim2.new(0.795, 0, 1, 0)
-		Sidebar.Size = UDim2.new(0.205, 0, 1, 0)
-		Sidebar.Position = UDim2.new(0, 0, 0, 0)
-		CardsGrid.CellSize = UDim2.new(0.25, -px(6), 0, px(86))
-		CardsRow.Size = UDim2.new(1, 0, 0, px(86))
+		CardsGrid.CellSize = UDim2.new(0.25, -px(6), 0, CARDS_H_DESK)
 	end
 
-	-- topbar adaptation
-	local titleX = isSmall and px(56) or px(20)
-	PageTitle.Position = UDim2.new(0, titleX, 0, px(12))
-	PageSub.Position = UDim2.new(0, titleX, 0, px(34))
-	PageTitle.Size = UDim2.new(0.6, 0, 0, px(24))
-	Hamburger.Visible = isSmall
-	Pill.Visible = not isSmall
-	TopBrand.Visible = not isSmall
-	Banner.Visible = not isSmall
-	for _, b in ipairs(Topbar:GetChildren()) do
-		if b:IsA("TextButton") and b ~= Hamburger then
-			b.Visible = not isSmall
-		end
-	end
+	local leftH = FEAT_H
+	local rightH = SYS_H + px(12) + QA_H
+	if not small then rightH = rightH + px(12) + BANNER_H end
 
-	-- dashboard columns
-	if isSmall then
+	if small then
 		LeftCol.Position = UDim2.new(0, 0, 0, 0)
-		LeftCol.Size = UDim2.new(1, 0, 0, 0)
-		RightCol.Position = UDim2.new(0, 0, 0, LeftCol.AbsoluteSize.Y + px(12))
-		RightCol.Size = UDim2.new(1, 0, 0, 0)
-		MidRow.Size = UDim2.new(1, 0, 0, LeftCol.AbsoluteSize.Y + RightCol.AbsoluteSize.Y + px(12))
+		LeftCol.Size = UDim2.new(1, 0, 0, leftH)
+		RightCol.Position = UDim2.new(0, 0, 0, leftH + px(12))
+		RightCol.Size = UDim2.new(1, 0, 0, rightH)
 	else
 		LeftCol.Position = UDim2.new(0, 0, 0, 0)
-		LeftCol.Size = UDim2.new(0.615, -px(6), 0, 0)
+		LeftCol.Size = UDim2.new(0.615, -px(6), 0, leftH)
 		RightCol.Position = UDim2.new(0.615, px(6), 0, 0)
-		RightCol.Size = UDim2.new(0.385, -px(6), 0, 0)
-		MidRow.Size = UDim2.new(1, 0, 0, math.max(LeftCol.AbsoluteSize.Y, RightCol.AbsoluteSize.Y))
+		RightCol.Size = UDim2.new(0.385, -px(6), 0, rightH)
 	end
-	if State.maximized and not isSmall then
-		Shell.Size = UDim2.fromOffset(math.floor(vp.X * 0.985), math.floor(vp.Y * 0.98))
-	elseif not isSmall then
-		Shell.Size = UDim2.fromOffset(
-			math.min(px(1240), math.floor(vp.X * 0.93)),
-			math.min(px(780), math.floor(vp.Y * 0.9))
-		)
-	end
-	Shell.Position = UDim2.new(0.5, State.dragOffset.X, 0.5, State.dragOffset.Y)
+
+	Banner.Position = UDim2.new(0, 0, 0, SYS_H + px(12) + QA_H + px(12))
+	SysCard.Position = UDim2.new(0, 0, 0, 0)
+	QACard.Position = UDim2.new(0, 0, 0, SYS_H + px(12))
+
+	local midH = small and (leftH + px(12) + rightH) or math.max(leftH, rightH)
+	MidRow.Size = UDim2.new(1, 0, 0, midH)
+
+	LM[Dash] = { h = cardsH + midH, n = 2, gap = px(12) }
+	Dash.CanvasSize = UDim2.new(0, 0, 0, cardsH + px(12) + midH + px(14))
 end
 
--- keep the dashboard columns height in sync while content grows
-do
-	local function sync()
-		if isSmall then
-			RightCol.Position = UDim2.new(0, 0, 0, LeftCol.AbsoluteSize.Y + px(12))
-			MidRow.Size = UDim2.new(1, 0, 0, LeftCol.AbsoluteSize.Y + RightCol.AbsoluteSize.Y + px(12))
-		else
-			MidRow.Size = UDim2.new(1, 0, 0, math.max(LeftCol.AbsoluteSize.Y, RightCol.AbsoluteSize.Y))
+function applyResponsive()
+	isSmall = computeIsSmall()
+
+	if isSmall then
+		Shell.Size = screenSize
+		Shell.Position = UDim2.new(0, 0, 0, 0)
+		Shell.AnchorPoint = Vector2.new(0, 0)
+		shellCorner.CornerRadius = UDim.new(0, 0)
+		Content.Position = UDim2.new(0, 0, 0, 0)
+		Content.Size = screenSize
+		Sidebar.Size = UDim2.new(0.76, 0, 1, 0)
+		Sidebar.Position = UDim2.new(State.drawer and 0 or -1, 0, 0, 0)
+		Pill.Visible = false
+		TopBrand.Visible = false
+		minBtn.Visible = false
+		maxBtn.Visible = false
+		closeBtn.Visible = false
+		Hamburger.Visible = true
+		PageTitle.Position = UDim2.new(0, px(56), 0, px(10))
+		PageTitle.Size = UDim2.new(1, -px(70), 0, px(24))
+		PageSub.Position = UDim2.new(0, px(56), 0, px(32))
+		PageSub.Size = UDim2.new(1, -px(70), 0, px(20))
+	else
+		Shell.AnchorPoint = Vector2.new(0.5, 0.5)
+		Shell.Position = UDim2.new(0.5, State.dragOffset.X, 0.5, State.dragOffset.Y)
+		local w = math.min(px(1240), math.floor(vp.X * 0.93))
+		local h = math.min(px(780), math.floor(vp.Y * 0.9))
+		if State.maximized then
+			w = math.floor(vp.X * 0.985)
+			h = math.floor(vp.Y * 0.98)
 		end
+		Shell.Size = UDim2.fromOffset(w, h)
+		shellCorner.CornerRadius = UDim.new(0, px(16))
+		Content.Position = UDim2.new(SIDEBAR_W, 0, 0, 0)
+		Content.Size = UDim2.new(1 - SIDEBAR_W, 0, 1, 0)
+		Sidebar.Size = UDim2.new(SIDEBAR_W, 0, 1, 0)
+		Sidebar.Position = UDim2.new(0, 0, 0, 0)
+		Pill.Visible = true
+		TopBrand.Visible = true
+		minBtn.Visible = true
+		maxBtn.Visible = true
+		closeBtn.Visible = true
+		Hamburger.Visible = false
+		PageTitle.Position = UDim2.new(0, px(20), 0, px(12))
+		PageTitle.Size = UDim2.new(0.55, 0, 0, px(24))
+		PageSub.Position = UDim2.new(0, px(20), 0, px(34))
+		PageSub.Size = UDim2.new(0.55, 0, 0, px(20))
 	end
-	conn(LeftCol:GetPropertyChangedSignal("AbsoluteSize"), sync)
-	conn(RightCol:GetPropertyChangedSignal("AbsoluteSize"), sync)
+
+	if not isSmall and State.drawer then
+		State.drawer = false
+		DrawerDim.Visible = false
+	end
+
+	layoutDashboard(isSmall)
 end
 
 --============================================================
--- 20.  Show / hide
+-- 23.  Show / hide
 --============================================================
 local function setUIOpen(open)
 	State.uiOpen = open
 	if open then
+		if isSmall and State.drawer then App.closeDrawer() end
 		Shell.Visible = true
 		Float.Visible = false
 		applyResponsive()
-		Shell.BackgroundTransparency = 1
-		tween(Shell, 0.18, { BackgroundTransparency = 0 })
+		tween(Shell, 0.2, { BackgroundTransparency = 0 })
 	else
 		Shell.Visible = false
 		Float.Visible = true
-		if State.drawer then App.closeDrawer() end
 	end
 end
 
@@ -1983,7 +2266,7 @@ function LYNEX_TOGGLE_UI(open)
 end
 
 --============================================================
--- 21.  Live stats loop
+-- 24.  Live stats
 --============================================================
 do
 	local startClock = os.clock()
@@ -1993,34 +2276,33 @@ do
 	task.spawn(function()
 		while GUI and GUI.Parent do
 			local c = cam()
-			if c then vp = c.ViewportSize end
+			if c and c.ViewportSize.X > 0 then vp = c.ViewportSize end
 			local elapsed = os.clock() - startClock
-			local hh = math.floor(elapsed / 3600)
-			local mm = math.floor((elapsed % 3600) / 60)
-			local ss = math.floor(elapsed % 60)
-			local tstr = string.format("%02d:%02d:%02d", hh, mm, ss)
-			uptimeValue.Text = tstr
-			uptimeRow.Text = tstr
-			fpsValue.Text = tostring(math.floor(frames * 2 + 0.5))
-			frames = 0
-			local okp, ping = pcall(function()
-				return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+			local tstr = string.format("%02d:%02d:%02d",
+				math.floor(elapsed / 3600), math.floor((elapsed % 3600) / 60), math.floor(elapsed % 60))
+			pcall(function()
+				uptimeValue.Text = tstr
+				uptimeRow.Text = tstr
+				fpsValue.Text = tostring(math.floor(frames * 2 + 0.5))
+				resValue.Text = string.format("%d x %d", math.floor(vp.X), math.floor(vp.Y))
+				inputValue.Text = IS_MOBILE and "Touch" or "Keyboard / Mouse"
+				local okp, ping = pcall(function()
+					return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+				end)
+				pingValue.Text = okp and string.format("%.0f ms", ping) or "-- ms"
 			end)
-			pingValue.Text = okp and string.format("%.0f ms", ping) or "-- ms"
-			resValue.Text = string.format("%d x %d", math.floor(vp.X), math.floor(vp.Y))
+			frames = 0
 			task.wait(0.5)
 		end
 	end)
-
-	conn(workspace:GetPropertyChangedSignal("CurrentCamera"), function() end)
 end
 
 --============================================================
--- 22.  Uninject
+-- 25.  Uninject
 --============================================================
 function LYNEX_UNINJECT()
 	for k in pairs(Flags) do
-		pcall(setFlag, k, false)
+		pcall(setFlag, k, false, true)
 	end
 	pcall(stopFly)
 	pcall(clearESP)
@@ -2047,22 +2329,36 @@ end
 _G.LYNEX_UNLOAD = LYNEX_UNINJECT
 
 --============================================================
--- 23.  Boot
+-- 26.  Boot sequence (loading screen -> dashboard)
 --============================================================
-applyResponsive()
-navigate("Dashboard")
-State.uiOpen = true
-Shell.Visible = true
-Shell.BackgroundTransparency = 1
-tween(Shell, 0.25, { BackgroundTransparency = 0 })
+local BOOT_STEPS = {
+	{ 0.22, "Loading modules..." },
+	{ 0.45, "Preparing features..." },
+	{ 0.68, "Building interface..." },
+	{ 0.88, "Applying your theme..." },
+	{ 1.00, "Welcome to LYNEX" },
+}
 
-task.delay(0.4, function()
+task.spawn(function()
+	applyResponsive()
+	navigate("Dashboard")
+	setUIOpen(true)
+	Shell.BackgroundTransparency = 1
+
+	for _, step in ipairs(BOOT_STEPS) do
+		setLoading(step[1], step[2])
+		task.wait(0.28)
+	end
+
+	closeLoading()
+	tween(Shell, 0.3, { BackgroundTransparency = 0 })
+	task.wait(0.45)
 	notify("LYNEX injected successfully", C.green)
-	task.wait(0.6)
+	task.wait(0.8)
 	notify(IS_MOBILE and "Tap the X button to reopen the menu" or "Press RightShift to hide / show", C.accent)
 end)
 
--- expose a tiny API for your own buttons
+-- public API
 _G.LYNEX = {
 	Flags = Flags,
 	Options = Options,
