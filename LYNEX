@@ -16,6 +16,21 @@ local localPlayer = Players.LocalPlayer
 local playerGui   = localPlayer:WaitForChild("PlayerGui")
 
 --==================================================================
+--  📋 AUTO COPY DISCORD ON STARTUP (آمن ولا يعطل السكربت)
+--==================================================================
+task.spawn(function()
+    task.wait(0.2)
+    pcall(function()
+        local invite = "https://discord.gg/wkugtpfnj"
+        if typeof(setclipboard) == "function" then
+            setclipboard(invite)
+        elseif typeof(toclipboard) == "function" then
+            toclipboard(invite)
+        end
+    end)
+end)
+
+--==================================================================
 --  🎬 LOADING SCREEN (موازي — ما يعطّل السكربت الأساسي)
 --==================================================================
 task.spawn(function()
@@ -558,16 +573,23 @@ task.spawn(function()
 end)
 
 --==================================================================
--- 0) State
+-- 0) State + Config Persistence (Save Config)
 --==================================================================
-local settings = { animations = true, transparency = 15, glow = true }
+local settings = {
+    animations = true,
+    transparency = 15,
+    glow = true,
+    theme = "purple",
+    favorites = {},
+    waypoints = {},
+}
 local windowHidden = false
 local screenGui, blurObj
 
 local function resolveGuiParent() return playerGui end
 
 --==================================================================
--- 2) Theme
+-- 2) Theme + Presets
 --==================================================================
 local THEME = {
     BG_PANEL = Color3.fromRGB(16,10,28), BG_HEADER = Color3.fromRGB(22,14,38),
@@ -581,6 +603,190 @@ local THEME = {
     DANGER = Color3.fromRGB(200,60,110), DANGER_HI = Color3.fromRGB(240,90,150),
     OK = Color3.fromRGB(120,220,140),
 }
+
+do
+    local CONFIG_FILE = "LYNEX_HUB_Config.json"
+    local HttpService = game:GetService("HttpService")
+
+    settings.THEME_PRESETS = {
+        purple = {
+            name = "بنفسجي (الأصلي)",
+            dot = Color3.fromRGB(160, 96, 255),
+            palette = {
+                BG_PANEL = Color3.fromRGB(16,10,28), BG_HEADER = Color3.fromRGB(22,14,38),
+                BG_SIDEBAR = Color3.fromRGB(13,8,24), BG_CARD = Color3.fromRGB(26,17,46),
+                BG_CARD_HI = Color3.fromRGB(36,22,62),
+                P_DEEP = Color3.fromRGB(60,24,120), P_MAIN = Color3.fromRGB(112,56,200),
+                P_BRIGHT = Color3.fromRGB(160,96,255), P_GLOW = Color3.fromRGB(190,140,255),
+                BORDER = Color3.fromRGB(70,44,120), BORDER_HI = Color3.fromRGB(130,84,220),
+            },
+        },
+        cyan = {
+            name = "أزرق نيون (Neon Blue)",
+            dot = Color3.fromRGB(56, 195, 255),
+            palette = {
+                BG_PANEL = Color3.fromRGB(9,16,28), BG_HEADER = Color3.fromRGB(13,23,40),
+                BG_SIDEBAR = Color3.fromRGB(7,13,24), BG_CARD = Color3.fromRGB(15,27,46),
+                BG_CARD_HI = Color3.fromRGB(22,38,64),
+                P_DEEP = Color3.fromRGB(18,74,128), P_MAIN = Color3.fromRGB(28,132,215),
+                P_BRIGHT = Color3.fromRGB(56,195,255), P_GLOW = Color3.fromRGB(125,222,255),
+                BORDER = Color3.fromRGB(32,82,135), BORDER_HI = Color3.fromRGB(64,160,235),
+            },
+        },
+        crimson = {
+            name = "أحمر قرمزي (Crimson)",
+            dot = Color3.fromRGB(245, 70, 105),
+            palette = {
+                BG_PANEL = Color3.fromRGB(24,10,16), BG_HEADER = Color3.fromRGB(34,14,22),
+                BG_SIDEBAR = Color3.fromRGB(19,8,13), BG_CARD = Color3.fromRGB(40,17,27),
+                BG_CARD_HI = Color3.fromRGB(56,24,38),
+                P_DEEP = Color3.fromRGB(115,22,48), P_MAIN = Color3.fromRGB(195,42,78),
+                P_BRIGHT = Color3.fromRGB(245,70,105), P_GLOW = Color3.fromRGB(255,135,160),
+                BORDER = Color3.fromRGB(115,38,60), BORDER_HI = Color3.fromRGB(215,65,100),
+            },
+        },
+        gold = {
+            name = "ذهبي ملكي (Royal Gold)",
+            dot = Color3.fromRGB(245, 190, 65),
+            palette = {
+                BG_PANEL = Color3.fromRGB(22,17,10), BG_HEADER = Color3.fromRGB(32,24,13),
+                BG_SIDEBAR = Color3.fromRGB(18,14,8), BG_CARD = Color3.fromRGB(38,29,16),
+                BG_CARD_HI = Color3.fromRGB(54,41,22),
+                P_DEEP = Color3.fromRGB(115,80,18), P_MAIN = Color3.fromRGB(190,136,32),
+                P_BRIGHT = Color3.fromRGB(245,190,65), P_GLOW = Color3.fromRGB(255,220,128),
+                BORDER = Color3.fromRGB(112,84,32), BORDER_HI = Color3.fromRGB(215,165,58),
+            },
+        },
+        emerald = {
+            name = "أخضر زمردي (Emerald)",
+            dot = Color3.fromRGB(52, 215, 145),
+            palette = {
+                BG_PANEL = Color3.fromRGB(9,22,17), BG_HEADER = Color3.fromRGB(13,31,24),
+                BG_SIDEBAR = Color3.fromRGB(7,18,14), BG_CARD = Color3.fromRGB(16,38,29),
+                BG_CARD_HI = Color3.fromRGB(23,54,41),
+                P_DEEP = Color3.fromRGB(18,98,64), P_MAIN = Color3.fromRGB(32,162,106),
+                P_BRIGHT = Color3.fromRGB(52,215,145), P_GLOW = Color3.fromRGB(125,245,190),
+                BORDER = Color3.fromRGB(32,96,68), BORDER_HI = Color3.fromRGB(58,188,128),
+            },
+        },
+    }
+
+    settings.THEME_ORDER = { "purple", "cyan", "crimson", "gold", "emerald" }
+
+    function settings.saveConfig()
+        pcall(function()
+            if typeof(writefile) ~= "function" then return end
+            local payload = {
+                animations = settings.animations,
+                transparency = settings.transparency,
+                glow = settings.glow,
+                theme = settings.theme,
+                favorites = settings.favorites,
+                waypoints = settings.waypoints,
+            }
+            writefile(CONFIG_FILE, HttpService:JSONEncode(payload))
+        end)
+    end
+
+    function settings.loadConfig()
+        pcall(function()
+            if typeof(readfile) ~= "function" then return end
+            if typeof(isfile) == "function" and not isfile(CONFIG_FILE) then return end
+            local raw = readfile(CONFIG_FILE)
+            if not raw or raw == "" then return end
+            local data = HttpService:JSONDecode(raw)
+            if type(data) ~= "table" then return end
+            if type(data.animations) == "boolean" then settings.animations = data.animations end
+            if type(data.transparency) == "number" then settings.transparency = math.clamp(data.transparency, 0, 90) end
+            if type(data.glow) == "boolean" then settings.glow = data.glow end
+            if type(data.theme) == "string" and settings.THEME_PRESETS[data.theme] then
+                settings.theme = data.theme
+            end
+            if type(data.favorites) == "table" then settings.favorites = data.favorites end
+            if type(data.waypoints) == "table" then settings.waypoints = data.waypoints end
+        end)
+    end
+
+    settings.loadConfig()
+    local initialPreset = settings.THEME_PRESETS[settings.theme]
+    if initialPreset then
+        for k, v in pairs(initialPreset.palette) do THEME[k] = v end
+    end
+
+    local function colorsMatch(a, b)
+        if typeof(a) ~= "Color3" or typeof(b) ~= "Color3" then return false end
+        return math.abs(a.R - b.R) < 0.006
+           and math.abs(a.G - b.G) < 0.006
+           and math.abs(a.B - b.B) < 0.006
+    end
+
+    function settings.applyTheme(themeId, silent)
+        local preset = settings.THEME_PRESETS[themeId]
+        if not preset then return end
+        local oldColors = {}
+        for k, _ in pairs(preset.palette) do
+            oldColors[k] = THEME[k]
+        end
+        for k, v in pairs(preset.palette) do
+            THEME[k] = v
+        end
+        settings.theme = themeId
+
+        local function remapColor(c)
+            for k, oldC in pairs(oldColors) do
+                if colorsMatch(c, oldC) then return THEME[k] end
+            end
+            return nil
+        end
+
+        if screenGui then
+            for _, inst in ipairs(screenGui:GetDescendants()) do
+                if inst.Name ~= "FloatingBtn" and not inst:IsDescendantOf(screenGui:FindFirstChild("FloatingBtn") or inst) then
+                    pcall(function()
+                        if inst:IsA("GuiObject") then
+                            local nb = remapColor(inst.BackgroundColor3)
+                            if nb then inst.BackgroundColor3 = nb end
+                        end
+                        if inst:IsA("ScrollingFrame") then
+                            local ns = remapColor(inst.ScrollBarImageColor3)
+                            if ns then inst.ScrollBarImageColor3 = ns end
+                        end
+                        if inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox") then
+                            local nt = remapColor(inst.TextColor3)
+                            if nt then inst.TextColor3 = nt end
+                            local nst = remapColor(inst.TextStrokeColor3)
+                            if nst then inst.TextStrokeColor3 = nst end
+                        end
+                        if inst:IsA("UIStroke") and inst.Name ~= "ThemeSwatchStroke" then
+                            local nc = remapColor(inst.Color)
+                            if nc then inst.Color = nc end
+                        end
+                        if inst:IsA("UIGradient") then
+                            local kps = inst.Color.Keypoints
+                            local newKps, changed = {}, false
+                            for _, kp in ipairs(kps) do
+                                local mapped = remapColor(kp.Value)
+                                if mapped then
+                                    changed = true
+                                    table.insert(newKps, ColorSequenceKeypoint.new(kp.Time, mapped))
+                                else
+                                    table.insert(newKps, kp)
+                                end
+                            end
+                            if changed then inst.Color = ColorSequence.new(newKps) end
+                        end
+                    end)
+                end
+            end
+        end
+
+        if settings.refreshThemeButtons then pcall(settings.refreshThemeButtons) end
+        settings.saveConfig()
+        if not silent and typeof(showToast) == "function" then
+            showToast("✦  Theme: " .. preset.name)
+        end
+    end
+end
 
 local function pickFont(name, fallback)
     local ok, val = pcall(function() return Enum.Font[name] end)
@@ -804,17 +1010,47 @@ local menuBtn = create("TextButton", {
 addCorner(8, menuBtn); addStroke(THEME.BORDER, 1, 0.3, menuBtn)
 
 local title = create("TextLabel", {
-    Name = "Title", Size = UDim2.new(1, -130, 1, 0),
-    Position = UDim2.new(0, 46, 0, 0), BackgroundTransparency = 1,
-    Text = "LYNEX HUB", Font = FONT.Logo, TextSize = 15,
+    Name = "Title", Size = UDim2.new(1, -184, 1, 0),
+    Position = UDim2.new(0, 44, 0, 0), BackgroundTransparency = 1,
+    Text = "LYNEX HUB", Font = FONT.Logo, TextSize = 14, TextScaled = true,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     TextStrokeColor3 = THEME.P_GLOW, TextStrokeTransparency = 0.7, ZIndex = 4,
 }, header)
+create("UITextSizeConstraint", { MaxTextSize = 15, MinTextSize = 10 }, title)
 addGradient(title, {
     ColorSequenceKeypoint.new(0, THEME.TX_MAIN),
     ColorSequenceKeypoint.new(0.5, THEME.P_GLOW),
     ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
 }, 90)
+
+do
+    local statsBadge = create("Frame", {
+        Name = "LiveStatsBadge",
+        Size = UDim2.fromOffset(90, 24),
+        Position = UDim2.new(1, -135, 0.5, -12),
+        BackgroundColor3 = THEME.BG_CARD,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        ZIndex = 4,
+    }, header)
+    addCorner(7, statsBadge)
+    addStroke(THEME.BORDER, 1, 0.3, statsBadge)
+
+    local statsLbl = create("TextLabel", {
+        Size = UDim2.new(1, -8, 1, 0),
+        Position = UDim2.new(0, 4, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "60 FPS · --ms",
+        Font = FONT.Bold,
+        TextSize = 9,
+        TextColor3 = THEME.OK,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = 5,
+    }, statsBadge)
+
+    settings._headerStatsLabel = statsLbl
+end
 
 local closeBtn = create("TextButton", {
     Name = "CloseBtn", Size = UDim2.fromOffset(32, 32),
@@ -905,11 +1141,61 @@ local TABS = {
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
 
+do
+    local searchWrap = create("Frame", {
+        Name = "SidebarSearch",
+        Size = UDim2.new(1, 0, 0, 26),
+        BackgroundColor3 = THEME.BG_CARD_HI,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        LayoutOrder = -1000,
+        ZIndex = 4,
+    }, sidebar)
+    addCorner(7, searchWrap)
+    local sStroke = addStroke(THEME.BORDER, 1, 0.3, searchWrap)
+
+    local tabSearchBox = create("TextBox", {
+        Size = UDim2.new(1, -12, 1, 0),
+        Position = UDim2.new(0, 6, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        PlaceholderText = "🔍 بحث التابات...",
+        PlaceholderColor3 = THEME.TX_SUBTLE,
+        Font = FONT.Medium,
+        TextSize = 10,
+        TextColor3 = THEME.TX_MAIN,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ClearTextOnFocus = false,
+        ZIndex = 5,
+    }, searchWrap)
+
+    settings._filterTabs = function()
+        local q = string.lower((tabSearchBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+        for _, tab in ipairs(TABS) do
+            local d = tabButtons[tab.id]
+            if d and d.btn then
+                if q == "" then
+                    d.btn.Visible = true
+                else
+                    local matchName = string.find(string.lower(tab.name), q, 1, true) ~= nil
+                    local matchId = string.find(string.lower(tab.id), q, 1, true) ~= nil
+                    d.btn.Visible = matchName or matchId
+                end
+            end
+        end
+    end
+
+    tabSearchBox:GetPropertyChangedSignal("Text"):Connect(settings._filterTabs)
+    tabSearchBox.Focused:Connect(function() tween(sStroke, TweenInfo.new(0.18), { Transparency = 0.05 }) end)
+    tabSearchBox.FocusLost:Connect(function() tween(sStroke, TweenInfo.new(0.18), { Transparency = 0.3 }) end)
+end
+
 local function createTabButton(tab, order)
+    local isFav = settings.favorites[tab.id] == true
     local btn = create("TextButton", {
         Name = tab.id .. "Tab", Size = UDim2.new(1, 0, 0, 32),
         BackgroundColor3 = THEME.BG_CARD, AutoButtonColor = false,
-        Text = "", LayoutOrder = order, ZIndex = 4,
+        Text = "", LayoutOrder = isFav and (order - 500) or order, ZIndex = 4,
     }, sidebar)
     addCorner(8, btn)
     local stroke = addStroke(THEME.BORDER, 1, 0.4, btn)
@@ -920,17 +1206,42 @@ local function createTabButton(tab, order)
     }, btn)
     addCorner(2, indicator)
     local icon = create("TextLabel", {
-        Size = UDim2.fromOffset(20, 20), Position = UDim2.new(0, 9, 0.5, -10),
-        BackgroundTransparency = 1, Text = tab.icon, Font = FONT.Bold, TextSize = 14,
+        Size = UDim2.fromOffset(18, 20), Position = UDim2.new(0, 6, 0.5, -10),
+        BackgroundTransparency = 1, Text = tab.icon, Font = FONT.Bold, TextSize = 13,
         TextColor3 = THEME.P_GLOW, ZIndex = 5,
     }, btn)
     local label = create("TextLabel", {
-        Size = UDim2.new(1, -36, 1, 0), Position = UDim2.new(0, 32, 0, 0),
-        BackgroundTransparency = 1, Text = tab.name, Font = FONT.Medium, TextSize = 11,
+        Size = UDim2.new(1, -44, 1, 0), Position = UDim2.new(0, 26, 0, 0),
+        BackgroundTransparency = 1, Text = tab.name, Font = FONT.Medium, TextSize = 10,
         TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, btn)
-    tabButtons[tab.id] = { btn = btn, stroke = stroke, indicator = indicator, icon = icon, label = label }
+    local starBtn = create("TextButton", {
+        Name = "PinStar",
+        Size = UDim2.fromOffset(16, 22),
+        Position = UDim2.new(1, -17, 0.5, -11),
+        BackgroundTransparency = 1,
+        AutoButtonColor = false,
+        Text = isFav and "★" or "☆",
+        Font = FONT.Bold,
+        TextSize = 12,
+        TextColor3 = isFav and Color3.fromRGB(255, 210, 70) or THEME.TX_SUBTLE,
+        ZIndex = 6,
+    }, btn)
+    starBtn.MouseButton1Click:Connect(function()
+        local nowFav = not (settings.favorites[tab.id] == true)
+        if nowFav then
+            settings.favorites[tab.id] = true
+        else
+            settings.favorites[tab.id] = nil
+        end
+        starBtn.Text = nowFav and "★" or "☆"
+        starBtn.TextColor3 = nowFav and Color3.fromRGB(255, 210, 70) or THEME.TX_SUBTLE
+        btn.LayoutOrder = nowFav and (order - 500) or order
+        settings.saveConfig()
+        showToast(nowFav and ("★ تم تثبيت: " .. tab.name) or ("☆ أزيل من المفضلة: " .. tab.name))
+    end)
+    tabButtons[tab.id] = { btn = btn, stroke = stroke, indicator = indicator, icon = icon, label = label, star = starBtn, baseOrder = order }
     return btn
 end
 
@@ -1044,6 +1355,7 @@ local ageLbl = smallInfo(infoX + 100, 95, "◷", "—")
 
 local SERVER_ROWS = {
     { key = "players",  icon = "◉", label = "Players"   },
+    { key = "fpsPing",  icon = "⚡", label = "FPS / Ping"},
     { key = "gameName", icon = "✦", label = "Game Name" },
     { key = "mapName",  icon = "▣", label = "Map Name"  },
     { key = "serverId", icon = "◆", label = "Server ID" },
@@ -1132,11 +1444,167 @@ updateServerInfo()
 Players.PlayerAdded:Connect(updateServerInfo)
 Players.PlayerRemoving:Connect(updateServerInfo)
 
-local DISCORD_URL = "https://discord.gg/xzNRnKyVd"
+do
+    local frameCount = 0
+    local lastCheck = os.clock()
+    local currentFps = 60
+    local StatsService = nil
+    pcall(function() StatsService = game:GetService("Stats") end)
+
+    local renderConn
+    renderConn = RunService.RenderStepped:Connect(function()
+        if screenGui and not screenGui.Parent then
+            if renderConn then renderConn:Disconnect() end
+            return
+        end
+        frameCount += 1
+        local now = os.clock()
+        if now - lastCheck >= 0.5 then
+            currentFps = math.clamp(math.floor(frameCount / (now - lastCheck) + 0.5), 1, 999)
+            frameCount = 0
+            lastCheck = now
+
+            local pingMs = 0
+            pcall(function()
+                if StatsService and StatsService.Network and StatsService.Network.ServerStatsItem then
+                    local item = StatsService.Network.ServerStatsItem["Data Ping"]
+                    if item then pingMs = math.floor(item:GetValue() + 0.5) end
+                end
+            end)
+            if pingMs <= 0 then
+                pcall(function()
+                    pingMs = math.floor(localPlayer:GetNetworkPing() * 1000 + 0.5)
+                end)
+            end
+
+            local txt = tostring(currentFps) .. " FPS · " .. tostring(pingMs) .. "ms"
+            local col = THEME.OK
+            if currentFps < 25 or pingMs > 220 then
+                col = THEME.DANGER_HI
+            elseif currentFps < 45 or pingMs > 120 then
+                col = Color3.fromRGB(255, 205, 80)
+            end
+
+            if settings._headerStatsLabel then
+                settings._headerStatsLabel.Text = txt
+                settings._headerStatsLabel.TextColor3 = col
+            end
+            if serverInfoLabels.fpsPing then
+                serverInfoLabels.fpsPing.Text = txt
+                serverInfoLabels.fpsPing.TextColor3 = col
+            end
+        end
+    end)
+end
+
+do
+    pcall(function()
+        local DEV_ROWS = {
+            { icon = "★", role = "اونر ديسكورد",  name = "Ghaith", discord = "oday9734",   canCopy = true  },
+            { icon = "⚒", role = "مطور السكربت",  name = "Habash", discord = "غير معروف", canCopy = false },
+            { icon = "✦", role = "مصمم الواجهة",  name = "hamza",  discord = "hamza.abc0", canCopy = true  },
+        }
+
+        local devRowH = 44
+        local devRowGap = 6
+        local devCardHeight = 36 + (#DEV_ROWS * devRowH) + ((#DEV_ROWS - 1) * devRowGap) + 12
+        local devCard = create("Frame", {
+            Name = "DeveloperCard", Size = UDim2.new(1, 0, 0, devCardHeight),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = 4, ZIndex = 4,
+        }, homePage)
+        addCorner(12, devCard); addStroke(THEME.BORDER, 1, 0.15, devCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 22), Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1, Text = "✦  معلومات المطور",
+            Font = FONT.Bold, TextSize = 13, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, devCard)
+
+        for i, dev in ipairs(DEV_ROWS) do
+            local yPos = 36 + (i - 1) * (devRowH + devRowGap)
+            local rowClass = dev.canCopy and "TextButton" or "Frame"
+            local rowProps = {
+                Name = "DevRow_" .. i,
+                Size = UDim2.new(1, -20, 0, devRowH),
+                Position = UDim2.new(0, 10, 0, yPos),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                BackgroundTransparency = 0.15,
+                BorderSizePixel = 0,
+                ZIndex = 5,
+            }
+            if dev.canCopy then
+                rowProps.AutoButtonColor = false
+                rowProps.Text = ""
+            end
+            local row = create(rowClass, rowProps, devCard)
+            addCorner(8, row)
+            local rowStroke = addStroke(THEME.BORDER, 1, 0.35, row)
+
+            local accent = create("Frame", {
+                Size = UDim2.new(0, 3, 1, -12),
+                Position = UDim2.new(1, -3, 0, 6),
+                BackgroundColor3 = THEME.P_BRIGHT,
+                BorderSizePixel = 0,
+                ZIndex = 6,
+            }, row)
+            addCorner(2, accent)
+
+            create("TextLabel", {
+                Size = UDim2.new(1, -22, 0, 18),
+                Position = UDim2.new(0, 10, 0, 4),
+                BackgroundTransparency = 1,
+                Text = dev.icon .. "  " .. dev.role .. " :  " .. dev.name,
+                Font = FONT.Bold,
+                TextSize = 11,
+                TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 6,
+            }, row)
+
+            create("TextLabel", {
+                Size = UDim2.new(1, -22, 0, 16),
+                Position = UDim2.new(0, 10, 0, 23),
+                BackgroundTransparency = 1,
+                Text = "◈  الديسكورد :  " .. dev.discord,
+                Font = FONT.Medium,
+                TextSize = 10,
+                TextColor3 = dev.canCopy and THEME.P_GLOW or THEME.TX_DIM,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 6,
+            }, row)
+
+            if dev.canCopy then
+                row.MouseButton1Click:Connect(function()
+                    local copied = false
+                    if typeof(setclipboard) == "function" then
+                        copied = pcall(setclipboard, dev.discord)
+                    elseif typeof(toclipboard) == "function" then
+                        copied = pcall(toclipboard, dev.discord)
+                    end
+                    if copied then
+                        showToast("◈ تم نسخ حساب الديسكورد: " .. dev.discord)
+                    else
+                        showToast("◈ الديسكورد: " .. dev.discord)
+                    end
+                end)
+                if UserInputService.MouseEnabled then
+                    row.MouseEnter:Connect(function() tween(rowStroke, TweenInfo.new(0.18), { Transparency = 0.05 }) end)
+                    row.MouseLeave:Connect(function() tween(rowStroke, TweenInfo.new(0.18), { Transparency = 0.35 }) end)
+                end
+            end
+        end
+    end)
+end
+
+local DISCORD_URL = "https://discord.gg/wkugtpfnj"
 local discordBtn = create("TextButton", {
     Name = "DiscordBtn", Size = UDim2.new(1, 0, 0, 52),
     BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false, Text = "",
-    LayoutOrder = 4, ZIndex = 4,
+    LayoutOrder = 5, ZIndex = 4,
 }, homePage)
 addCorner(12, discordBtn)
 local discordStroke = addStroke(THEME.P_GLOW, 2, 0.35, discordBtn)
@@ -1151,7 +1619,19 @@ create("TextLabel", {
     TextColor3 = THEME.TX_MAIN, TextStrokeColor3 = Color3.fromRGB(40, 20, 80),
     TextStrokeTransparency = 0.7, ZIndex = 5,
 }, discordBtn)
-discordBtn.MouseButton1Click:Connect(function() openURL(DISCORD_URL) end)
+discordBtn.MouseButton1Click:Connect(function()
+    local copied = false
+    if typeof(setclipboard) == "function" then
+        copied = pcall(setclipboard, DISCORD_URL)
+    elseif typeof(toclipboard) == "function" then
+        copied = pcall(toclipboard, DISCORD_URL)
+    end
+    if copied then
+        showToast("◈ تم نسخ رابط سيرفر الديسكورد!")
+    else
+        openURL(DISCORD_URL)
+    end
+end)
 if UserInputService.MouseEnabled then
     discordBtn.MouseEnter:Connect(function() tween(discordStroke, TweenInfo.new(0.18), { Transparency = 0.1 }) end)
     discordBtn.MouseLeave:Connect(function() tween(discordStroke, TweenInfo.new(0.18), { Transparency = 0.35 }) end)
@@ -1824,19 +2304,122 @@ local function createSliderRow(parent, order, labelText, initialValue, onChange)
 end
 
 local animRow = createToggleRow(settingsScroll, 1, "Animations", settings.animations, function(v)
-    settings.animations = v
+    settings.animations = v; settings.saveConfig()
 end)
-local glowRow = createToggleRow(settingsScroll, 2, "Purple Glow", settings.glow, function(v)
-    settings.glow = v; applyGlowState()
+local glowRow = createToggleRow(settingsScroll, 2, "Window Glow", settings.glow, function(v)
+    settings.glow = v; applyGlowState(); settings.saveConfig()
 end)
 local transRow = createSliderRow(settingsScroll, 3, "Window Transparency", settings.transparency, function(v)
-    applyWindowTransparency(v)
+    applyWindowTransparency(v); settings.saveConfig()
 end)
+
+do
+    create("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 24),
+        BackgroundTransparency = 1,
+        Text = "✦  THEMES (ألوان الواجهة)",
+        Font = FONT.Bold,
+        TextSize = 12,
+        TextColor3 = THEME.P_GLOW,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        LayoutOrder = 4,
+        ZIndex = 5,
+    }, settingsScroll)
+
+    local themeBtnRefs = {}
+    for idx, tKey in ipairs(settings.THEME_ORDER) do
+        local preset = settings.THEME_PRESETS[tKey]
+        local isCurrent = (settings.theme == tKey)
+        local tBtn = create("TextButton", {
+            Name = "ThemeBtn_" .. tKey,
+            Size = UDim2.new(1, 0, 0, 38),
+            BackgroundColor3 = isCurrent and THEME.BG_CARD_HI or THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            AutoButtonColor = false,
+            Text = "",
+            LayoutOrder = 4 + idx,
+            ZIndex = 4,
+        }, settingsScroll)
+        addCorner(9, tBtn)
+        local tStroke = addStroke(isCurrent and THEME.P_GLOW or THEME.BORDER, isCurrent and 1.5 or 1, isCurrent and 0.05 or 0.25, tBtn)
+
+        local swatch = create("Frame", {
+            Name = "FloatingBtn", -- ignored by theme remapper so swatch keeps its own true color!
+            Size = UDim2.fromOffset(18, 18),
+            Position = UDim2.new(0, 12, 0.5, -9),
+            BackgroundColor3 = preset.dot,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, tBtn)
+        addCorner(9, swatch)
+        local swStroke = addStroke(Color3.fromRGB(255, 255, 255), 1, 0.35, swatch)
+        swStroke.Name = "ThemeSwatchStroke"
+
+        local tLabel = create("TextLabel", {
+            Size = UDim2.new(1, -72, 1, 0),
+            Position = UDim2.new(0, 38, 0, 0),
+            BackgroundTransparency = 1,
+            Text = preset.name,
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 5,
+        }, tBtn)
+
+        local statusMark = create("TextLabel", {
+            Size = UDim2.fromOffset(26, 20),
+            Position = UDim2.new(1, -34, 0.5, -10),
+            BackgroundTransparency = 1,
+            Text = isCurrent and "✓" or "",
+            Font = FONT.Bold,
+            TextSize = 13,
+            TextColor3 = THEME.P_GLOW,
+            ZIndex = 5,
+        }, tBtn)
+
+        themeBtnRefs[tKey] = { btn = tBtn, stroke = tStroke, mark = statusMark }
+        tBtn.MouseButton1Click:Connect(function()
+            settings.applyTheme(tKey, false)
+        end)
+    end
+
+    settings.refreshThemeButtons = function()
+        for tKey, ref in pairs(themeBtnRefs) do
+            local active = (settings.theme == tKey)
+            ref.btn.BackgroundColor3 = active and THEME.BG_CARD_HI or THEME.BG_CARD
+            ref.stroke.Color = active and THEME.P_GLOW or THEME.BORDER
+            ref.stroke.Thickness = active and 1.5 or 1
+            ref.stroke.Transparency = active and 0.05 or 0.25
+            ref.mark.Text = active and "✓" or ""
+            ref.mark.TextColor3 = THEME.P_GLOW
+        end
+    end
+
+    local saveCfgBtn = create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundColor3 = THEME.P_MAIN,
+        AutoButtonColor = false,
+        Text = "💾  SAVE CONFIG (حفظ الإعدادات)",
+        Font = FONT.Bold,
+        TextSize = 12,
+        TextColor3 = THEME.TX_MAIN,
+        LayoutOrder = 15,
+        ZIndex = 4,
+    }, settingsScroll)
+    addCorner(10, saveCfgBtn)
+    addStroke(THEME.P_GLOW, 1.2, 0.2, saveCfgBtn)
+    saveCfgBtn.MouseButton1Click:Connect(function()
+        settings.saveConfig()
+        showToast("💾  تم حفظ جميع الإعدادات بنجاح!")
+    end)
+end
+
 local resetBtn = create("TextButton", {
     Size = UDim2.new(1, 0, 0, 42), BackgroundColor3 = THEME.BG_CARD,
     AutoButtonColor = false, Text = "↻  RESET TO DEFAULTS",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.DANGER_HI,
-    LayoutOrder = 4, ZIndex = 4,
+    LayoutOrder = 20, ZIndex = 4,
 }, settingsScroll)
 addCorner(10, resetBtn); addStroke(THEME.DANGER, 1.2, 0.15, resetBtn)
 
@@ -1855,6 +2438,9 @@ local playerState = {
     flight = { active = false, speed = 60, bodyVel = nil, conn = nil },
     gravity = { applied = false, value = 196.2, original = 196.2 },
     rotation = { active = false, speed = 10, bodyAV = nil },
+    lockMove = { active = false, conn = nil },
+    clickTp = { active = false, tool = nil },
+    noclip = { active = false, conn = nil, originals = {} },
     infiniteJump = { active = false, conn = nil },
     swimming = { active = false, bodyForce = nil },
     ipadView = { active = false, originalFov = nil },
@@ -2064,6 +2650,32 @@ end, function()
     showToast("↻  Jump reset")
 end)
 
+createPlayerToggle(playerPage, nextOrder(), "◈ Lock Speed & Jump", "تثبيت السرعة والقفز ضد التصفير التلقائي", false, function(v)
+    playerState.lockMove.active = v
+    if playerState.lockMove.conn then
+        pcall(function() playerState.lockMove.conn:Disconnect() end)
+        playerState.lockMove.conn = nil
+    end
+    if v then
+        playerState.lockMove.conn = RunService.Heartbeat:Connect(function()
+            if not playerState.lockMove.active then return end
+            local hum = getHumanoid(localPlayer)
+            if hum then
+                if hum.WalkSpeed ~= playerState.speed.value then
+                    hum.WalkSpeed = playerState.speed.value
+                end
+                if not hum.UseJumpPower then hum.UseJumpPower = true end
+                if hum.JumpPower ~= playerState.jump.value then
+                    hum.JumpPower = playerState.jump.value
+                end
+            end
+        end)
+        showToast("◈  Lock Speed & Jump ON")
+    else
+        showToast("◈  Lock Speed & Jump OFF")
+    end
+end)
+
 local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "Hover & fly toward camera look", false, function(v)
     playerState.flight.active = v
     if v then
@@ -2144,6 +2756,38 @@ end)
 
 addSectionHeader("SPECIAL MOVEMENT", nextOrder())
 
+createPlayerToggle(playerPage, nextOrder(), "◈ Noclip", "Walk through walls & obstacles", false, function(v)
+    playerState.noclip.active = v
+    if v then
+        if playerState.noclip.conn then pcall(function() playerState.noclip.conn:Disconnect() end) end
+        playerState.noclip.originals = {}
+        playerState.noclip.conn = RunService.Stepped:Connect(function()
+            if not playerState.noclip.active then return end
+            local char = localPlayer.Character
+            if not char then return end
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    playerState.noclip.originals[part] = true
+                    part.CanCollide = false
+                end
+            end
+        end)
+        showToast("◈  Noclip ON")
+    else
+        if playerState.noclip.conn then
+            pcall(function() playerState.noclip.conn:Disconnect() end)
+            playerState.noclip.conn = nil
+        end
+        for part in pairs(playerState.noclip.originals) do
+            if part and part.Parent then
+                pcall(function() part.CanCollide = true end)
+            end
+        end
+        playerState.noclip.originals = {}
+        showToast("◈  Noclip OFF")
+    end
+end)
+
 createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedly while holding space", false, function(v)
     playerState.infiniteJump.active = v
     if v then
@@ -2176,6 +2820,67 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Swimming", "Float in the air (l
         showToast("◈  Swimming ON")
     else showToast("◈  Swimming OFF") end
 end)
+
+do
+    local TOOL_NAME = "✦ LYNEX Click TP"
+    local function removeClickTpTool()
+        if playerState.clickTp.tool then
+            pcall(function() playerState.clickTp.tool:Destroy() end)
+            playerState.clickTp.tool = nil
+        end
+        pcall(function()
+            local bp = localPlayer:FindFirstChildOfClass("Backpack")
+            if bp then
+                for _, c in ipairs(bp:GetChildren()) do
+                    if c:IsA("Tool") and c.Name == TOOL_NAME then c:Destroy() end
+                end
+            end
+            local ch = localPlayer.Character
+            if ch then
+                for _, c in ipairs(ch:GetChildren()) do
+                    if c:IsA("Tool") and c.Name == TOOL_NAME then c:Destroy() end
+                end
+            end
+        end)
+    end
+
+    local function giveClickTpTool()
+        removeClickTpTool()
+        local bp = localPlayer:FindFirstChildOfClass("Backpack")
+        if not bp then showToast("✕  Backpack not ready"); return end
+        local tool = Instance.new("Tool")
+        tool.Name = TOOL_NAME
+        tool.RequiresHandle = false
+        tool.CanBeDropped = false
+        tool.Activated:Connect(function()
+            pcall(function()
+                local mouse = localPlayer:GetMouse()
+                local char = localPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                if mouse and mouse.Hit and root then
+                    root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+                    showToast("⇄  تم الانتقال!")
+                end
+            end)
+        end)
+        tool.Parent = bp
+        playerState.clickTp.tool = tool
+    end
+
+    settings._giveClickTpTool = giveClickTpTool
+    settings._removeClickTpTool = removeClickTpTool
+
+    createPlayerToggle(playerPage, nextOrder(), "◈ Click TP Tool", "أداة بالحقيبة للانتقال لأي مكان تضغط عليه", false, function(v)
+        playerState.clickTp.active = v
+        if v then
+            giveClickTpTool()
+            showToast("◈  تم إضافة أداة Click TP في الحقيبة!")
+        else
+            removeClickTpTool()
+            showToast("◈  تم إزالة أداة Click TP")
+        end
+    end)
+end
 
 addSectionHeader("VISUALS", nextOrder())
 
@@ -2223,6 +2928,189 @@ create("TextLabel", {
     LayoutOrder = nextOrder(), ZIndex = 4,
 }, playerPage)
 
+do
+    addSectionHeader("SAVED WAYPOINTS (حفظ الأماكن)", nextOrder())
+
+    local placeKey = tostring(game.PlaceId or 0)
+    if type(settings.waypoints[placeKey]) ~= "table" then
+        settings.waypoints[placeKey] = {}
+    end
+
+    local wpInputCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 78),
+        BackgroundColor3 = THEME.BG_CARD,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        LayoutOrder = nextOrder(),
+        ZIndex = 4,
+    }, playerPage)
+    addCorner(10, wpInputCard)
+    addStroke(THEME.BORDER, 1, 0.2, wpInputCard)
+
+    local wpBoxWrap = create("Frame", {
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 10, 0, 8),
+        BackgroundColor3 = THEME.BG_CARD_HI,
+        BorderSizePixel = 0,
+        ZIndex = 5,
+    }, wpInputCard)
+    addCorner(7, wpBoxWrap)
+    addStroke(THEME.BORDER, 1, 0.3, wpBoxWrap)
+
+    local wpNameBox = create("TextBox", {
+        Size = UDim2.new(1, -16, 1, 0),
+        Position = UDim2.new(0, 8, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        PlaceholderText = "اكتب اسم المكان هنا...",
+        PlaceholderColor3 = THEME.TX_SUBTLE,
+        Font = FONT.Medium,
+        TextSize = 11,
+        TextColor3 = THEME.TX_MAIN,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ClearTextOnFocus = false,
+        ZIndex = 6,
+    }, wpBoxWrap)
+
+    local wpSaveBtn = create("TextButton", {
+        Size = UDim2.new(1, -20, 0, 28),
+        Position = UDim2.new(0, 10, 0, 43),
+        BackgroundColor3 = THEME.P_MAIN,
+        AutoButtonColor = false,
+        Text = "⊕  حفظ موقعي الحالي (Save Waypoint)",
+        Font = FONT.Bold,
+        TextSize = 11,
+        TextColor3 = THEME.TX_MAIN,
+        ZIndex = 5,
+    }, wpInputCard)
+    addCorner(7, wpSaveBtn)
+    addStroke(THEME.P_GLOW, 1, 0.25, wpSaveBtn)
+
+    local wpListFrame = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        LayoutOrder = nextOrder(),
+        ZIndex = 4,
+    }, playerPage)
+    create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, wpListFrame)
+
+    local function renderWaypoints()
+        for _, ch in ipairs(wpListFrame:GetChildren()) do
+            if ch:IsA("Frame") or ch:IsA("TextLabel") then ch:Destroy() end
+        end
+        local list = settings.waypoints[placeKey] or {}
+        if #list == 0 then
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 22),
+                BackgroundTransparency = 1,
+                Text = "لا توجد أماكن محفوظة بعد في هذا الماب.",
+                Font = FONT.Regular,
+                TextSize = 10,
+                TextColor3 = THEME.TX_SUBTLE,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                ZIndex = 4,
+            }, wpListFrame)
+            return
+        end
+        for idx, wp in ipairs(list) do
+            local item = create("Frame", {
+                Size = UDim2.new(1, 0, 0, 38),
+                BackgroundColor3 = THEME.BG_CARD,
+                BackgroundTransparency = 0.05,
+                BorderSizePixel = 0,
+                LayoutOrder = idx,
+                ZIndex = 4,
+            }, wpListFrame)
+            addCorner(8, item)
+            addStroke(THEME.BORDER, 1, 0.25, item)
+
+            create("TextLabel", {
+                Size = UDim2.new(1, -116, 1, 0),
+                Position = UDim2.new(0, 10, 0, 0),
+                BackgroundTransparency = 1,
+                Text = "◈  " .. tostring(wp.name),
+                Font = FONT.Bold,
+                TextSize = 11,
+                TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 5,
+            }, item)
+
+            local tpBtn = create("TextButton", {
+                Size = UDim2.fromOffset(64, 26),
+                Position = UDim2.new(1, -100, 0.5, -13),
+                BackgroundColor3 = THEME.P_MAIN,
+                AutoButtonColor = false,
+                Text = "⇄ انتقال",
+                Font = FONT.Bold,
+                TextSize = 10,
+                TextColor3 = THEME.TX_MAIN,
+                ZIndex = 5,
+            }, item)
+            addCorner(6, tpBtn)
+            addStroke(THEME.P_GLOW, 1, 0.3, tpBtn)
+
+            local delBtn = create("TextButton", {
+                Size = UDim2.fromOffset(26, 26),
+                Position = UDim2.new(1, -32, 0.5, -13),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                AutoButtonColor = false,
+                Text = "×",
+                Font = FONT.Bold,
+                TextSize = 14,
+                TextColor3 = THEME.DANGER_HI,
+                ZIndex = 5,
+            }, item)
+            addCorner(6, delBtn)
+            addStroke(THEME.DANGER, 1, 0.3, delBtn)
+
+            tpBtn.MouseButton1Click:Connect(function()
+                local char = localPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                if root then
+                    root.CFrame = CFrame.new(wp.x, wp.y, wp.z)
+                    showToast("⇄  تم الانتقال إلى: " .. tostring(wp.name))
+                else
+                    showToast("✕  الشخصية غير جاهزة")
+                end
+            end)
+
+            delBtn.MouseButton1Click:Connect(function()
+                table.remove(list, idx)
+                settings.saveConfig()
+                renderWaypoints()
+                showToast("✕  تم حذف المكان")
+            end)
+        end
+    end
+
+    wpSaveBtn.MouseButton1Click:Connect(function()
+        local char = localPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then showToast("✕  الشخصية غير جاهزة"); return end
+        local list = settings.waypoints[placeKey]
+        local rawName = (wpNameBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+        if rawName == "" then
+            rawName = "مكان #" .. tostring(#list + 1)
+        end
+        local pos = root.Position
+        table.insert(list, {
+            name = rawName,
+            x = math.floor(pos.X * 10) / 10,
+            y = math.floor(pos.Y * 10) / 10,
+            z = math.floor(pos.Z * 10) / 10,
+        })
+        wpNameBox.Text = ""
+        settings.saveConfig()
+        renderWaypoints()
+        showToast("⊕  تم حفظ المكان: " .. rawName)
+    end)
+
+    renderWaypoints()
+end
+
 localPlayer.CharacterAdded:Connect(function(char)
     task.wait(0.2)
     local hum = char:FindFirstChildOfClass("Humanoid")
@@ -2266,6 +3154,12 @@ localPlayer.CharacterAdded:Connect(function(char)
             end
         end
     end
+    if playerState.noclip.active then
+        playerState.noclip.originals = {}
+    end
+    if playerState.clickTp.active and settings._giveClickTpTool then
+        pcall(settings._giveClickTpTool)
+    end
     if playerState.ipadView.active then
         local cam = workspace.CurrentCamera
         if cam then cam.FieldOfView = 80 end
@@ -2275,6 +3169,14 @@ end)
 _G.LYNEX_CLEANUP = function()
     if playerState.gravity.applied then
         pcall(function() workspace.Gravity = playerState.gravity.original end)
+    end
+    if playerState.lockMove.conn then pcall(function() playerState.lockMove.conn:Disconnect() end) end
+    if settings._removeClickTpTool then pcall(settings._removeClickTpTool) end
+    if playerState.noclip.conn then pcall(function() playerState.noclip.conn:Disconnect() end) end
+    if playerState.noclip.active then
+        for part in pairs(playerState.noclip.originals) do
+            if part and part.Parent then pcall(function() part.CanCollide = true end) end
+        end
     end
     if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end) end
     if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
@@ -2342,6 +3244,7 @@ end
 --==================================================================
 -- 16.7) Auto Fish Page
 --==================================================================
+do
 local AUTO_FISH_URL = "https://raw.githubusercontent.com/coronavip100-max/Auto-fish/refs/heads/main/Auto%20fish"
 
 local autoFishPage = createPage("autofish", true)
@@ -2496,10 +3399,12 @@ afLoadBtn.MouseButton1Click:Connect(function()
     end)
 end)
 styleActionButton(afLoadBtn, afLoadStroke)
+end
 
 --==================================================================
 -- 16.8) Car Page
 --==================================================================
+do
 local CAR_URL = "https://raw.githubusercontent.com/LYNEX-NO-KEY/LYNEX-KEYLESS-/refs/heads/main/Car"
 
 local carPage = createPage("car", true)
@@ -2654,6 +3559,7 @@ carLoadBtn.MouseButton1Click:Connect(function()
     end)
 end)
 styleActionButton(carLoadBtn, carLoadStroke)
+end
 
 --==================================================================
 -- 16.8b) Uncle Mazrouk Page
@@ -5412,6 +6318,7 @@ end
 --==================================================================
 -- 16.9) Misc Page
 --==================================================================
+do
 local miscPage = createPage("misc", true)
 create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, miscPage)
 create("UIPadding", {
@@ -5740,6 +6647,130 @@ local function toggleInfiniteZoom(enabled)
     end
 end
 
+local antiAfkConn = nil
+local fullBrightConn = nil
+
+local function boostFPS()
+    showToast("⚡  جاري تحسين الفريمات وإزالة اللاغ…")
+    task.spawn(function()
+        pcall(function()
+            Lighting.GlobalShadows = false
+            Lighting.FogEnd = 9e9
+            Lighting.ShadowSoftness = 0
+            for _, eff in ipairs(Lighting:GetChildren()) do
+                if eff.Name ~= "LYNEX_HUB_Blur" and (eff:IsA("PostEffect") or eff:IsA("BloomEffect")
+                   or eff:IsA("BlurEffect") or eff:IsA("SunRaysEffect")
+                   or eff:IsA("ColorCorrectionEffect") or eff:IsA("DepthOfFieldEffect")) then
+                    eff.Enabled = false
+                end
+            end
+        end)
+        pcall(function()
+            local terrain = workspace:FindFirstChildOfClass("Terrain")
+            if terrain then
+                terrain.WaterWaveSize = 0
+                terrain.WaterWaveSpeed = 0
+                terrain.WaterReflectance = 0
+                terrain.WaterTransparency = 0
+            end
+        end)
+        local count = 0
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            count += 1
+            if count % 250 == 0 then task.wait() end
+            pcall(function()
+                if obj:IsA("BasePart") and not obj:IsA("Terrain") then
+                    obj.Material = Enum.Material.SmoothPlastic
+                    obj.Reflectance = 0
+                    obj.CastShadow = false
+                elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail")
+                    or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
+                    obj.Enabled = false
+                elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                    obj.Transparency = math.max(obj.Transparency, 0.65)
+                end
+            end)
+        end
+        showToast("⚡  تم تفعيل FPS Booster بنجاح!")
+    end)
+end
+
+local function lowServerHop()
+    if teleportBusy then return end
+    teleportBusy = true
+    showToast("⇣  جاري البحث عن سيرفر شبه فارغ…")
+    task.spawn(function()
+        local HttpService = game:GetService("HttpService")
+        local url = "https://games.roblox.com/v1/games/" .. tostring(game.PlaceId) .. "/servers/Public?sortOrder=Asc&limit=100"
+        local body, err = fetchUrl(url)
+        if not body then
+            teleportBusy = false
+            showToast("✕  فشل جلب السيرفرات: " .. tostring(err))
+            return
+        end
+        local okDec, decoded = pcall(function() return HttpService:JSONDecode(body) end)
+        if not okDec or type(decoded) ~= "table" or type(decoded.data) ~= "table" then
+            teleportBusy = false
+            showToast("✕  تعذر قراءة قائمة السيرفرات")
+            return
+        end
+        local chosen = nil
+        for _, srv in ipairs(decoded.data) do
+            local id = srv.id
+            local playing = tonumber(srv.playing) or 0
+            local maxP = tonumber(srv.maxPlayers) or 999
+            if id and id ~= game.JobId and playing >= 1 and playing < maxP then
+                if not chosen or playing < chosen.playing then
+                    chosen = { id = id, playing = playing }
+                end
+            end
+        end
+        if not chosen then
+            teleportBusy = false
+            showToast("◈  لم يتم العثور على سيرفر فارغ متاح")
+            return
+        end
+        showToast("⇣  جاري النقل لسيرفر فيه " .. tostring(chosen.playing) .. " لاعب…")
+        local okTp, errTp = pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, chosen.id, localPlayer)
+        end)
+        if not okTp then
+            teleportBusy = false
+            showToast("✕  " .. tostring(errTp))
+        else
+            task.delay(4, function() teleportBusy = false end)
+        end
+    end)
+end
+
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+    Text = "✦  PERFORMANCE & AFK", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
+    LayoutOrder = miscOrder(), ZIndex = 5,
+}, miscPage)
+
+createPlayerToggle(miscPage, miscOrder(), "◉ Anti-AFK (مانع الفصل)", "يمنع طردك بعد 20 دقيقة من الوقوف", false, function(enabled)
+    if antiAfkConn then
+        pcall(function() antiAfkConn:Disconnect() end)
+        antiAfkConn = nil
+    end
+    if enabled then
+        antiAfkConn = localPlayer.Idled:Connect(function()
+            pcall(function()
+                local vu = game:GetService("VirtualUser")
+                vu:CaptureController()
+                vu:ClickButton2(Vector2.new(0, 0))
+            end)
+        end)
+        showToast("◉  Anti-AFK ON — لن يتم فصلك")
+    else
+        showToast("◉  Anti-AFK OFF")
+    end
+end)
+
+createMiscButton(miscPage, miscOrder(), "⚡  FPS Booster (رفع الفريمات وإزالة اللاغ)", THEME.P_MAIN, THEME.P_GLOW, boostFPS)
+
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
     Text = "✦  GRAPHICS", Font = FONT.Bold, TextSize = 12,
@@ -5766,6 +6797,37 @@ create("TextLabel", {
 
 createMiscRow(miscPage, miscOrder(), "☾  Night", "☀  Day", applyNight, applyDay)
 
+createPlayerToggle(miscPage, miscOrder(), "☀ FullBright (إضاءة كاملة)", "إزالة الظلام والضباب بالكامل", false, function(enabled)
+    if fullBrightConn then
+        pcall(function() fullBrightConn:Disconnect() end)
+        fullBrightConn = nil
+    end
+    if enabled then
+        captureLightingOriginals()
+        local function enforceBright()
+            pcall(function()
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.FogEnd = 100000
+                Lighting.FogStart = 0
+                Lighting.GlobalShadows = false
+                Lighting.Ambient = Color3.fromRGB(178, 178, 178)
+                Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
+            end)
+        end
+        enforceBright()
+        fullBrightConn = RunService.Heartbeat:Connect(enforceBright)
+        showToast("☀  FullBright ON")
+    else
+        if miscState.lightingOriginal then
+            pcall(function()
+                for k, v in pairs(miscState.lightingOriginal) do Lighting[k] = v end
+            end)
+        end
+        showToast("☀  FullBright OFF")
+    end
+end)
+
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
     Text = "⚠ Lighting changes are local-only.",
@@ -5782,6 +6844,7 @@ create("TextLabel", {
 }, miscPage)
 
 createMiscButton(miscPage, miscOrder(), "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
+createMiscButton(miscPage, miscOrder(), "⇣  Low Server Hop (سيرفر شبه فارغ)", THEME.BG_CARD_HI, THEME.P_GLOW, lowServerHop)
 createMiscButton(miscPage, miscOrder(), "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
 
 create("TextLabel", {
@@ -5811,6 +6874,8 @@ create("TextLabel", {
 }, miscPage)
 
 _G.LYNEX_CLEANUP_MISC = function()
+    if antiAfkConn then pcall(function() antiAfkConn:Disconnect() end); antiAfkConn = nil end
+    if fullBrightConn then pcall(function() fullBrightConn:Disconnect() end); fullBrightConn = nil end
     if miscState.lightingOriginal then
         pcall(function()
             for k, v in pairs(miscState.lightingOriginal) do Lighting[k] = v end
@@ -5828,6 +6893,7 @@ _G.LYNEX_CLEANUP_MISC = function()
         local s = getUserGameSettings()
         if s then pcall(function() s.SavedQualityLevel = miscState.qualityOriginal end) end
     end
+end
 end
 
 --==================================================================
@@ -6679,6 +7745,8 @@ resetBtn.MouseButton1Click:Connect(function()
     settings.animations = true; settings.transparency = 15; settings.glow = true
     animRow.setOn(true); glowRow.setOn(true); transRow.setValue(15)
     applyWindowTransparency(15); applyGlowState()
+    if settings.applyTheme then settings.applyTheme("purple", true) end
+    settings.saveConfig()
     showToast("↻  Settings restored")
 end)
 
@@ -6712,6 +7780,10 @@ end)
 --==================================================================
 switchTab("home")
 applyBlur()
+pcall(function()
+    if settings.transparency ~= 15 then applyWindowTransparency(settings.transparency) end
+    if not settings.glow then applyGlowState() end
+end)
 
 do
     root.Visible = true
@@ -6731,3 +7803,6 @@ end
 
 print("[LYNEX HUB v4.1] ✦ Ready — 28 tabs + 🎬 Loading Screen (Automatic strike ⚡ + auto Rope 🪢 + auto Handcuff 🔗 + View ◎ + Fly PC ✈ + Dances 💃 + Animation Packs 🎬 + Auto Piano 🎹)")
 showToast("◎  LYNEX HUB v4.1 loaded")
+task.delay(1.5, function()
+    showToast("◈  تم نسخ سيرفر الديسكورد تلقائياً")
+end)
