@@ -573,16 +573,23 @@ task.spawn(function()
 end)
 
 --==================================================================
--- 0) State
+-- 0) State + Config Persistence (Save Config)
 --==================================================================
-local settings = { animations = true, transparency = 15, glow = true }
+local settings = {
+    animations = true,
+    transparency = 15,
+    glow = true,
+    theme = "purple",
+    favorites = {},
+    waypoints = {},
+}
 local windowHidden = false
 local screenGui, blurObj
 
 local function resolveGuiParent() return playerGui end
 
 --==================================================================
--- 2) Theme
+-- 2) Theme + Presets
 --==================================================================
 local THEME = {
     BG_PANEL = Color3.fromRGB(16,10,28), BG_HEADER = Color3.fromRGB(22,14,38),
@@ -596,6 +603,190 @@ local THEME = {
     DANGER = Color3.fromRGB(200,60,110), DANGER_HI = Color3.fromRGB(240,90,150),
     OK = Color3.fromRGB(120,220,140),
 }
+
+do
+    local CONFIG_FILE = "LYNEX_HUB_Config.json"
+    local HttpService = game:GetService("HttpService")
+
+    settings.THEME_PRESETS = {
+        purple = {
+            name = "بنفسجي (الأصلي)",
+            dot = Color3.fromRGB(160, 96, 255),
+            palette = {
+                BG_PANEL = Color3.fromRGB(16,10,28), BG_HEADER = Color3.fromRGB(22,14,38),
+                BG_SIDEBAR = Color3.fromRGB(13,8,24), BG_CARD = Color3.fromRGB(26,17,46),
+                BG_CARD_HI = Color3.fromRGB(36,22,62),
+                P_DEEP = Color3.fromRGB(60,24,120), P_MAIN = Color3.fromRGB(112,56,200),
+                P_BRIGHT = Color3.fromRGB(160,96,255), P_GLOW = Color3.fromRGB(190,140,255),
+                BORDER = Color3.fromRGB(70,44,120), BORDER_HI = Color3.fromRGB(130,84,220),
+            },
+        },
+        cyan = {
+            name = "أزرق نيون",
+            dot = Color3.fromRGB(56, 195, 255),
+            palette = {
+                BG_PANEL = Color3.fromRGB(9,16,28), BG_HEADER = Color3.fromRGB(13,23,40),
+                BG_SIDEBAR = Color3.fromRGB(7,13,24), BG_CARD = Color3.fromRGB(15,27,46),
+                BG_CARD_HI = Color3.fromRGB(22,38,64),
+                P_DEEP = Color3.fromRGB(18,74,128), P_MAIN = Color3.fromRGB(28,132,215),
+                P_BRIGHT = Color3.fromRGB(56,195,255), P_GLOW = Color3.fromRGB(125,222,255),
+                BORDER = Color3.fromRGB(32,82,135), BORDER_HI = Color3.fromRGB(64,160,235),
+            },
+        },
+        crimson = {
+            name = "أحمر قرمزي",
+            dot = Color3.fromRGB(245, 70, 105),
+            palette = {
+                BG_PANEL = Color3.fromRGB(24,10,16), BG_HEADER = Color3.fromRGB(34,14,22),
+                BG_SIDEBAR = Color3.fromRGB(19,8,13), BG_CARD = Color3.fromRGB(40,17,27),
+                BG_CARD_HI = Color3.fromRGB(56,24,38),
+                P_DEEP = Color3.fromRGB(115,22,48), P_MAIN = Color3.fromRGB(195,42,78),
+                P_BRIGHT = Color3.fromRGB(245,70,105), P_GLOW = Color3.fromRGB(255,135,160),
+                BORDER = Color3.fromRGB(115,38,60), BORDER_HI = Color3.fromRGB(215,65,100),
+            },
+        },
+        gold = {
+            name = "ذهبي ملكي",
+            dot = Color3.fromRGB(245, 190, 65),
+            palette = {
+                BG_PANEL = Color3.fromRGB(22,17,10), BG_HEADER = Color3.fromRGB(32,24,13),
+                BG_SIDEBAR = Color3.fromRGB(18,14,8), BG_CARD = Color3.fromRGB(38,29,16),
+                BG_CARD_HI = Color3.fromRGB(54,41,22),
+                P_DEEP = Color3.fromRGB(115,80,18), P_MAIN = Color3.fromRGB(190,136,32),
+                P_BRIGHT = Color3.fromRGB(245,190,65), P_GLOW = Color3.fromRGB(255,220,128),
+                BORDER = Color3.fromRGB(112,84,32), BORDER_HI = Color3.fromRGB(215,165,58),
+            },
+        },
+        emerald = {
+            name = "أخضر زمردي",
+            dot = Color3.fromRGB(52, 215, 145),
+            palette = {
+                BG_PANEL = Color3.fromRGB(9,22,17), BG_HEADER = Color3.fromRGB(13,31,24),
+                BG_SIDEBAR = Color3.fromRGB(7,18,14), BG_CARD = Color3.fromRGB(16,38,29),
+                BG_CARD_HI = Color3.fromRGB(23,54,41),
+                P_DEEP = Color3.fromRGB(18,98,64), P_MAIN = Color3.fromRGB(32,162,106),
+                P_BRIGHT = Color3.fromRGB(52,215,145), P_GLOW = Color3.fromRGB(125,245,190),
+                BORDER = Color3.fromRGB(32,96,68), BORDER_HI = Color3.fromRGB(58,188,128),
+            },
+        },
+    }
+
+    settings.THEME_ORDER = { "purple", "cyan", "crimson", "gold", "emerald" }
+
+    function settings.saveConfig()
+        pcall(function()
+            if typeof(writefile) ~= "function" then return end
+            local payload = {
+                animations = settings.animations,
+                transparency = settings.transparency,
+                glow = settings.glow,
+                theme = settings.theme,
+                favorites = settings.favorites,
+                waypoints = settings.waypoints,
+            }
+            writefile(CONFIG_FILE, HttpService:JSONEncode(payload))
+        end)
+    end
+
+    function settings.loadConfig()
+        pcall(function()
+            if typeof(readfile) ~= "function" then return end
+            if typeof(isfile) == "function" and not isfile(CONFIG_FILE) then return end
+            local raw = readfile(CONFIG_FILE)
+            if not raw or raw == "" then return end
+            local data = HttpService:JSONDecode(raw)
+            if type(data) ~= "table" then return end
+            if type(data.animations) == "boolean" then settings.animations = data.animations end
+            if type(data.transparency) == "number" then settings.transparency = math.clamp(data.transparency, 0, 90) end
+            if type(data.glow) == "boolean" then settings.glow = data.glow end
+            if type(data.theme) == "string" and settings.THEME_PRESETS[data.theme] then
+                settings.theme = data.theme
+            end
+            if type(data.favorites) == "table" then settings.favorites = data.favorites end
+            if type(data.waypoints) == "table" then settings.waypoints = data.waypoints end
+        end)
+    end
+
+    settings.loadConfig()
+    local initialPreset = settings.THEME_PRESETS[settings.theme]
+    if initialPreset then
+        for k, v in pairs(initialPreset.palette) do THEME[k] = v end
+    end
+
+    local function colorsMatch(a, b)
+        if typeof(a) ~= "Color3" or typeof(b) ~= "Color3" then return false end
+        return math.abs(a.R - b.R) < 0.006
+           and math.abs(a.G - b.G) < 0.006
+           and math.abs(a.B - b.B) < 0.006
+    end
+
+    function settings.applyTheme(themeId, silent)
+        local preset = settings.THEME_PRESETS[themeId]
+        if not preset then return end
+        local oldColors = {}
+        for k, _ in pairs(preset.palette) do
+            oldColors[k] = THEME[k]
+        end
+        for k, v in pairs(preset.palette) do
+            THEME[k] = v
+        end
+        settings.theme = themeId
+
+        local function remapColor(c)
+            for k, oldC in pairs(oldColors) do
+                if colorsMatch(c, oldC) then return THEME[k] end
+            end
+            return nil
+        end
+
+        if screenGui then
+            for _, inst in ipairs(screenGui:GetDescendants()) do
+                if inst.Name ~= "FloatingBtn" and not inst:IsDescendantOf(screenGui:FindFirstChild("FloatingBtn") or inst) then
+                    pcall(function()
+                        if inst:IsA("GuiObject") then
+                            local nb = remapColor(inst.BackgroundColor3)
+                            if nb then inst.BackgroundColor3 = nb end
+                        end
+                        if inst:IsA("ScrollingFrame") then
+                            local ns = remapColor(inst.ScrollBarImageColor3)
+                            if ns then inst.ScrollBarImageColor3 = ns end
+                        end
+                        if inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox") then
+                            local nt = remapColor(inst.TextColor3)
+                            if nt then inst.TextColor3 = nt end
+                            local nst = remapColor(inst.TextStrokeColor3)
+                            if nst then inst.TextStrokeColor3 = nst end
+                        end
+                        if inst:IsA("UIStroke") and inst.Name ~= "ThemeSwatchStroke" then
+                            local nc = remapColor(inst.Color)
+                            if nc then inst.Color = nc end
+                        end
+                        if inst:IsA("UIGradient") then
+                            local kps = inst.Color.Keypoints
+                            local newKps, changed = {}, false
+                            for _, kp in ipairs(kps) do
+                                local mapped = remapColor(kp.Value)
+                                if mapped then
+                                    changed = true
+                                    table.insert(newKps, ColorSequenceKeypoint.new(kp.Time, mapped))
+                                else
+                                    table.insert(newKps, kp)
+                                end
+                            end
+                            if changed then inst.Color = ColorSequence.new(newKps) end
+                        end
+                    end)
+                end
+            end
+        end
+
+        if settings.refreshThemeButtons then pcall(settings.refreshThemeButtons) end
+        settings.saveConfig()
+        if not silent and typeof(showToast) == "function" then
+            showToast("✦  الثيم: " .. preset.name)
+        end
+    end
+end
 
 local function pickFont(name, fallback)
     local ok, val = pcall(function() return Enum.Font[name] end)
@@ -819,17 +1010,47 @@ local menuBtn = create("TextButton", {
 addCorner(8, menuBtn); addStroke(THEME.BORDER, 1, 0.3, menuBtn)
 
 local title = create("TextLabel", {
-    Name = "Title", Size = UDim2.new(1, -130, 1, 0),
-    Position = UDim2.new(0, 46, 0, 0), BackgroundTransparency = 1,
-    Text = "LYNEX HUB", Font = FONT.Logo, TextSize = 15,
+    Name = "Title", Size = UDim2.new(1, -184, 1, 0),
+    Position = UDim2.new(0, 44, 0, 0), BackgroundTransparency = 1,
+    Text = "LYNEX HUB", Font = FONT.Logo, TextSize = 14, TextScaled = true,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     TextStrokeColor3 = THEME.P_GLOW, TextStrokeTransparency = 0.7, ZIndex = 4,
 }, header)
+create("UITextSizeConstraint", { MaxTextSize = 15, MinTextSize = 10 }, title)
 addGradient(title, {
     ColorSequenceKeypoint.new(0, THEME.TX_MAIN),
     ColorSequenceKeypoint.new(0.5, THEME.P_GLOW),
     ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
 }, 90)
+
+do
+    local statsBadge = create("Frame", {
+        Name = "LiveStatsBadge",
+        Size = UDim2.fromOffset(90, 24),
+        Position = UDim2.new(1, -135, 0.5, -12),
+        BackgroundColor3 = THEME.BG_CARD,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        ZIndex = 4,
+    }, header)
+    addCorner(7, statsBadge)
+    addStroke(THEME.BORDER, 1, 0.3, statsBadge)
+
+    local statsLbl = create("TextLabel", {
+        Size = UDim2.new(1, -8, 1, 0),
+        Position = UDim2.new(0, 4, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "60 FPS · --ms",
+        Font = FONT.Bold,
+        TextSize = 9,
+        TextColor3 = THEME.OK,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = 5,
+    }, statsBadge)
+
+    settings._headerStatsLabel = statsLbl
+end
 
 local closeBtn = create("TextButton", {
     Name = "CloseBtn", Size = UDim2.fromOffset(32, 32),
@@ -920,11 +1141,61 @@ local TABS = {
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
 
+do
+    local searchWrap = create("Frame", {
+        Name = "SidebarSearch",
+        Size = UDim2.new(1, 0, 0, 26),
+        BackgroundColor3 = THEME.BG_CARD_HI,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        LayoutOrder = -1000,
+        ZIndex = 4,
+    }, sidebar)
+    addCorner(7, searchWrap)
+    local sStroke = addStroke(THEME.BORDER, 1, 0.3, searchWrap)
+
+    local tabSearchBox = create("TextBox", {
+        Size = UDim2.new(1, -12, 1, 0),
+        Position = UDim2.new(0, 6, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        PlaceholderText = "🔍 بحث التابات...",
+        PlaceholderColor3 = THEME.TX_SUBTLE,
+        Font = FONT.Medium,
+        TextSize = 10,
+        TextColor3 = THEME.TX_MAIN,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ClearTextOnFocus = false,
+        ZIndex = 5,
+    }, searchWrap)
+
+    settings._filterTabs = function()
+        local q = string.lower((tabSearchBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+        for _, tab in ipairs(TABS) do
+            local d = tabButtons[tab.id]
+            if d and d.btn then
+                if q == "" then
+                    d.btn.Visible = true
+                else
+                    local matchName = string.find(string.lower(tab.name), q, 1, true) ~= nil
+                    local matchId = string.find(string.lower(tab.id), q, 1, true) ~= nil
+                    d.btn.Visible = matchName or matchId
+                end
+            end
+        end
+    end
+
+    tabSearchBox:GetPropertyChangedSignal("Text"):Connect(settings._filterTabs)
+    tabSearchBox.Focused:Connect(function() tween(sStroke, TweenInfo.new(0.18), { Transparency = 0.05 }) end)
+    tabSearchBox.FocusLost:Connect(function() tween(sStroke, TweenInfo.new(0.18), { Transparency = 0.3 }) end)
+end
+
 local function createTabButton(tab, order)
+    local isFav = settings.favorites[tab.id] == true
     local btn = create("TextButton", {
         Name = tab.id .. "Tab", Size = UDim2.new(1, 0, 0, 32),
         BackgroundColor3 = THEME.BG_CARD, AutoButtonColor = false,
-        Text = "", LayoutOrder = order, ZIndex = 4,
+        Text = "", LayoutOrder = isFav and (order - 500) or order, ZIndex = 4,
     }, sidebar)
     addCorner(8, btn)
     local stroke = addStroke(THEME.BORDER, 1, 0.4, btn)
@@ -935,17 +1206,42 @@ local function createTabButton(tab, order)
     }, btn)
     addCorner(2, indicator)
     local icon = create("TextLabel", {
-        Size = UDim2.fromOffset(20, 20), Position = UDim2.new(0, 9, 0.5, -10),
-        BackgroundTransparency = 1, Text = tab.icon, Font = FONT.Bold, TextSize = 14,
+        Size = UDim2.fromOffset(18, 20), Position = UDim2.new(0, 6, 0.5, -10),
+        BackgroundTransparency = 1, Text = tab.icon, Font = FONT.Bold, TextSize = 13,
         TextColor3 = THEME.P_GLOW, ZIndex = 5,
     }, btn)
     local label = create("TextLabel", {
-        Size = UDim2.new(1, -36, 1, 0), Position = UDim2.new(0, 32, 0, 0),
-        BackgroundTransparency = 1, Text = tab.name, Font = FONT.Medium, TextSize = 11,
+        Size = UDim2.new(1, -44, 1, 0), Position = UDim2.new(0, 26, 0, 0),
+        BackgroundTransparency = 1, Text = tab.name, Font = FONT.Medium, TextSize = 10,
         TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
     }, btn)
-    tabButtons[tab.id] = { btn = btn, stroke = stroke, indicator = indicator, icon = icon, label = label }
+    local starBtn = create("TextButton", {
+        Name = "PinStar",
+        Size = UDim2.fromOffset(16, 22),
+        Position = UDim2.new(1, -17, 0.5, -11),
+        BackgroundTransparency = 1,
+        AutoButtonColor = false,
+        Text = isFav and "★" or "☆",
+        Font = FONT.Bold,
+        TextSize = 12,
+        TextColor3 = isFav and Color3.fromRGB(255, 210, 70) or THEME.TX_SUBTLE,
+        ZIndex = 6,
+    }, btn)
+    starBtn.MouseButton1Click:Connect(function()
+        local nowFav = not (settings.favorites[tab.id] == true)
+        if nowFav then
+            settings.favorites[tab.id] = true
+        else
+            settings.favorites[tab.id] = nil
+        end
+        starBtn.Text = nowFav and "★" or "☆"
+        starBtn.TextColor3 = nowFav and Color3.fromRGB(255, 210, 70) or THEME.TX_SUBTLE
+        btn.LayoutOrder = nowFav and (order - 500) or order
+        settings.saveConfig()
+        showToast(nowFav and ("★ تم تثبيت: " .. tab.name) or ("☆ أزيل من المفضلة: " .. tab.name))
+    end)
+    tabButtons[tab.id] = { btn = btn, stroke = stroke, indicator = indicator, icon = icon, label = label, star = starBtn, baseOrder = order }
     return btn
 end
 
@@ -999,7 +1295,7 @@ addGradient(logo, {
 create("UITextSizeConstraint", { MaxTextSize = 26, MinTextSize = 18 }, logo)
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 0, 0, 44),
-    BackgroundTransparency = 1, Text = "PREMIUM  ·  INTERFACE",
+    BackgroundTransparency = 1, Text = "واجهة  ·  احترافية",
     Font = FONT.Medium, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5,
 }, hero)
@@ -1025,7 +1321,7 @@ local avatarImg = create("ImageLabel", {
 local infoX = 88
 local displayNameLbl = create("TextLabel", {
     Size = UDim2.new(1, -infoX - 8, 0, 20), Position = UDim2.new(0, infoX, 0, 10),
-    BackgroundTransparency = 1, Text = "Loading…", Font = FONT.Bold, TextSize = 14,
+    BackgroundTransparency = 1, Text = "جاري التحميل…", Font = FONT.Bold, TextSize = 14,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
 }, profileCard)
@@ -1058,11 +1354,12 @@ local uidLbl = smallInfo(infoX, 95, "#", "—")
 local ageLbl = smallInfo(infoX + 100, 95, "◷", "—")
 
 local SERVER_ROWS = {
-    { key = "players",  icon = "◉", label = "Players"   },
-    { key = "gameName", icon = "✦", label = "Game Name" },
-    { key = "mapName",  icon = "▣", label = "Map Name"  },
-    { key = "serverId", icon = "◆", label = "Server ID" },
-    { key = "placeId",  icon = "◈", label = "Place ID"  },
+    { key = "players",  icon = "◉", label = "اللاعبين"       },
+    { key = "fpsPing",  icon = "⚡", label = "الفريمات / البنق" },
+    { key = "gameName", icon = "✦", label = "اسم اللعبة"     },
+    { key = "mapName",  icon = "▣", label = "اسم الماب"      },
+    { key = "serverId", icon = "◆", label = "معرف السيرفر"   },
+    { key = "placeId",  icon = "◈", label = "معرف الماب"     },
 }
 
 local serverCardHeight = 34 + (#SERVER_ROWS * 22) + 10
@@ -1075,7 +1372,7 @@ addCorner(12, serverCard); addStroke(THEME.BORDER, 1, 0.15, serverCard)
 
 create("TextLabel", {
     Size = UDim2.new(1, -20, 0, 22), Position = UDim2.new(0, 12, 0, 8),
-    BackgroundTransparency = 1, Text = "✦  SERVER INFORMATION",
+    BackgroundTransparency = 1, Text = "✦  معلومات السيرفر",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.P_GLOW,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, serverCard)
@@ -1146,6 +1443,59 @@ end
 updateServerInfo()
 Players.PlayerAdded:Connect(updateServerInfo)
 Players.PlayerRemoving:Connect(updateServerInfo)
+
+do
+    local frameCount = 0
+    local lastCheck = os.clock()
+    local currentFps = 60
+    local StatsService = nil
+    pcall(function() StatsService = game:GetService("Stats") end)
+
+    local renderConn
+    renderConn = RunService.RenderStepped:Connect(function()
+        if screenGui and not screenGui.Parent then
+            if renderConn then renderConn:Disconnect() end
+            return
+        end
+        frameCount += 1
+        local now = os.clock()
+        if now - lastCheck >= 0.5 then
+            currentFps = math.clamp(math.floor(frameCount / (now - lastCheck) + 0.5), 1, 999)
+            frameCount = 0
+            lastCheck = now
+
+            local pingMs = 0
+            pcall(function()
+                if StatsService and StatsService.Network and StatsService.Network.ServerStatsItem then
+                    local item = StatsService.Network.ServerStatsItem["Data Ping"]
+                    if item then pingMs = math.floor(item:GetValue() + 0.5) end
+                end
+            end)
+            if pingMs <= 0 then
+                pcall(function()
+                    pingMs = math.floor(localPlayer:GetNetworkPing() * 1000 + 0.5)
+                end)
+            end
+
+            local txt = tostring(currentFps) .. " FPS · " .. tostring(pingMs) .. "ms"
+            local col = THEME.OK
+            if currentFps < 25 or pingMs > 220 then
+                col = THEME.DANGER_HI
+            elseif currentFps < 45 or pingMs > 120 then
+                col = Color3.fromRGB(255, 205, 80)
+            end
+
+            if settings._headerStatsLabel then
+                settings._headerStatsLabel.Text = txt
+                settings._headerStatsLabel.TextColor3 = col
+            end
+            if serverInfoLabels.fpsPing then
+                serverInfoLabels.fpsPing.Text = txt
+                serverInfoLabels.fpsPing.TextColor3 = col
+            end
+        end
+    end)
+end
 
 do
     pcall(function()
@@ -1265,7 +1615,7 @@ addGradient(discordBtn, {
 }, 90)
 create("TextLabel", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-    Text = "◈   JOIN OUR DISCORD", Font = FONT.Bold, TextSize = 15,
+    Text = "◈   انضم إلى سيرفر الديسكورد", Font = FONT.Bold, TextSize = 15,
     TextColor3 = THEME.TX_MAIN, TextStrokeColor3 = Color3.fromRGB(40, 20, 80),
     TextStrokeTransparency = 0.7, ZIndex = 5,
 }, discordBtn)
@@ -1305,7 +1655,7 @@ addStroke(THEME.P_BRIGHT, 1.5, 0.2, spectateIndicator)
 
 local spectateIndicatorLabel = create("TextLabel", {
     Size = UDim2.new(1, -34, 1, 0), BackgroundTransparency = 1,
-    Text = "◉  Spectating", Font = FONT.Bold, TextSize = 12,
+    Text = "◉  مشاهدة", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Center,
     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 101,
 }, spectateIndicator)
@@ -1337,7 +1687,7 @@ local function refreshSpectateButtons()
     for player, refs in pairs(spectateButtons) do
         if refs and refs.btn and refs.btn.Parent then
             local isTarget = (spectate.active and spectate.target == player)
-            refs.btn.Text = isTarget and "◉  Stop" or "◉  Spectate"
+            refs.btn.Text = isTarget and "◉  إيقاف" or "◉  مشاهدة"
             tween(refs.btn, TweenInfo.new(0.2), {
                 BackgroundColor3 = isTarget and THEME.DANGER or THEME.P_MAIN,
             })
@@ -1354,7 +1704,7 @@ local function updateSpectateIndicator()
     local shouldShow = spectate.active and spectate.target
         and spectate.target.Parent and not windowHidden
     if shouldShow then
-        spectateIndicatorLabel.Text = "◉  Spectating: " .. displayNameOf(spectate.target)
+        spectateIndicatorLabel.Text = "◉  مشاهدة: " .. displayNameOf(spectate.target)
         if not spectateIndicator.Visible then
             spectateIndicator.Visible = true
             spectateIndicator.BackgroundTransparency = 1
@@ -1430,8 +1780,8 @@ end
 
 local function startSpectating(targetPlayer)
     if not targetPlayer then return end
-    if targetPlayer == localPlayer then showToast("◉  Cannot spectate yourself"); return end
-    if not targetPlayer.Parent then showToast("◉  Player unavailable"); return end
+    if targetPlayer == localPlayer then showToast("◉  لا يمكنك مشاهدة نفسك"); return end
+    if not targetPlayer.Parent then showToast("◉  اللاعب غير متاح"); return end
     if spectate.active and spectate.target == targetPlayer then stopSpectating(); return end
     if spectate.connection then
         pcall(function() spectate.connection:Disconnect() end)
@@ -1452,13 +1802,13 @@ local function startSpectating(targetPlayer)
     end)
     updateSpectateIndicator(); refreshSpectateButtons()
     local disp = displayNameOf(targetPlayer)
-    if hum then showToast("◉  Spectating " .. disp)
-    else showToast("◉  Waiting for " .. disp .. "…") end
+    if hum then showToast("◉  جاري مشاهدة " .. disp)
+    else showToast("◉  بانتظار ظهور " .. disp .. "…") end
 end
 
 Players.PlayerRemoving:Connect(function(p)
     if spectate.active and spectate.target and spectate.target.UserId == p.UserId then
-        stopSpectating("Target left — camera restored")
+        stopSpectating("غادر اللاعب — تم إرجاع الكاميرا")
     end
 end)
 localPlayer.CharacterAdded:Connect(function()
@@ -1487,9 +1837,9 @@ local TELEPORT_COOLDOWN = 1.0
 local lastTeleportTime = 0
 local function teleportToPlayer(targetPlayer, button)
     if not targetPlayer or not targetPlayer.Parent then
-        showToast("➤  Player unavailable"); return
+        showToast("➤  اللاعب غير متاح"); return
     end
-    if targetPlayer == localPlayer then showToast("➤  Cannot teleport to yourself"); return end
+    if targetPlayer == localPlayer then showToast("➤  لا يمكنك الانتقال إلى نفسك"); return end
     local now = os.clock()
     if now - lastTeleportTime < TELEPORT_COOLDOWN then return end
     lastTeleportTime = now
@@ -1497,22 +1847,22 @@ local function teleportToPlayer(targetPlayer, button)
     local myHum  = myChar and myChar:FindFirstChildOfClass("Humanoid")
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
     if not (myChar and myHum and myRoot) then
-        showToast("➤  Your character is not ready"); return
+        showToast("➤  شخصيتك غير جاهزة"); return
     end
-    if myHum.Health <= 0 then showToast("➤  You are dead"); return end
+    if myHum.Health <= 0 then showToast("➤  شخصيتك ميتة حالياً"); return end
     local targetChar = targetPlayer.Character
     local targetHum  = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
     local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
     if not (targetChar and targetHum and targetRoot) then
-        showToast("➤  " .. displayNameOf(targetPlayer) .. " has no character"); return
+        showToast("➤  " .. displayNameOf(targetPlayer) .. " ليس لديه شخصية حالياً"); return
     end
     if targetHum.Health <= 0 then
-        showToast("➤  " .. displayNameOf(targetPlayer) .. " is dead"); return
+        showToast("➤  " .. displayNameOf(targetPlayer) .. " ميت حالياً"); return
     end
     local destination = targetRoot.CFrame * CFrame.new(0, 0, 4)
     local ok = pcall(function() myChar:PivotTo(destination) end)
     if not ok then pcall(function() myRoot.CFrame = destination end) end
-    showToast("➤  Teleported to " .. displayNameOf(targetPlayer))
+    showToast("➤  تم الانتقال إلى " .. displayNameOf(targetPlayer))
     if button and button.Parent then
         local origText, origBG = button.Text, button.BackgroundColor3
         button.Text = "➤  …"; button.BackgroundColor3 = THEME.BG_CARD_HI
@@ -1544,7 +1894,7 @@ create("TextLabel", {
 local searchBox = create("TextBox", {
     Name = "SearchBox", Size = UDim2.new(1, -72, 1, 0),
     Position = UDim2.new(0, 30, 0, 0), BackgroundTransparency = 1, Text = "",
-    PlaceholderText = "Search username or display name…",
+    PlaceholderText = "ابحث باسم اللاعب أو اليوزر…",
     PlaceholderColor3 = THEME.TX_SUBTLE, Font = FONT.Medium, TextSize = 12,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     ClearTextOnFocus = false, MultiLine = false, TextEditable = true, ZIndex = 5,
@@ -1635,7 +1985,7 @@ local function buildPlayerCard(player, order)
 
     local okAge, accountAge = pcall(function() return player.AccountAge end)
     local ageText = (okAge and typeof(accountAge) == "number")
-        and (tostring(accountAge) .. " days") or "N/A"
+        and (tostring(accountAge) .. " يوم") or "غير متاح"
 
     create("TextLabel", {
         Size = UDim2.new(0, 100, 0, 14), Position = UDim2.new(0, iX, 0, 46),
@@ -1655,7 +2005,7 @@ local function buildPlayerCard(player, order)
         Position = UDim2.new(0, 10, 1, -38),
         BackgroundColor3 = isSpectating and THEME.DANGER or THEME.P_MAIN,
         BackgroundTransparency = 0.05, AutoButtonColor = false,
-        Text = isSpectating and "◉  Stop" or "◉  Spectate",
+        Text = isSpectating and "◉  إيقاف" or "◉  مشاهدة",
         Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
         TextScaled = true, TextWrapped = false, ZIndex = 7,
     }, card)
@@ -1675,7 +2025,7 @@ local function buildPlayerCard(player, order)
         Name = "TeleportBtn", Size = UDim2.new(0.5, -13, 0, 28),
         Position = UDim2.new(0.5, 3, 1, -38),
         BackgroundColor3 = THEME.P_MAIN, BackgroundTransparency = 0.05,
-        AutoButtonColor = false, Text = "➤  Teleport",
+        AutoButtonColor = false, Text = "➤  انتقال",
         Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
         TextScaled = true, TextWrapped = false, ZIndex = 7,
     }, card)
@@ -1708,7 +2058,7 @@ local function renderPlayers(filter)
     if order == 0 then
         create("TextLabel", {
             Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1,
-            Text = "◌  No players match your search",
+            Text = "◌  لا يوجد لاعبين مطابقين للبحث",
             Font = FONT.Medium, TextSize = 12, TextColor3 = THEME.TX_SUBTLE,
             TextXAlignment = Enum.TextXAlignment.Center, TextYAlignment = Enum.TextYAlignment.Center,
             LayoutOrder = 0, ZIndex = 5,
@@ -1838,7 +2188,7 @@ create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.La
 
 local settingsHeader = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1,
-    Text = "✦  SETTINGS", Font = FONT.Bold, TextSize = 14,
+    Text = "✦  الإعدادات", Font = FONT.Bold, TextSize = 14,
     TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = 0, ZIndex = 5,
 }, settingsScroll)
@@ -1953,20 +2303,123 @@ local function createSliderRow(parent, order, labelText, initialValue, onChange)
     return { setValue = function(v) apply(v, false) end, get = function() return current end }
 end
 
-local animRow = createToggleRow(settingsScroll, 1, "Animations", settings.animations, function(v)
-    settings.animations = v
+local animRow = createToggleRow(settingsScroll, 1, "تأثيرات الحركة (الأنيميشن)", settings.animations, function(v)
+    settings.animations = v; settings.saveConfig()
 end)
-local glowRow = createToggleRow(settingsScroll, 2, "Purple Glow", settings.glow, function(v)
-    settings.glow = v; applyGlowState()
+local glowRow = createToggleRow(settingsScroll, 2, "توهج النافذة", settings.glow, function(v)
+    settings.glow = v; applyGlowState(); settings.saveConfig()
 end)
-local transRow = createSliderRow(settingsScroll, 3, "Window Transparency", settings.transparency, function(v)
-    applyWindowTransparency(v)
+local transRow = createSliderRow(settingsScroll, 3, "شفافية النافذة", settings.transparency, function(v)
+    applyWindowTransparency(v); settings.saveConfig()
 end)
+
+do
+    create("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 24),
+        BackgroundTransparency = 1,
+        Text = "✦  ألوان الواجهة",
+        Font = FONT.Bold,
+        TextSize = 12,
+        TextColor3 = THEME.P_GLOW,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        LayoutOrder = 4,
+        ZIndex = 5,
+    }, settingsScroll)
+
+    local themeBtnRefs = {}
+    for idx, tKey in ipairs(settings.THEME_ORDER) do
+        local preset = settings.THEME_PRESETS[tKey]
+        local isCurrent = (settings.theme == tKey)
+        local tBtn = create("TextButton", {
+            Name = "ThemeBtn_" .. tKey,
+            Size = UDim2.new(1, 0, 0, 38),
+            BackgroundColor3 = isCurrent and THEME.BG_CARD_HI or THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            AutoButtonColor = false,
+            Text = "",
+            LayoutOrder = 4 + idx,
+            ZIndex = 4,
+        }, settingsScroll)
+        addCorner(9, tBtn)
+        local tStroke = addStroke(isCurrent and THEME.P_GLOW or THEME.BORDER, isCurrent and 1.5 or 1, isCurrent and 0.05 or 0.25, tBtn)
+
+        local swatch = create("Frame", {
+            Name = "FloatingBtn", -- ignored by theme remapper so swatch keeps its own true color!
+            Size = UDim2.fromOffset(18, 18),
+            Position = UDim2.new(0, 12, 0.5, -9),
+            BackgroundColor3 = preset.dot,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, tBtn)
+        addCorner(9, swatch)
+        local swStroke = addStroke(Color3.fromRGB(255, 255, 255), 1, 0.35, swatch)
+        swStroke.Name = "ThemeSwatchStroke"
+
+        local tLabel = create("TextLabel", {
+            Size = UDim2.new(1, -72, 1, 0),
+            Position = UDim2.new(0, 38, 0, 0),
+            BackgroundTransparency = 1,
+            Text = preset.name,
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 5,
+        }, tBtn)
+
+        local statusMark = create("TextLabel", {
+            Size = UDim2.fromOffset(26, 20),
+            Position = UDim2.new(1, -34, 0.5, -10),
+            BackgroundTransparency = 1,
+            Text = isCurrent and "✓" or "",
+            Font = FONT.Bold,
+            TextSize = 13,
+            TextColor3 = THEME.P_GLOW,
+            ZIndex = 5,
+        }, tBtn)
+
+        themeBtnRefs[tKey] = { btn = tBtn, stroke = tStroke, mark = statusMark }
+        tBtn.MouseButton1Click:Connect(function()
+            settings.applyTheme(tKey, false)
+        end)
+    end
+
+    settings.refreshThemeButtons = function()
+        for tKey, ref in pairs(themeBtnRefs) do
+            local active = (settings.theme == tKey)
+            ref.btn.BackgroundColor3 = active and THEME.BG_CARD_HI or THEME.BG_CARD
+            ref.stroke.Color = active and THEME.P_GLOW or THEME.BORDER
+            ref.stroke.Thickness = active and 1.5 or 1
+            ref.stroke.Transparency = active and 0.05 or 0.25
+            ref.mark.Text = active and "✓" or ""
+            ref.mark.TextColor3 = THEME.P_GLOW
+        end
+    end
+
+    local saveCfgBtn = create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundColor3 = THEME.P_MAIN,
+        AutoButtonColor = false,
+        Text = "💾  حفظ الإعدادات",
+        Font = FONT.Bold,
+        TextSize = 12,
+        TextColor3 = THEME.TX_MAIN,
+        LayoutOrder = 15,
+        ZIndex = 4,
+    }, settingsScroll)
+    addCorner(10, saveCfgBtn)
+    addStroke(THEME.P_GLOW, 1.2, 0.2, saveCfgBtn)
+    saveCfgBtn.MouseButton1Click:Connect(function()
+        settings.saveConfig()
+        showToast("💾  تم حفظ جميع الإعدادات بنجاح!")
+    end)
+end
+
 local resetBtn = create("TextButton", {
     Size = UDim2.new(1, 0, 0, 42), BackgroundColor3 = THEME.BG_CARD,
-    AutoButtonColor = false, Text = "↻  RESET TO DEFAULTS",
+    AutoButtonColor = false, Text = "↻  استعادة الإعدادات الافتراضية",
     Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.DANGER_HI,
-    LayoutOrder = 4, ZIndex = 4,
+    LayoutOrder = 20, ZIndex = 4,
 }, settingsScroll)
 addCorner(10, resetBtn); addStroke(THEME.DANGER, 1.2, 0.15, resetBtn)
 
@@ -1985,6 +2438,8 @@ local playerState = {
     flight = { active = false, speed = 60, bodyVel = nil, conn = nil },
     gravity = { applied = false, value = 196.2, original = 196.2 },
     rotation = { active = false, speed = 10, bodyAV = nil },
+    lockMove = { active = false, conn = nil },
+    clickTp = { active = false, tool = nil },
     noclip = { active = false, conn = nil, originals = {} },
     infiniteJump = { active = false, conn = nil },
     swimming = { active = false, bodyForce = nil },
@@ -2125,7 +2580,7 @@ local function createActionButtons(parent, order, applyLabel, applyColor, onAppl
     local resetB = create("TextButton", {
         Size = UDim2.new(0.5, -4, 1, 0), Position = UDim2.new(0.5, 4, 0, 0),
         BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
-        Text = "↻  Reset", Font = FONT.Bold, TextSize = 11,
+        Text = "↻  إعادة ضبط", Font = FONT.Bold, TextSize = 11,
         TextColor3 = THEME.DANGER_HI, ZIndex = 5,
     }, row)
     addCorner(8, resetB)
@@ -2146,60 +2601,86 @@ end
 local uiOrder = 0
 local function nextOrder() uiOrder += 1; return uiOrder end
 
-addSectionHeader("MOVEMENT", nextOrder())
+addSectionHeader("الحركة والسرعة", nextOrder())
 
-local speedSlider = createRangeSlider(playerPage, nextOrder(), "◉ Speed", 16, 500, playerState.speed.value, function(v)
+local speedSlider = createRangeSlider(playerPage, nextOrder(), "◉ السرعة", 16, 500, playerState.speed.value, function(v)
     playerState.speed.value = v
     if playerState.speed.applied then
         local hum = getHumanoid(localPlayer)
         if hum then hum.WalkSpeed = v end
     end
 end)
-createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
     local hum = getHumanoid(localPlayer)
     if hum then
         hum.WalkSpeed = playerState.speed.value
         playerState.speed.applied = true
-        showToast("◉  Speed applied: " .. playerState.speed.value)
-    else showToast("◉  Character not ready") end
+        showToast("◉  تم تطبيق السرعة: " .. playerState.speed.value)
+    else showToast("◉  الشخصية غير جاهزة") end
 end, function()
     playerState.speed.value = playerState.speed.original
     speedSlider.setValue(playerState.speed.original)
     local hum = getHumanoid(localPlayer)
     if hum then hum.WalkSpeed = playerState.speed.original end
     playerState.speed.applied = false
-    showToast("↻  Speed reset")
+    showToast("↻  تمت إعادة ضبط السرعة")
 end)
 
-local jumpSlider = createRangeSlider(playerPage, nextOrder(), "◈ Jump Power", 50, 500, playerState.jump.value, function(v)
+local jumpSlider = createRangeSlider(playerPage, nextOrder(), "◈ قوة القفز", 50, 500, playerState.jump.value, function(v)
     playerState.jump.value = v
     if playerState.jump.applied then
         local hum = getHumanoid(localPlayer)
         if hum then hum.UseJumpPower = true; hum.JumpPower = v end
     end
 end)
-createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
     local hum = getHumanoid(localPlayer)
     if hum then
         hum.UseJumpPower = true
         hum.JumpPower = playerState.jump.value
         playerState.jump.applied = true
-        showToast("◈  Jump applied: " .. playerState.jump.value)
-    else showToast("◈  Character not ready") end
+        showToast("◈  تم تطبيق القفز: " .. playerState.jump.value)
+    else showToast("◈  الشخصية غير جاهزة") end
 end, function()
     playerState.jump.value = playerState.jump.original
     jumpSlider.setValue(playerState.jump.original)
     local hum = getHumanoid(localPlayer)
     if hum then hum.UseJumpPower = true; hum.JumpPower = playerState.jump.original end
     playerState.jump.applied = false
-    showToast("↻  Jump reset")
+    showToast("↻  تمت إعادة ضبط القفز")
 end)
 
-local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "Hover & fly toward camera look", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ تثبيت السرعة والقفز", "يثبت السرعة والقفز ضد التصفير التلقائي", false, function(v)
+    playerState.lockMove.active = v
+    if playerState.lockMove.conn then
+        pcall(function() playerState.lockMove.conn:Disconnect() end)
+        playerState.lockMove.conn = nil
+    end
+    if v then
+        playerState.lockMove.conn = RunService.Heartbeat:Connect(function()
+            if not playerState.lockMove.active then return end
+            local hum = getHumanoid(localPlayer)
+            if hum then
+                if hum.WalkSpeed ~= playerState.speed.value then
+                    hum.WalkSpeed = playerState.speed.value
+                end
+                if not hum.UseJumpPower then hum.UseJumpPower = true end
+                if hum.JumpPower ~= playerState.jump.value then
+                    hum.JumpPower = playerState.jump.value
+                end
+            end
+        end)
+        showToast("◈  تم تفعيل تثبيت السرعة والقفز")
+    else
+        showToast("◈  تم إيقاف تثبيت السرعة والقفز")
+    end
+end)
+
+local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ الطيران", "التحليق والطيران باتجاه الكاميرا", false, function(v)
     playerState.flight.active = v
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  Character not ready"); return end
+        if not char then showToast("◈  الشخصية غير جاهزة"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end) end
@@ -2222,39 +2703,39 @@ local flightToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Flight", "
                 bv.Velocity = Vector3.zero
             end
         end)
-        showToast("◈  Flight ON — move joystick to fly")
+        showToast("◈  تم تفعيل الطيران — تحرك للطيران")
     else
         if playerState.flight.conn then pcall(function() playerState.flight.conn:Disconnect() end); playerState.flight.conn = nil end
         if playerState.flight.bodyVel then pcall(function() playerState.flight.bodyVel:Destroy() end); playerState.flight.bodyVel = nil end
-        showToast("◈  Flight OFF")
+        showToast("◈  تم إيقاف الطيران")
     end
 end)
-createRangeSlider(playerPage, nextOrder(), "↝ Flight Speed", 10, 300, playerState.flight.speed, function(v)
+createRangeSlider(playerPage, nextOrder(), "↝ سرعة الطيران", 10, 300, playerState.flight.speed, function(v)
     playerState.flight.speed = v
 end)
 
-local gravitySlider = createRangeSlider(playerPage, nextOrder(), "◉ Gravity", 0, 196, math.floor(playerState.gravity.original), function(v)
+local gravitySlider = createRangeSlider(playerPage, nextOrder(), "◉ الجاذبية", 0, 196, math.floor(playerState.gravity.original), function(v)
     playerState.gravity.value = v; playerState.gravity.applied = true
     workspace.Gravity = v
 end)
-createActionButtons(playerPage, nextOrder(), "Apply  ✓", THEME.P_MAIN, function()
+createActionButtons(playerPage, nextOrder(), "تطبيق  ✓", THEME.P_MAIN, function()
     workspace.Gravity = playerState.gravity.value
     playerState.gravity.applied = true
-    showToast("◉  Gravity: " .. playerState.gravity.value)
+    showToast("◉  الجاذبية: " .. playerState.gravity.value)
 end, function()
     playerState.gravity.value = playerState.gravity.original
     workspace.Gravity = playerState.gravity.original
     gravitySlider.setValue(math.floor(playerState.gravity.original))
     playerState.gravity.applied = false
-    showToast("↻  Gravity reset")
+    showToast("↻  تمت إعادة ضبط الجاذبية")
 end)
 
-local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Rotation", "Spin your character in place", false, function(v)
+local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ الدوران", "تدوير شخصيتك في مكانها", false, function(v)
     playerState.rotation.active = v
     if playerState.rotation.bodyAV then pcall(function() playerState.rotation.bodyAV:Destroy() end); playerState.rotation.bodyAV = nil end
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  Character not ready"); return end
+        if not char then showToast("◈  الشخصية غير جاهزة"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         local av = Instance.new("BodyAngularVelocity")
@@ -2263,19 +2744,19 @@ local rotationToggle = createPlayerToggle(playerPage, nextOrder(), "◈ Rotation
         av.AngularVelocity = Vector3.new(0, playerState.rotation.speed, 0)
         av.Parent = root
         playerState.rotation.bodyAV = av
-        showToast("◈  Rotation ON")
-    else showToast("◈  Rotation OFF") end
+        showToast("◈  تم تفعيل الدوران")
+    else showToast("◈  تم إيقاف الدوران") end
 end)
-createRangeSlider(playerPage, nextOrder(), "↻ Rotation Speed", 1, 50, playerState.rotation.speed, function(v)
+createRangeSlider(playerPage, nextOrder(), "↻ سرعة الدوران", 1, 50, playerState.rotation.speed, function(v)
     playerState.rotation.speed = v
     if playerState.rotation.bodyAV and playerState.rotation.bodyAV.Parent then
         playerState.rotation.bodyAV.AngularVelocity = Vector3.new(0, v, 0)
     end
 end)
 
-addSectionHeader("SPECIAL MOVEMENT", nextOrder())
+addSectionHeader("حركات خاصة", nextOrder())
 
-createPlayerToggle(playerPage, nextOrder(), "◈ Noclip", "Walk through walls & obstacles", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ اختراق الجدران", "المشي عبر الجدران والعوائق", false, function(v)
     playerState.noclip.active = v
     if v then
         if playerState.noclip.conn then pcall(function() playerState.noclip.conn:Disconnect() end) end
@@ -2291,7 +2772,7 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Noclip", "Walk through walls & 
                 end
             end
         end)
-        showToast("◈  Noclip ON")
+        showToast("◈  تم تفعيل اختراق الجدران")
     else
         if playerState.noclip.conn then
             pcall(function() playerState.noclip.conn:Disconnect() end)
@@ -2303,11 +2784,11 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Noclip", "Walk through walls & 
             end
         end
         playerState.noclip.originals = {}
-        showToast("◈  Noclip OFF")
+        showToast("◈  تم إيقاف اختراق الجدران")
     end
 end)
 
-createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedly while holding space", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ قفز لا نهائي", "القفز المتكرر في الهواء بلا حدود", false, function(v)
     playerState.infiniteJump.active = v
     if v then
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end) end
@@ -2316,19 +2797,19 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Infinite Jump", "Jump repeatedl
             local hum = getHumanoid(localPlayer)
             if hum and hum.Health > 0 then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
         end)
-        showToast("◈  Infinite Jump ON")
+        showToast("◈  تم تفعيل القفز اللانهائي")
     else
         if playerState.infiniteJump.conn then pcall(function() playerState.infiniteJump.conn:Disconnect() end); playerState.infiniteJump.conn = nil end
-        showToast("◈  Infinite Jump OFF")
+        showToast("◈  تم إيقاف القفز اللانهائي")
     end
 end)
 
-createPlayerToggle(playerPage, nextOrder(), "◈ Swimming", "Float in the air (local only)", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ السباحة في الهواء", "الطفو في الهواء (محلي فقط)", false, function(v)
     playerState.swimming.active = v
     if playerState.swimming.bodyForce then pcall(function() playerState.swimming.bodyForce:Destroy() end); playerState.swimming.bodyForce = nil end
     if v then
         local char = localPlayer.Character
-        if not char then showToast("◈  Character not ready"); return end
+        if not char then showToast("◈  الشخصية غير جاهزة"); return end
         local root = char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         local bf = Instance.new("BodyForce")
@@ -2336,27 +2817,88 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Swimming", "Float in the air (l
         bf.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity, 0)
         bf.Parent = root
         playerState.swimming.bodyForce = bf
-        showToast("◈  Swimming ON")
-    else showToast("◈  Swimming OFF") end
+        showToast("◈  تم تفعيل السباحة في الهواء")
+    else showToast("◈  تم إيقاف السباحة في الهواء") end
 end)
 
-addSectionHeader("VISUALS", nextOrder())
+do
+    local TOOL_NAME = "✦ LYNEX Click TP"
+    local function removeClickTpTool()
+        if playerState.clickTp.tool then
+            pcall(function() playerState.clickTp.tool:Destroy() end)
+            playerState.clickTp.tool = nil
+        end
+        pcall(function()
+            local bp = localPlayer:FindFirstChildOfClass("Backpack")
+            if bp then
+                for _, c in ipairs(bp:GetChildren()) do
+                    if c:IsA("Tool") and c.Name == TOOL_NAME then c:Destroy() end
+                end
+            end
+            local ch = localPlayer.Character
+            if ch then
+                for _, c in ipairs(ch:GetChildren()) do
+                    if c:IsA("Tool") and c.Name == TOOL_NAME then c:Destroy() end
+                end
+            end
+        end)
+    end
 
-createPlayerToggle(playerPage, nextOrder(), "▣ iPad View", "Wider camera FOV (local only)", false, function(v)
+    local function giveClickTpTool()
+        removeClickTpTool()
+        local bp = localPlayer:FindFirstChildOfClass("Backpack")
+        if not bp then showToast("✕  الحقيبة غير جاهزة"); return end
+        local tool = Instance.new("Tool")
+        tool.Name = TOOL_NAME
+        tool.RequiresHandle = false
+        tool.CanBeDropped = false
+        tool.Activated:Connect(function()
+            pcall(function()
+                local mouse = localPlayer:GetMouse()
+                local char = localPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                if mouse and mouse.Hit and root then
+                    root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+                    showToast("⇄  تم الانتقال!")
+                end
+            end)
+        end)
+        tool.Parent = bp
+        playerState.clickTp.tool = tool
+    end
+
+    settings._giveClickTpTool = giveClickTpTool
+    settings._removeClickTpTool = removeClickTpTool
+
+    createPlayerToggle(playerPage, nextOrder(), "◈ أداة الانتقال باللمس", "أداة بالحقيبة للانتقال لأي مكان تضغط عليه", false, function(v)
+        playerState.clickTp.active = v
+        if v then
+            giveClickTpTool()
+            showToast("◈  تمت إضافة أداة الانتقال في الحقيبة!")
+        else
+            removeClickTpTool()
+            showToast("◈  تمت إزالة أداة الانتقال")
+        end
+    end)
+end
+
+addSectionHeader("البصريات والكاميرا", nextOrder())
+
+createPlayerToggle(playerPage, nextOrder(), "▣ منظور الآيباد", "توسيع مجال رؤية الكاميرا (محلي فقط)", false, function(v)
     playerState.ipadView.active = v
     local cam = workspace.CurrentCamera
     if not cam then return end
     if v then
         playerState.ipadView.originalFov = cam.FieldOfView
         cam.FieldOfView = 80
-        showToast("▣  iPad View ON (FOV 80)")
+        showToast("▣  تم تفعيل منظور الآيباد")
     else
         cam.FieldOfView = playerState.ipadView.originalFov or 70
-        showToast("▣  iPad View OFF")
+        showToast("▣  تم إيقاف منظور الآيباد")
     end
 end)
 
-createPlayerToggle(playerPage, nextOrder(), "◈ Invisible", "Local only — others still see you", false, function(v)
+createPlayerToggle(playerPage, nextOrder(), "◈ الاختفاء", "إخفاء شخصيتك على شاشتك (محلي فقط)", false, function(v)
     playerState.invisible.active = v
     local char = localPlayer.Character
     if not char then return end
@@ -2368,23 +2910,206 @@ createPlayerToggle(playerPage, nextOrder(), "◈ Invisible", "Local only — oth
                 part.Transparency = 1
             end
         end
-        showToast("◈  Invisible ON (local only)")
+        showToast("◈  تم تفعيل الاختفاء (محلي فقط)")
     else
         for part, orig in pairs(playerState.invisible.originals) do
             if part and part.Parent then part.Transparency = orig end
         end
         playerState.invisible.originals = {}
-        showToast("◈  Invisible OFF")
+        showToast("◈  تم إيقاف الاختفاء")
     end
 end)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 34), BackgroundTransparency = 1,
-    Text = "⚠ Invisible & iPad View affect only your local client, not other players or the server.",
+    Text = "⚠ الاختفاء ومنظور الآيباد يؤثران على شاشتك فقط ولا يظهران لبقية اللاعبين.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = nextOrder(), ZIndex = 4,
 }, playerPage)
+
+do
+    addSectionHeader("حفظ الأماكن", nextOrder())
+
+    local placeKey = tostring(game.PlaceId or 0)
+    if type(settings.waypoints[placeKey]) ~= "table" then
+        settings.waypoints[placeKey] = {}
+    end
+
+    local wpInputCard = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 78),
+        BackgroundColor3 = THEME.BG_CARD,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        LayoutOrder = nextOrder(),
+        ZIndex = 4,
+    }, playerPage)
+    addCorner(10, wpInputCard)
+    addStroke(THEME.BORDER, 1, 0.2, wpInputCard)
+
+    local wpBoxWrap = create("Frame", {
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 10, 0, 8),
+        BackgroundColor3 = THEME.BG_CARD_HI,
+        BorderSizePixel = 0,
+        ZIndex = 5,
+    }, wpInputCard)
+    addCorner(7, wpBoxWrap)
+    addStroke(THEME.BORDER, 1, 0.3, wpBoxWrap)
+
+    local wpNameBox = create("TextBox", {
+        Size = UDim2.new(1, -16, 1, 0),
+        Position = UDim2.new(0, 8, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        PlaceholderText = "اكتب اسم المكان هنا...",
+        PlaceholderColor3 = THEME.TX_SUBTLE,
+        Font = FONT.Medium,
+        TextSize = 11,
+        TextColor3 = THEME.TX_MAIN,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ClearTextOnFocus = false,
+        ZIndex = 6,
+    }, wpBoxWrap)
+
+    local wpSaveBtn = create("TextButton", {
+        Size = UDim2.new(1, -20, 0, 28),
+        Position = UDim2.new(0, 10, 0, 43),
+        BackgroundColor3 = THEME.P_MAIN,
+        AutoButtonColor = false,
+        Text = "⊕  حفظ موقعي الحالي",
+        Font = FONT.Bold,
+        TextSize = 11,
+        TextColor3 = THEME.TX_MAIN,
+        ZIndex = 5,
+    }, wpInputCard)
+    addCorner(7, wpSaveBtn)
+    addStroke(THEME.P_GLOW, 1, 0.25, wpSaveBtn)
+
+    local wpListFrame = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        LayoutOrder = nextOrder(),
+        ZIndex = 4,
+    }, playerPage)
+    create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, wpListFrame)
+
+    local function renderWaypoints()
+        for _, ch in ipairs(wpListFrame:GetChildren()) do
+            if ch:IsA("Frame") or ch:IsA("TextLabel") then ch:Destroy() end
+        end
+        local list = settings.waypoints[placeKey] or {}
+        if #list == 0 then
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 22),
+                BackgroundTransparency = 1,
+                Text = "لا توجد أماكن محفوظة بعد في هذا الماب.",
+                Font = FONT.Regular,
+                TextSize = 10,
+                TextColor3 = THEME.TX_SUBTLE,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                ZIndex = 4,
+            }, wpListFrame)
+            return
+        end
+        for idx, wp in ipairs(list) do
+            local item = create("Frame", {
+                Size = UDim2.new(1, 0, 0, 38),
+                BackgroundColor3 = THEME.BG_CARD,
+                BackgroundTransparency = 0.05,
+                BorderSizePixel = 0,
+                LayoutOrder = idx,
+                ZIndex = 4,
+            }, wpListFrame)
+            addCorner(8, item)
+            addStroke(THEME.BORDER, 1, 0.25, item)
+
+            create("TextLabel", {
+                Size = UDim2.new(1, -116, 1, 0),
+                Position = UDim2.new(0, 10, 0, 0),
+                BackgroundTransparency = 1,
+                Text = "◈  " .. tostring(wp.name),
+                Font = FONT.Bold,
+                TextSize = 11,
+                TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 5,
+            }, item)
+
+            local tpBtn = create("TextButton", {
+                Size = UDim2.fromOffset(64, 26),
+                Position = UDim2.new(1, -100, 0.5, -13),
+                BackgroundColor3 = THEME.P_MAIN,
+                AutoButtonColor = false,
+                Text = "⇄ انتقال",
+                Font = FONT.Bold,
+                TextSize = 10,
+                TextColor3 = THEME.TX_MAIN,
+                ZIndex = 5,
+            }, item)
+            addCorner(6, tpBtn)
+            addStroke(THEME.P_GLOW, 1, 0.3, tpBtn)
+
+            local delBtn = create("TextButton", {
+                Size = UDim2.fromOffset(26, 26),
+                Position = UDim2.new(1, -32, 0.5, -13),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                AutoButtonColor = false,
+                Text = "×",
+                Font = FONT.Bold,
+                TextSize = 14,
+                TextColor3 = THEME.DANGER_HI,
+                ZIndex = 5,
+            }, item)
+            addCorner(6, delBtn)
+            addStroke(THEME.DANGER, 1, 0.3, delBtn)
+
+            tpBtn.MouseButton1Click:Connect(function()
+                local char = localPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                if root then
+                    root.CFrame = CFrame.new(wp.x, wp.y, wp.z)
+                    showToast("⇄  تم الانتقال إلى: " .. tostring(wp.name))
+                else
+                    showToast("✕  الشخصية غير جاهزة")
+                end
+            end)
+
+            delBtn.MouseButton1Click:Connect(function()
+                table.remove(list, idx)
+                settings.saveConfig()
+                renderWaypoints()
+                showToast("✕  تم حذف المكان")
+            end)
+        end
+    end
+
+    wpSaveBtn.MouseButton1Click:Connect(function()
+        local char = localPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then showToast("✕  الشخصية غير جاهزة"); return end
+        local list = settings.waypoints[placeKey]
+        local rawName = (wpNameBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+        if rawName == "" then
+            rawName = "مكان #" .. tostring(#list + 1)
+        end
+        local pos = root.Position
+        table.insert(list, {
+            name = rawName,
+            x = math.floor(pos.X * 10) / 10,
+            y = math.floor(pos.Y * 10) / 10,
+            z = math.floor(pos.Z * 10) / 10,
+        })
+        wpNameBox.Text = ""
+        settings.saveConfig()
+        renderWaypoints()
+        showToast("⊕  تم حفظ المكان: " .. rawName)
+    end)
+
+    renderWaypoints()
+end
 
 localPlayer.CharacterAdded:Connect(function(char)
     task.wait(0.2)
@@ -2432,6 +3157,9 @@ localPlayer.CharacterAdded:Connect(function(char)
     if playerState.noclip.active then
         playerState.noclip.originals = {}
     end
+    if playerState.clickTp.active and settings._giveClickTpTool then
+        pcall(settings._giveClickTpTool)
+    end
     if playerState.ipadView.active then
         local cam = workspace.CurrentCamera
         if cam then cam.FieldOfView = 80 end
@@ -2442,6 +3170,8 @@ _G.LYNEX_CLEANUP = function()
     if playerState.gravity.applied then
         pcall(function() workspace.Gravity = playerState.gravity.original end)
     end
+    if playerState.lockMove.conn then pcall(function() playerState.lockMove.conn:Disconnect() end) end
+    if settings._removeClickTpTool then pcall(settings._removeClickTpTool) end
     if playerState.noclip.conn then pcall(function() playerState.noclip.conn:Disconnect() end) end
     if playerState.noclip.active then
         for part in pairs(playerState.noclip.originals) do
@@ -5630,14 +6360,14 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 22), Position = UDim2.new(0, 82, 0, 14),
-    BackgroundTransparency = 1, Text = "Misc Utilities",
+    BackgroundTransparency = 1, Text = "أدوات متنوعة",
     Font = FONT.Logo, TextSize = 16, TextColor3 = THEME.TX_MAIN,
     TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
 }, miscHeaderCard)
 create("TextLabel", {
     Size = UDim2.new(1, -88, 0, 40), Position = UDim2.new(0, 82, 0, 38),
     BackgroundTransparency = 1,
-    Text = "Client-side tweaks: Graphics, Time, Server, Camera.",
+    Text = "تعديلات سريعة: الجرافيكس، الأداء، الإضاءة، السيرفر، والكاميرا.",
     Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscHeaderCard)
@@ -5651,7 +6381,7 @@ addCorner(8, miscNotice); addStroke(Color3.fromRGB(200, 140, 60), 1, 0.3, miscNo
 create("TextLabel", {
     Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0),
     BackgroundTransparency = 1,
-    Text = "⚠  Graphics, Time & Zoom changes are CLIENT-SIDE only.",
+    Text = "⚠  تغييرات الجرافيكس والإضاءة والزوم تظهر على شاشتك فقط.",
     Font = FONT.Medium, TextSize = 9, TextColor3 = Color3.fromRGB(255, 210, 150),
     TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 5,
 }, miscNotice)
@@ -5738,10 +6468,10 @@ local qualityStatusLbl
 local function updateQualityStatus()
     if not qualityStatusLbl then return end
     local lvl = getCurrentQualityLevel()
-    if not lvl then qualityStatusLbl.Text = "◈ Current: Unknown / Automatic"; return end
+    if not lvl then qualityStatusLbl.Text = "◈ الجودة الحالية: غير معروف / تلقائي"; return end
     local idx = getQualityIndex(lvl)
-    if idx then qualityStatusLbl.Text = "◈ Current: Level " .. idx .. " / 10"
-    else qualityStatusLbl.Text = "◈ Current: Automatic" end
+    if idx then qualityStatusLbl.Text = "◈ الجودة الحالية: المستوى " .. idx .. " / 10"
+    else qualityStatusLbl.Text = "◈ الجودة الحالية: تلقائي" end
 end
 
 local function captureQualityOriginal()
@@ -5760,14 +6490,14 @@ local function increaseQuality()
             Lighting.EnvironmentDiffuseScale = 1
             Lighting.EnvironmentSpecularScale = 1
         end)
-        showToast("◈  Quality boosted (Lighting fallback)")
+        showToast("◈  تم رفع الجودة")
         return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.min(idx + 1, #QUALITY_LEVELS)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
-    else showToast("✕  Cannot change quality") end
+        updateQualityStatus(); showToast("◈  الجودة: المستوى " .. idx)
+    else showToast("✕  تعذر تغيير الجودة") end
 end
 
 local function decreaseQuality()
@@ -5780,14 +6510,14 @@ local function decreaseQuality()
             Lighting.EnvironmentDiffuseScale = 0
             Lighting.EnvironmentSpecularScale = 0
         end)
-        showToast("◈  Quality reduced (Lighting fallback)")
+        showToast("◈  تم خفض الجودة")
         return
     end
     local idx = getQualityIndex(lvl) or 5
     idx = math.max(idx - 1, 1)
     if setQualityLevel(QUALITY_LEVELS[idx]) then
-        updateQualityStatus(); showToast("◈  Quality: Level " .. idx)
-    else showToast("✕  Cannot change quality") end
+        updateQualityStatus(); showToast("◈  الجودة: المستوى " .. idx)
+    else showToast("✕  تعذر تغيير الجودة") end
 end
 
 local function captureLightingOriginals()
@@ -5810,7 +6540,7 @@ local function applyNight()
         Lighting.ColorShift_Bottom = Color3.fromRGB(10, 10, 20)
         Lighting.FogEnd = 500; Lighting.FogStart = 50
     end)
-    showToast("◈  Night applied (local only)")
+    showToast("◈  تم تفعيل الوضع الليلي")
 end
 
 local function applyDay()
@@ -5823,7 +6553,7 @@ local function applyDay()
         Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
         Lighting.FogEnd = 10000; Lighting.FogStart = 0
     end)
-    showToast("◈  Day applied (local only)")
+    showToast("◈  تم تفعيل وضع النهار")
 end
 
 local teleportBusy = false
@@ -5852,13 +6582,13 @@ local function showConfirm(titleText, messageText, onConfirm)
     }, modal)
     local cancelBtn = create("TextButton", {
         Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0, 12, 1, -46),
-        BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false, Text = "Cancel",
+        BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false, Text = "إلغاء",
         Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_DIM, ZIndex = 202,
     }, modal)
     addCorner(8, cancelBtn); addStroke(THEME.BORDER, 1, 0.3, cancelBtn)
     local confirmBtn = create("TextButton", {
         Size = UDim2.new(0.5, -18, 0, 34), Position = UDim2.new(0.5, 6, 1, -46),
-        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false, Text = "Confirm",
+        BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false, Text = "تأكيد",
         Font = FONT.Bold, TextSize = 12, TextColor3 = THEME.TX_MAIN, ZIndex = 202,
     }, modal)
     addCorner(8, confirmBtn); addStroke(THEME.P_GLOW, 1.5, 0.2, confirmBtn)
@@ -5871,9 +6601,9 @@ end
 
 local function changeServer()
     if teleportBusy then return end
-    showConfirm("Change Server", "You will be teleported to a new server.",
+    showConfirm("تغيير السيرفر", "سيتم نقلك الآن إلى سيرفر جديد.",
         function()
-            teleportBusy = true; showToast("◈  Finding new server…")
+            teleportBusy = true; showToast("◈  جاري البحث عن سيرفر جديد…")
             local ok, err = pcall(function() TeleportService:Teleport(game.PlaceId, localPlayer) end)
             if not ok then showToast("✕  " .. tostring(err)); teleportBusy = false end
             task.delay(3, function() teleportBusy = false end)
@@ -5882,9 +6612,9 @@ end
 
 local function rejoinServer()
     if teleportBusy then return end
-    showConfirm("Rejoin Server", "You will rejoin this same server.",
+    showConfirm("إعادة الدخول", "سيتم إعادة إدخالك إلى نفس السيرفر الحالي.",
         function()
-            teleportBusy = true; showToast("◈  Rejoining server…")
+            teleportBusy = true; showToast("◈  جاري إعادة الدخول للسيرفر…")
             local ok, err = pcall(function()
                 if game.JobId and game.JobId ~= "" then
                     TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
@@ -5906,29 +6636,153 @@ local function toggleInfiniteZoom(enabled)
             localPlayer.CameraMaxZoomDistance = 10000
             localPlayer.CameraMinZoomDistance = 0.1
         end)
-        if ok then miscState.zoomActive = true; showToast("◉  Infinite Zoom ON")
-        else showToast("✕  Camera locked") end
+        if ok then miscState.zoomActive = true; showToast("◉  تم تفعيل الزوم اللانهائي")
+        else showToast("✕  الكاميرا مقفلة من الماب") end
     else
         pcall(function()
             localPlayer.CameraMaxZoomDistance = miscState.zoomOriginalMax or 400
             localPlayer.CameraMinZoomDistance = miscState.zoomOriginalMin or 0.5
         end)
-        miscState.zoomActive = false; showToast("◉  Infinite Zoom OFF")
+        miscState.zoomActive = false; showToast("◉  تم إيقاف الزوم اللانهائي")
     end
+end
+
+local antiAfkConn = nil
+local fullBrightConn = nil
+
+local function boostFPS()
+    showToast("⚡  جاري تحسين الفريمات وإزالة اللاغ…")
+    task.spawn(function()
+        pcall(function()
+            Lighting.GlobalShadows = false
+            Lighting.FogEnd = 9e9
+            Lighting.ShadowSoftness = 0
+            for _, eff in ipairs(Lighting:GetChildren()) do
+                if eff.Name ~= "LYNEX_HUB_Blur" and (eff:IsA("PostEffect") or eff:IsA("BloomEffect")
+                   or eff:IsA("BlurEffect") or eff:IsA("SunRaysEffect")
+                   or eff:IsA("ColorCorrectionEffect") or eff:IsA("DepthOfFieldEffect")) then
+                    eff.Enabled = false
+                end
+            end
+        end)
+        pcall(function()
+            local terrain = workspace:FindFirstChildOfClass("Terrain")
+            if terrain then
+                terrain.WaterWaveSize = 0
+                terrain.WaterWaveSpeed = 0
+                terrain.WaterReflectance = 0
+                terrain.WaterTransparency = 0
+            end
+        end)
+        local count = 0
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            count += 1
+            if count % 250 == 0 then task.wait() end
+            pcall(function()
+                if obj:IsA("BasePart") and not obj:IsA("Terrain") then
+                    obj.Material = Enum.Material.SmoothPlastic
+                    obj.Reflectance = 0
+                    obj.CastShadow = false
+                elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail")
+                    or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
+                    obj.Enabled = false
+                elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                    obj.Transparency = math.max(obj.Transparency, 0.65)
+                end
+            end)
+        end
+        showToast("⚡  تم رفع الفريمات وإزالة اللاغ بنجاح!")
+    end)
+end
+
+local function lowServerHop()
+    if teleportBusy then return end
+    teleportBusy = true
+    showToast("⇣  جاري البحث عن سيرفر شبه فارغ…")
+    task.spawn(function()
+        local HttpService = game:GetService("HttpService")
+        local url = "https://games.roblox.com/v1/games/" .. tostring(game.PlaceId) .. "/servers/Public?sortOrder=Asc&limit=100"
+        local body, err = fetchUrl(url)
+        if not body then
+            teleportBusy = false
+            showToast("✕  فشل جلب السيرفرات: " .. tostring(err))
+            return
+        end
+        local okDec, decoded = pcall(function() return HttpService:JSONDecode(body) end)
+        if not okDec or type(decoded) ~= "table" or type(decoded.data) ~= "table" then
+            teleportBusy = false
+            showToast("✕  تعذر قراءة قائمة السيرفرات")
+            return
+        end
+        local chosen = nil
+        for _, srv in ipairs(decoded.data) do
+            local id = srv.id
+            local playing = tonumber(srv.playing) or 0
+            local maxP = tonumber(srv.maxPlayers) or 999
+            if id and id ~= game.JobId and playing >= 1 and playing < maxP then
+                if not chosen or playing < chosen.playing then
+                    chosen = { id = id, playing = playing }
+                end
+            end
+        end
+        if not chosen then
+            teleportBusy = false
+            showToast("◈  لم يتم العثور على سيرفر فارغ متاح")
+            return
+        end
+        showToast("⇣  جاري النقل لسيرفر فيه " .. tostring(chosen.playing) .. " لاعب…")
+        local okTp, errTp = pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, chosen.id, localPlayer)
+        end)
+        if not okTp then
+            teleportBusy = false
+            showToast("✕  " .. tostring(errTp))
+        else
+            task.delay(4, function() teleportBusy = false end)
+        end
+    end)
 end
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  GRAPHICS", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  الأداء وعدم الفصل", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscRow(miscPage, miscOrder(), "▲  Increase Quality", "▼  Decrease Quality", increaseQuality, decreaseQuality)
+createPlayerToggle(miscPage, miscOrder(), "◉ مانع الفصل التلقائي", "يمنع طردك بعد 20 دقيقة من الوقوف", false, function(enabled)
+    if antiAfkConn then
+        pcall(function() antiAfkConn:Disconnect() end)
+        antiAfkConn = nil
+    end
+    if enabled then
+        antiAfkConn = localPlayer.Idled:Connect(function()
+            pcall(function()
+                local vu = game:GetService("VirtualUser")
+                vu:CaptureController()
+                vu:ClickButton2(Vector2.new(0, 0))
+            end)
+        end)
+        showToast("◉  تم تفعيل مانع الفصل — لن يتم طردك")
+    else
+        showToast("◉  تم إيقاف مانع الفصل")
+    end
+end)
+
+createMiscButton(miscPage, miscOrder(), "⚡  رفع الفريمات وإزالة اللاغ", THEME.P_MAIN, THEME.P_GLOW, boostFPS)
+
+create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+    Text = "✦  الجرافيكس والجودة", Font = FONT.Bold, TextSize = 12,
+    TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
+    LayoutOrder = miscOrder(), ZIndex = 5,
+}, miscPage)
+
+createMiscRow(miscPage, miscOrder(), "▲  رفع الجودة", "▼  خفض الجودة", increaseQuality, decreaseQuality)
 
 qualityStatusLbl = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1,
-    Text = "◈ Current: —", Font = FONT.Medium, TextSize = 10,
+    Text = "◈ الجودة الحالية: —", Font = FONT.Medium, TextSize = 10,
     TextColor3 = THEME.TX_SUBTLE, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
@@ -5936,16 +6790,47 @@ updateQualityStatus()
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  TIME OF DAY", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  الوقت والإضاءة", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscRow(miscPage, miscOrder(), "☾  Night", "☀  Day", applyNight, applyDay)
+createMiscRow(miscPage, miscOrder(), "☾  الوضع الليلي", "☀  وضع النهار", applyNight, applyDay)
+
+createPlayerToggle(miscPage, miscOrder(), "☀ إضاءة كاملة", "إزالة الظلام والضباب بالكامل", false, function(enabled)
+    if fullBrightConn then
+        pcall(function() fullBrightConn:Disconnect() end)
+        fullBrightConn = nil
+    end
+    if enabled then
+        captureLightingOriginals()
+        local function enforceBright()
+            pcall(function()
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.FogEnd = 100000
+                Lighting.FogStart = 0
+                Lighting.GlobalShadows = false
+                Lighting.Ambient = Color3.fromRGB(178, 178, 178)
+                Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
+            end)
+        end
+        enforceBright()
+        fullBrightConn = RunService.Heartbeat:Connect(enforceBright)
+        showToast("☀  تم تفعيل الإضاءة الكاملة")
+    else
+        if miscState.lightingOriginal then
+            pcall(function()
+                for k, v in pairs(miscState.lightingOriginal) do Lighting[k] = v end
+            end)
+        end
+        showToast("☀  تم إيقاف الإضاءة الكاملة")
+    end
+end)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Lighting changes are local-only.",
+    Text = "⚠ تغييرات الإضاءة تظهر على شاشتك فقط.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -5953,17 +6838,18 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  SERVER", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  خيارات السيرفر", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
-createMiscButton(miscPage, miscOrder(), "◈  Change Server", THEME.P_MAIN, THEME.P_GLOW, changeServer)
-createMiscButton(miscPage, miscOrder(), "↻  Rejoin Server", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
+createMiscButton(miscPage, miscOrder(), "◈  تغيير السيرفر", THEME.P_MAIN, THEME.P_GLOW, changeServer)
+createMiscButton(miscPage, miscOrder(), "⇣  دخول سيرفر شبه فارغ", THEME.BG_CARD_HI, THEME.P_GLOW, lowServerHop)
+createMiscButton(miscPage, miscOrder(), "↻  إعادة دخول نفس السيرفر", THEME.BG_CARD_HI, THEME.P_GLOW, rejoinServer)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Teleporting will disconnect you.",
+    Text = "⚠ الانتقال سيفصلك من السيرفر الحالي.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
@@ -5971,23 +6857,25 @@ create("TextLabel", {
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
-    Text = "✦  CAMERA", Font = FONT.Bold, TextSize = 12,
+    Text = "✦  الكاميرا", Font = FONT.Bold, TextSize = 12,
     TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Left,
     LayoutOrder = miscOrder(), ZIndex = 5,
 }, miscPage)
 
 createPlayerToggle(miscPage, miscOrder(),
-    "◉ Infinite Zoom", "Extends camera max distance", false, toggleInfiniteZoom)
+    "◉ زوم لا نهائي", "توسيع أقصى مسافة لتبعيد الكاميرا", false, toggleInfiniteZoom)
 
 create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1,
-    Text = "⚠ Some games clamp zoom distance.",
+    Text = "⚠ بعض المابات تقفل مسافة الزوم.",
     Font = FONT.Regular, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
     TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center,
     LayoutOrder = miscOrder(), ZIndex = 4,
 }, miscPage)
 
 _G.LYNEX_CLEANUP_MISC = function()
+    if antiAfkConn then pcall(function() antiAfkConn:Disconnect() end); antiAfkConn = nil end
+    if fullBrightConn then pcall(function() fullBrightConn:Disconnect() end); fullBrightConn = nil end
     if miscState.lightingOriginal then
         pcall(function()
             for k, v in pairs(miscState.lightingOriginal) do Lighting[k] = v end
@@ -6823,8 +7711,8 @@ local function loadPlayerProfile()
     usernameLbl.Text = "@" .. username
     uidLbl.Text = tostring(userId)
     if okAge and typeof(accountAge) == "number" then
-        ageLbl.Text = tostring(accountAge) .. " days"
-    else ageLbl.Text = "N/A" end
+        ageLbl.Text = tostring(accountAge) .. " يوم"
+    else ageLbl.Text = "غير متاح" end
 end
 loadPlayerProfile()
 
@@ -6857,7 +7745,9 @@ resetBtn.MouseButton1Click:Connect(function()
     settings.animations = true; settings.transparency = 15; settings.glow = true
     animRow.setOn(true); glowRow.setOn(true); transRow.setValue(15)
     applyWindowTransparency(15); applyGlowState()
-    showToast("↻  Settings restored")
+    if settings.applyTheme then settings.applyTheme("purple", true) end
+    settings.saveConfig()
+    showToast("↻  تمت استعادة الإعدادات الافتراضية")
 end)
 
 --==================================================================
@@ -6890,6 +7780,10 @@ end)
 --==================================================================
 switchTab("home")
 applyBlur()
+pcall(function()
+    if settings.transparency ~= 15 then applyWindowTransparency(settings.transparency) end
+    if not settings.glow then applyGlowState() end
+end)
 
 do
     root.Visible = true
