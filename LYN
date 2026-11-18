@@ -582,6 +582,9 @@ local settings = {
     theme = "purple",
     favorites = {},
     waypoints = {},
+    _startTime = os.clock(),
+    _registeredToggles = {},
+    _charFrozen = false,
 }
 local windowHidden = false
 local screenGui, blurObj
@@ -1110,6 +1113,7 @@ local pagesContainer = create("Frame", {
 --==================================================================
 local TABS = {
     { id = "home",          name = "المنزل",            icon = "⌂"  },
+    { id = "dashboard",     name = "لوحة التحكم",       icon = "⊞"  },
     { id = "players",       name = "اللاعبين",          icon = "◉"  },
     { id = "player",        name = "الاعب",             icon = "●"  },
     { id = "autofish",      name = "صيد تلقائي",        icon = "≋"  },
@@ -2558,8 +2562,20 @@ local function createPlayerToggle(parent, order, titleText, subtitleText, initia
         })
         if fire and onChange then onChange(v) end
     end
-    toggle.MouseButton1Click:Connect(function() setOn(not isOn, true) end)
-    return { setOn = function(v) setOn(v, false) end, get = function() return isOn end }
+    toggle.MouseButton1Click:Connect(function()
+        setOn(not isOn, true)
+        if settings._refreshDashboardFeatures then pcall(settings._refreshDashboardFeatures) end
+    end)
+    local ctrl = {
+        title = titleText,
+        setOn = function(v) setOn(v, false) end,
+        get = function() return isOn end,
+        turnOff = function()
+            if isOn then setOn(false, true) end
+        end,
+    }
+    table.insert(settings._registeredToggles, ctrl)
+    return ctrl
 end
 
 local function createActionButtons(parent, order, applyLabel, applyColor, onApply, onReset)
@@ -3165,6 +3181,34 @@ localPlayer.CharacterAdded:Connect(function(char)
         if cam then cam.FieldOfView = 80 end
     end
 end)
+
+settings._resetCustomStats = function()
+    if playerState.speed.applied then
+        playerState.speed.value = playerState.speed.original
+        pcall(function() speedSlider.setValue(playerState.speed.original) end)
+        local hum = getHumanoid(localPlayer)
+        if hum then pcall(function() hum.WalkSpeed = playerState.speed.original end) end
+        playerState.speed.applied = false
+    end
+    if playerState.jump.applied then
+        playerState.jump.value = playerState.jump.original
+        pcall(function() jumpSlider.setValue(playerState.jump.original) end)
+        local hum = getHumanoid(localPlayer)
+        if hum then
+            pcall(function()
+                hum.UseJumpPower = true
+                hum.JumpPower = playerState.jump.original
+            end)
+        end
+        playerState.jump.applied = false
+    end
+    if playerState.gravity.applied then
+        playerState.gravity.value = playerState.gravity.original
+        pcall(function() workspace.Gravity = playerState.gravity.original end)
+        pcall(function() gravitySlider.setValue(math.floor(playerState.gravity.original)) end)
+        playerState.gravity.applied = false
+    end
+end
 
 _G.LYNEX_CLEANUP = function()
     if playerState.gravity.applied then
@@ -6894,6 +6938,693 @@ _G.LYNEX_CLEANUP_MISC = function()
         if s then pcall(function() s.SavedQualityLevel = miscState.qualityOriginal end) end
     end
 end
+end
+
+--==================================================================
+-- 16.95) ⊞ لوحة التحكم (Dashboard Page)
+--==================================================================
+do
+    local okDash, errDash = pcall(function()
+        local dashPage = createPage("dashboard", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, dashPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
+        }, dashPage)
+
+        local dOrder = 0
+        local function nextDOrder()
+            dOrder += 1
+            return dOrder
+        end
+
+        -- 0) Header Banner Card
+        local bannerCard = create("Frame", {
+            Name = "DashBanner",
+            Size = UDim2.new(1, 0, 0, 74),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextDOrder(),
+            ZIndex = 4,
+        }, dashPage)
+        addCorner(12, bannerCard)
+        addStroke(THEME.BORDER, 1, 0.15, bannerCard)
+
+        local bannerIcon = create("Frame", {
+            Size = UDim2.fromOffset(50, 50),
+            Position = UDim2.new(0, 12, 0.5, -25),
+            BackgroundColor3 = THEME.P_MAIN,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, bannerCard)
+        addCorner(25, bannerIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, bannerIcon)
+        addGradient(bannerIcon, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            Text = "⊞",
+            Font = FONT.Logo,
+            TextSize = 24,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 6,
+        }, bannerIcon)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 22),
+            Position = UDim2.new(0, 70, 0, 13),
+            BackgroundTransparency = 1,
+            Text = "لوحة التحكم المركزية",
+            Font = FONT.Bold,
+            TextSize = 14,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, bannerCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 28),
+            Position = UDim2.new(0, 70, 0, 35),
+            BackgroundTransparency = 1,
+            Text = "مراقبة حالة السكربت، الأداء، وقت التشغيل، والتحكم الشامل بالأزرار.",
+            Font = FONT.Regular,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            TextWrapped = true,
+            ZIndex = 5,
+        }, bannerCard)
+
+        -- 1) حالة السكربت (Script Status Card)
+        local execName = "Delta / مدعوم"
+        pcall(function()
+            if typeof(identifyexecutor) == "function" then
+                local n = identifyexecutor()
+                if n and tostring(n) ~= "" then execName = tostring(n) end
+            elseif typeof(getexecutorname) == "function" then
+                local n = getexecutorname()
+                if n and tostring(n) ~= "" then execName = tostring(n) end
+            end
+        end)
+        local deviceType = (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled) and "جوال (لمس)" or "كمبيوتر / هجين"
+
+        local STATUS_ROWS = {
+            { icon = "●", label = "حالة السكربت",      value = "شغال ومستقر (متصل)", color = THEME.OK },
+            { icon = "⚡", label = "المشغّل (Executor)", value = execName,             color = THEME.P_GLOW },
+            { icon = "▣", label = "نوع الجهاز",        value = deviceType,           color = THEME.TX_MAIN },
+            { icon = "⊞", label = "التبويبات المحمّلة", value = tostring(#TABS) .. " تبويب جاهز", color = THEME.TX_MAIN },
+        }
+
+        local statusCardH = 36 + (#STATUS_ROWS * 22) + 10
+        local statusCard = create("Frame", {
+            Name = "ScriptStatusCard",
+            Size = UDim2.new(1, 0, 0, statusCardH),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextDOrder(),
+            ZIndex = 4,
+        }, dashPage)
+        addCorner(12, statusCard)
+        addStroke(THEME.BORDER, 1, 0.15, statusCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 22),
+            Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1,
+            Text = "✦  حالة السكربت",
+            Font = FONT.Bold,
+            TextSize = 13,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, statusCard)
+
+        for i, rowInfo in ipairs(STATUS_ROWS) do
+            local r = create("Frame", {
+                Size = UDim2.new(1, -24, 0, 20),
+                Position = UDim2.new(0, 12, 0, 34 + (i - 1) * 22),
+                BackgroundTransparency = 1,
+                ZIndex = 5,
+            }, statusCard)
+            create("TextLabel", {
+                Size = UDim2.new(0.52, 0, 1, 0),
+                Position = UDim2.new(0.48, 0, 0, 0),
+                BackgroundTransparency = 1,
+                Text = rowInfo.icon .. "  " .. rowInfo.label,
+                Font = FONT.Medium,
+                TextSize = 10,
+                TextColor3 = THEME.TX_SUBTLE,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                ZIndex = 6,
+            }, r)
+            create("TextLabel", {
+                Size = UDim2.new(0.48, -4, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1,
+                Text = rowInfo.value,
+                Font = FONT.Bold,
+                TextSize = 10,
+                TextColor3 = rowInfo.color,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 6,
+            }, r)
+        end
+
+        -- 2) وقت تشغيل السكربت (Uptime Card)
+        local uptimeCard = create("Frame", {
+            Name = "UptimeCard",
+            Size = UDim2.new(1, 0, 0, 88),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextDOrder(),
+            ZIndex = 4,
+        }, dashPage)
+        addCorner(12, uptimeCard)
+        addStroke(THEME.BORDER, 1, 0.15, uptimeCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 20),
+            Position = UDim2.new(0, 12, 0, 7),
+            BackgroundTransparency = 1,
+            Text = "✦  وقت تشغيل السكربت",
+            Font = FONT.Bold,
+            TextSize = 13,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, uptimeCard)
+
+        local uptimeClockLbl = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 30),
+            Position = UDim2.new(0, 12, 0, 30),
+            BackgroundTransparency = 1,
+            Text = "00 : 00 : 00",
+            Font = FONT.Logo,
+            TextSize = 22,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            ZIndex = 5,
+        }, uptimeCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 16),
+            Position = UDim2.new(0, 12, 0, 64),
+            BackgroundTransparency = 1,
+            Text = "ساعة  :  دقيقة  :  ثانية  (منذ لحظة تشغيل السكربت)",
+            Font = FONT.Regular,
+            TextSize = 9,
+            TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            ZIndex = 5,
+        }, uptimeCard)
+
+        -- 3) أداء السكربت (Script Performance Card)
+        local perfCard = create("Frame", {
+            Name = "PerformanceCard",
+            Size = UDim2.new(1, 0, 0, 166),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextDOrder(),
+            ZIndex = 4,
+        }, dashPage)
+        addCorner(12, perfCard)
+        addStroke(THEME.BORDER, 1, 0.15, perfCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 22),
+            Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1,
+            Text = "✦  أداء السكربت",
+            Font = FONT.Bold,
+            TextSize = 13,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, perfCard)
+
+        local function makePerfRow(idx, labelText)
+            local r = create("Frame", {
+                Size = UDim2.new(1, -24, 0, 20),
+                Position = UDim2.new(0, 12, 0, 33 + (idx - 1) * 21),
+                BackgroundTransparency = 1,
+                ZIndex = 5,
+            }, perfCard)
+            create("TextLabel", {
+                Size = UDim2.new(0.55, 0, 1, 0),
+                Position = UDim2.new(0.45, 0, 0, 0),
+                BackgroundTransparency = 1,
+                Text = labelText,
+                Font = FONT.Medium,
+                TextSize = 10,
+                TextColor3 = THEME.TX_SUBTLE,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                ZIndex = 6,
+            }, r)
+            local valLbl = create("TextLabel", {
+                Size = UDim2.new(0.45, -4, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1,
+                Text = "—",
+                Font = FONT.Bold,
+                TextSize = 10,
+                TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 6,
+            }, r)
+            return valLbl
+        end
+
+        local luaMemLbl   = makePerfRow(1, "◈ ذاكرة السكربت (Lua):")
+        local totalMemLbl = makePerfRow(2, "▣ ذاكرة اللعبة الكلية:")
+        local frameMsLbl  = makePerfRow(3, "⚡ سرعة الإطار والاستقرار:")
+
+        local perfBarBg = create("Frame", {
+            Size = UDim2.new(1, -24, 0, 8),
+            Position = UDim2.new(0, 12, 0, 102),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, perfCard)
+        addCorner(4, perfBarBg)
+
+        local perfBarFill = create("Frame", {
+            Size = UDim2.new(0.9, 0, 1, 0),
+            BackgroundColor3 = THEME.OK,
+            BorderSizePixel = 0,
+            ZIndex = 6,
+        }, perfBarBg)
+        addCorner(4, perfBarFill)
+
+        local cleanMemBtn = create("TextButton", {
+            Size = UDim2.new(1, -24, 0, 34),
+            Position = UDim2.new(0, 12, 0, 120),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "🧹  تنظيف ذاكرة السكربت وتخفيف الضغط",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, perfCard)
+        addCorner(8, cleanMemBtn)
+        local cleanMemStroke = addStroke(THEME.P_GLOW, 1, 0.28, cleanMemBtn)
+        styleActionButton(cleanMemBtn, cleanMemStroke)
+
+        cleanMemBtn.MouseButton1Click:Connect(function()
+            local beforeKb = 0
+            pcall(function() beforeKb = collectgarbage("count") end)
+            pcall(function() collectgarbage("collect") end)
+            local afterKb = beforeKb
+            pcall(function() afterKb = collectgarbage("count") end)
+            local freedKb = math.max(0, math.floor(beforeKb - afterKb))
+            showToast("🧹  تم تنظيف ذاكرة السكربت (تحرير " .. tostring(freedKb) .. " KB)")
+        end)
+
+        -- 4) الميزات المشغّلة حالياً (Active Features Card)
+        local activeCard = create("Frame", {
+            Name = "ActiveFeaturesCard",
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextDOrder(),
+            ZIndex = 4,
+        }, dashPage)
+        addCorner(12, activeCard)
+        addStroke(THEME.BORDER, 1, 0.15, activeCard)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 8),
+            PaddingBottom = UDim.new(0, 10),
+            PaddingLeft = UDim.new(0, 12),
+            PaddingRight = UDim.new(0, 12),
+        }, activeCard)
+        create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, activeCard)
+
+        local activeHeaderLbl = create("TextLabel", {
+            Size = UDim2.new(1, 0, 0, 22),
+            BackgroundTransparency = 1,
+            Text = "✦  الميزات المشغّلة حالياً (0)",
+            Font = FONT.Bold,
+            TextSize = 13,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            LayoutOrder = 1,
+            ZIndex = 5,
+        }, activeCard)
+
+        local activeListHolder = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = 2,
+            ZIndex = 5,
+        }, activeCard)
+        create("UIListLayout", { Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder }, activeListHolder)
+
+        local freezeBtnLblRef = nil
+        local function setFreezeCharacter(freeze)
+            settings._charFrozen = freeze
+            local char = localPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                pcall(function() root.Anchored = freeze end)
+            end
+            if freezeBtnLblRef then
+                freezeBtnLblRef.Text = freeze and "🧊  فك تجميد الشخصية (مجمّدة حالياً)" or "🧊  تجميد الشخصية بمكانها"
+            end
+        end
+
+        local lastSignature = ""
+        local function refreshActiveFeatures(force)
+            local items = {}
+            for _, ctrl in ipairs(settings._registeredToggles) do
+                local okG, isOn = pcall(ctrl.get)
+                if okG and isOn then
+                    table.insert(items, {
+                        label = ctrl.title,
+                        stop = function()
+                            pcall(ctrl.turnOff)
+                        end,
+                    })
+                end
+            end
+            if playerState.speed.applied then
+                table.insert(items, {
+                    label = "◉ السرعة المخصصة (" .. tostring(playerState.speed.value) .. ")",
+                    stop = function()
+                        playerState.speed.value = playerState.speed.original
+                        pcall(function() speedSlider.setValue(playerState.speed.original) end)
+                        local hum = getHumanoid(localPlayer)
+                        if hum then pcall(function() hum.WalkSpeed = playerState.speed.original end) end
+                        playerState.speed.applied = false
+                    end,
+                })
+            end
+            if playerState.jump.applied then
+                table.insert(items, {
+                    label = "◈ قوة القفز المخصصة (" .. tostring(playerState.jump.value) .. ")",
+                    stop = function()
+                        playerState.jump.value = playerState.jump.original
+                        pcall(function() jumpSlider.setValue(playerState.jump.original) end)
+                        local hum = getHumanoid(localPlayer)
+                        if hum then pcall(function() hum.UseJumpPower = true; hum.JumpPower = playerState.jump.original end) end
+                        playerState.jump.applied = false
+                    end,
+                })
+            end
+            if playerState.gravity.applied then
+                table.insert(items, {
+                    label = "◉ الجاذبية المخصصة (" .. tostring(playerState.gravity.value) .. ")",
+                    stop = function()
+                        playerState.gravity.value = playerState.gravity.original
+                        pcall(function() workspace.Gravity = playerState.gravity.original end)
+                        pcall(function() gravitySlider.setValue(math.floor(playerState.gravity.original)) end)
+                        playerState.gravity.applied = false
+                    end,
+                })
+            end
+            if spectate.active and spectate.target then
+                table.insert(items, {
+                    label = "◉ مشاهدة اللاعب: " .. displayNameOf(spectate.target),
+                    stop = function()
+                        pcall(function() stopSpectating("silent") end)
+                    end,
+                })
+            end
+            if settings._charFrozen then
+                table.insert(items, {
+                    label = "🧊 تجميد الشخصية بمكانها",
+                    stop = function()
+                        setFreezeCharacter(false)
+                    end,
+                })
+            end
+
+            local sigParts = {}
+            for _, it in ipairs(items) do table.insert(sigParts, it.label) end
+            local sig = table.concat(sigParts, "|")
+            if not force and sig == lastSignature then return end
+            lastSignature = sig
+
+            activeHeaderLbl.Text = "✦  الميزات المشغّلة حالياً (" .. tostring(#items) .. ")"
+
+            for _, ch in ipairs(activeListHolder:GetChildren()) do
+                if ch:IsA("Frame") or ch:IsA("TextLabel") then ch:Destroy() end
+            end
+
+            if #items == 0 then
+                create("TextLabel", {
+                    Size = UDim2.new(1, 0, 0, 26),
+                    BackgroundTransparency = 1,
+                    Text = "لا توجد ميزات مشغّلة حالياً — جميع الأزرار مطفأة.",
+                    Font = FONT.Regular,
+                    TextSize = 10,
+                    TextColor3 = THEME.TX_SUBTLE,
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    ZIndex = 5,
+                }, activeListHolder)
+                return
+            end
+
+            for idx, it in ipairs(items) do
+                local chip = create("Frame", {
+                    Size = UDim2.new(1, 0, 0, 32),
+                    BackgroundColor3 = THEME.BG_CARD_HI,
+                    BackgroundTransparency = 0.1,
+                    BorderSizePixel = 0,
+                    LayoutOrder = idx,
+                    ZIndex = 5,
+                }, activeListHolder)
+                addCorner(8, chip)
+                addStroke(THEME.BORDER, 1, 0.3, chip)
+
+                create("TextLabel", {
+                    Size = UDim2.new(1, -74, 1, 0),
+                    Position = UDim2.new(0, 66, 0, 0),
+                    BackgroundTransparency = 1,
+                    Text = it.label,
+                    Font = FONT.Bold,
+                    TextSize = 10,
+                    TextColor3 = THEME.OK,
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    ZIndex = 6,
+                }, chip)
+
+                local offBtn = create("TextButton", {
+                    Size = UDim2.fromOffset(56, 22),
+                    Position = UDim2.new(0, 6, 0.5, -11),
+                    BackgroundColor3 = THEME.DANGER,
+                    AutoButtonColor = false,
+                    Text = "إيقاف ✕",
+                    Font = FONT.Bold,
+                    TextSize = 9,
+                    TextColor3 = THEME.TX_MAIN,
+                    ZIndex = 6,
+                }, chip)
+                addCorner(6, offBtn)
+                offBtn.MouseButton1Click:Connect(function()
+                    it.stop()
+                    refreshActiveFeatures(true)
+                    showToast("✕  تم إيقاف: " .. it.label)
+                end)
+            end
+        end
+
+        settings._refreshDashboardFeatures = function()
+            refreshActiveFeatures(true)
+        end
+        refreshActiveFeatures(true)
+
+        -- 5) أزرار التحكم السريعة والطوارئ (Quick Control Actions Card)
+        local actionsCard = create("Frame", {
+            Name = "QuickActionsCard",
+            Size = UDim2.new(1, 0, 0, 226),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextDOrder(),
+            ZIndex = 4,
+        }, dashPage)
+        addCorner(12, actionsCard)
+        addStroke(THEME.BORDER, 1, 0.15, actionsCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 22),
+            Position = UDim2.new(0, 12, 0, 8),
+            BackgroundTransparency = 1,
+            Text = "✦  أزرار التحكم السريعة",
+            Font = FONT.Bold,
+            TextSize = 13,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, actionsCard)
+
+        local function makeDashActionBtn(yOffset, text, bgColor, strokeColor, onClick)
+            local b = create("TextButton", {
+                Size = UDim2.new(1, -24, 0, 40),
+                Position = UDim2.new(0, 12, 0, yOffset),
+                BackgroundColor3 = bgColor,
+                AutoButtonColor = false,
+                Text = text,
+                Font = FONT.Bold,
+                TextSize = 11,
+                TextColor3 = THEME.TX_MAIN,
+                ZIndex = 5,
+            }, actionsCard)
+            addCorner(9, b)
+            local st = addStroke(strokeColor, 1.3, 0.2, b)
+            styleActionButton(b, st)
+            b.MouseButton1Click:Connect(onClick)
+            return b
+        end
+
+        -- زر 1: إطفاء جميع الأزرار والميزات فوراً
+        makeDashActionBtn(36, "🚨  إطفاء جميع الأزرار والميزات فوراً", THEME.DANGER, THEME.DANGER_HI, function()
+            for _, ctrl in ipairs(settings._registeredToggles) do
+                pcall(ctrl.turnOff)
+            end
+            if settings._resetCustomStats then pcall(settings._resetCustomStats) end
+            if spectate.active then pcall(function() stopSpectating("silent") end) end
+            if settings._charFrozen then setFreezeCharacter(false) end
+            if _G.LYNEX_CLEANUP_MISC then pcall(_G.LYNEX_CLEANUP_MISC) end
+            refreshActiveFeatures(true)
+            showToast("🚨  تم إطفاء جميع الأزرار والميزات فوراً!")
+        end)
+
+        -- زر 2: ريسيت سريع للشخصية
+        makeDashActionBtn(82, "🔄  ريسيت سريع للشخصية", THEME.P_MAIN, THEME.P_GLOW, function()
+            local char = localPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if not hum then
+                showToast("✕  الشخصية غير جاهزة")
+                return
+            end
+            setFreezeCharacter(false)
+            pcall(function() hum.Health = 0 end)
+            pcall(function() char:BreakJoints() end)
+            showToast("🔄  تم عمل ريسيت سريع للشخصية!")
+        end)
+
+        -- زر 3: ريسيت بنفس المكان (Refresh Character)
+        makeDashActionBtn(128, "📍  ريسيت مع الرجوع لنفس المكان", THEME.BG_CARD_HI, THEME.P_GLOW, function()
+            local char = localPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not (hum and root) then
+                showToast("✕  الشخصية غير جاهزة")
+                return
+            end
+            local savedCF = root.CFrame
+            setFreezeCharacter(false)
+            showToast("📍  جاري عمل ريسيت وإرجاعك لنفس المكان…")
+            localPlayer.CharacterAdded:Once(function(newChar)
+                task.spawn(function()
+                    local newRoot = newChar:WaitForChild("HumanoidRootPart", 5)
+                    task.wait(0.15)
+                    if newRoot then
+                        pcall(function() newRoot.CFrame = savedCF end)
+                        showToast("📍  تم إرجاعك لنفس مكانك بنجاح!")
+                    end
+                end)
+            end)
+            pcall(function() hum.Health = 0 end)
+            pcall(function() char:BreakJoints() end)
+        end)
+
+        -- زر 4: تجميد / فك تجميد الشخصية
+        freezeBtnLblRef = makeDashActionBtn(174, "🧊  تجميد الشخصية بمكانها", THEME.BG_CARD_HI, THEME.BORDER_HI, function()
+            local char = localPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root then
+                showToast("✕  الشخصية غير جاهزة")
+                return
+            end
+            local nextState = not settings._charFrozen
+            setFreezeCharacter(nextState)
+            refreshActiveFeatures(true)
+            showToast(nextState and "🧊  تم تجميد الشخصية بمكانها" or "🧊  تم فك تجميد الشخصية")
+        end)
+
+        -- Live Updater Loop for Uptime, Performance, and Active Features
+        local StatsSvc = nil
+        pcall(function() StatsSvc = game:GetService("Stats") end)
+
+        local lastFrameTick = os.clock()
+        local smoothedDt = 1 / 60
+        local dtConn
+        dtConn = RunService.RenderStepped:Connect(function(dt)
+            if screenGui and not screenGui.Parent then
+                if dtConn then dtConn:Disconnect() end
+                return
+            end
+            if type(dt) == "number" and dt > 0 then
+                smoothedDt = smoothedDt * 0.85 + dt * 0.15
+            else
+                local now = os.clock()
+                local diff = now - lastFrameTick
+                lastFrameTick = now
+                if diff > 0 then smoothedDt = smoothedDt * 0.85 + diff * 0.15 end
+            end
+        end)
+
+        task.spawn(function()
+            while screenGui and screenGui.Parent do
+                local elapsed = math.max(0, math.floor(os.clock() - (settings._startTime or os.clock())))
+                local hrs = math.floor(elapsed / 3600)
+                local mins = math.floor((elapsed % 3600) / 60)
+                local secs = elapsed % 60
+                uptimeClockLbl.Text = string.format("%02d : %02d : %02d", hrs, mins, secs)
+
+                local luaKb = 0
+                pcall(function() luaKb = collectgarbage("count") end)
+                if luaKb >= 1024 then
+                    luaMemLbl.Text = string.format("%.2f MB", luaKb / 1024)
+                else
+                    luaMemLbl.Text = string.format("%d KB", math.floor(luaKb))
+                end
+
+                local totalMb = 0
+                pcall(function()
+                    if StatsSvc then totalMb = StatsSvc:GetTotalMemoryUsageMb() end
+                end)
+                totalMemLbl.Text = (totalMb > 0) and string.format("%d MB", math.floor(totalMb + 0.5)) or "طبيعي"
+
+                local frameMs = smoothedDt * 1000
+                local perfStateTxt = "ممتاز ومستقر"
+                local perfCol = THEME.OK
+                local barRatio = math.clamp(1 - ((frameMs - 16) / 50), 0.18, 1)
+                if frameMs > 40 then
+                    perfStateTxt = "ضغط عالي"
+                    perfCol = THEME.DANGER_HI
+                elseif frameMs > 24 then
+                    perfStateTxt = "متوسط"
+                    perfCol = Color3.fromRGB(255, 205, 80)
+                end
+                frameMsLbl.Text = string.format("%.1f ms · %s", frameMs, perfStateTxt)
+                frameMsLbl.TextColor3 = perfCol
+                perfBarFill.Size = UDim2.new(barRatio, 0, 1, 0)
+                perfBarFill.BackgroundColor3 = perfCol
+
+                refreshActiveFeatures(false)
+                task.wait(1)
+            end
+        end)
+    end)
+
+    if okDash then
+        print("[LYNEX] ✓ Dashboard (لوحة التحكم) section loaded OK")
+    else
+        warn("[LYNEX] ✗ Dashboard section FAILED:", errDash)
+    end
 end
 
 --==================================================================
