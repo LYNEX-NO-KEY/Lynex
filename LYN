@@ -1119,6 +1119,7 @@ local TABS = {
     { id = "home",          name = "المنزل",                   icon = "⌂"  },
     { id = "dashboard",     name = "لوحة التحكم",              icon = "⊞"  },
     { id = "keybinds",      name = "اختصارات لوحة المفاتيح",   icon = "⌨"  },
+    { id = "servers",       name = "السيرفرات",                icon = "🌐" },
     { id = "players",       name = "اللاعبين",          icon = "◉"  },
     { id = "player",        name = "الاعب",             icon = "●"  },
     { id = "autofish",      name = "صيد تلقائي",        icon = "≋"  },
@@ -8037,6 +8038,851 @@ do
         print("[LYNEX] ✓ Keybinds (اختصارات لوحة المفاتيح) section loaded OK")
     else
         warn("[LYNEX] ✗ Keybinds section FAILED:", errKb)
+    end
+end
+
+--==================================================================
+-- 16.97) 🌐 السيرفرات (Live Game Servers Browser Page)
+--==================================================================
+do
+    local okSrv, errSrv = pcall(function()
+        local TeleportService = game:GetService("TeleportService")
+        local HttpService = game:GetService("HttpService")
+        local StatsService = nil
+        pcall(function() StatsService = game:GetService("Stats") end)
+
+        local srvPage = createPage("servers", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, srvPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
+        }, srvPage)
+
+        local sOrder = 0
+        local function nextSOrder()
+            sOrder += 1
+            return sOrder
+        end
+
+        -- Header Banner
+        local srvBanner = create("Frame", {
+            Name = "ServersBanner",
+            Size = UDim2.new(1, 0, 0, 74),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextSOrder(),
+            ZIndex = 4,
+        }, srvPage)
+        addCorner(12, srvBanner)
+        addStroke(THEME.BORDER, 1, 0.15, srvBanner)
+
+        local srvIcon = create("Frame", {
+            Size = UDim2.fromOffset(50, 50),
+            Position = UDim2.new(0, 12, 0.5, -25),
+            BackgroundColor3 = THEME.P_MAIN,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, srvBanner)
+        addCorner(25, srvIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, srvIcon)
+        addGradient(srvIcon, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            Text = "🌐",
+            Font = FONT.Logo,
+            TextSize = 23,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 6,
+        }, srvIcon)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 22),
+            Position = UDim2.new(0, 70, 0, 12),
+            BackgroundTransparency = 1,
+            Text = "متصفح سيرفرات الماب",
+            Font = FONT.Bold,
+            TextSize = 14,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, srvBanner)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 28),
+            Position = UDim2.new(0, 70, 0, 34),
+            BackgroundTransparency = 1,
+            Text = "استعراض جميع السيرفرات النشطة مع عدد الأشخاص والبنق والفريم والانتقال المباشر.",
+            Font = FONT.Regular,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            TextWrapped = true,
+            ZIndex = 5,
+        }, srvBanner)
+
+        -- 1) Counters & Current Server Card
+        local summaryCard = create("Frame", {
+            Name = "ServersSummaryCard",
+            Size = UDim2.new(1, 0, 0, 152),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextSOrder(),
+            ZIndex = 4,
+        }, srvPage)
+        addCorner(12, summaryCard)
+        addStroke(THEME.BORDER, 1, 0.15, summaryCard)
+
+        local function makeStatTile(xScale, xOffset, titleTxt, initVal, valColor)
+            local tile = create("Frame", {
+                Size = UDim2.new(0.333, -10, 0, 56),
+                Position = UDim2.new(xScale, xOffset, 0, 10),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                BorderSizePixel = 0,
+                ZIndex = 5,
+            }, summaryCard)
+            addCorner(9, tile)
+            addStroke(THEME.BORDER, 1, 0.3, tile)
+            create("TextLabel", {
+                Size = UDim2.new(1, -6, 0, 18),
+                Position = UDim2.new(0, 3, 0, 5),
+                BackgroundTransparency = 1,
+                Text = titleTxt,
+                Font = FONT.Medium,
+                TextSize = 9,
+                TextColor3 = THEME.TX_SUBTLE,
+                ZIndex = 6,
+            }, tile)
+            local vLbl = create("TextLabel", {
+                Size = UDim2.new(1, -6, 0, 26),
+                Position = UDim2.new(0, 3, 0, 24),
+                BackgroundTransparency = 1,
+                Text = initVal,
+                Font = FONT.Logo,
+                TextSize = 15,
+                TextColor3 = valColor,
+                ZIndex = 6,
+            }, tile)
+            return vLbl
+        end
+
+        local availCountLbl = makeStatTile(0, 10, "🟢 سيرفرات متاحة", "0", THEME.OK)
+        local totalPlayersLbl = makeStatTile(0.333, 5, "👥 إجمالي اللاعبين", "0", THEME.P_GLOW)
+        local totalServersLbl = makeStatTile(0.666, 0, "🌐 عدد السيرفرات", "0", THEME.TX_MAIN)
+
+        local mySrvLbl = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 22),
+            Position = UDim2.new(0, 12, 0, 74),
+            BackgroundTransparency = 1,
+            Text = "★ سيرفرك الحالي: -- / -- لاعب  |  البنق: -- ms  |  الفريم: -- FPS",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.OK,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+            ZIndex = 5,
+        }, summaryCard)
+
+        local copyMyJobBtn = create("TextButton", {
+            Size = UDim2.new(0.48, -14, 0, 34),
+            Position = UDim2.new(0, 12, 0, 106),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "📋  نسخ كود سيرفري",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, summaryCard)
+        addCorner(8, copyMyJobBtn)
+        addStroke(THEME.BORDER_HI, 1, 0.25, copyMyJobBtn)
+        copyMyJobBtn.MouseButton1Click:Connect(function()
+            local jid = tostring(game.JobId or "")
+            if jid == "" then
+                showToast("✕  كود السيرفر غير متاح حالياً")
+                return
+            end
+            if copyToClipboard(jid) then
+                showToast("📋  تم نسخ كود سيرفرك بنجاح!")
+            else
+                showToast("كود السيرفر: " .. jid)
+            end
+        end)
+
+        local rejoinMySrvBtn = create("TextButton", {
+            Size = UDim2.new(0.48, -14, 0, 34),
+            Position = UDim2.new(0.52, 2, 0, 106),
+            BackgroundColor3 = THEME.P_MAIN,
+            AutoButtonColor = false,
+            Text = "🔄  إعادة دخول سيرفري",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, summaryCard)
+        addCorner(8, rejoinMySrvBtn)
+        addStroke(THEME.P_GLOW, 1, 0.2, rejoinMySrvBtn)
+        rejoinMySrvBtn.MouseButton1Click:Connect(function()
+            showToast("🔄  جاري إعادة الدخول لنفس السيرفر...")
+            pcall(function()
+                if game.JobId and game.JobId ~= "" then
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
+                else
+                    TeleportService:Teleport(game.PlaceId, localPlayer)
+                end
+            end)
+        end)
+
+        -- Live update for current server stats (Players, Ping, FPS)
+        local myLastTick = os.clock()
+        local myFrames = 0
+        local myCurFps = 60
+        RunService.RenderStepped:Connect(function()
+            myFrames += 1
+            local now = os.clock()
+            if now - myLastTick >= 1 then
+                myCurFps = math.clamp(math.floor(myFrames / (now - myLastTick) + 0.5), 1, 999)
+                myFrames = 0
+                myLastTick = now
+            end
+        end)
+
+        task.spawn(function()
+            while screenGui and screenGui.Parent do
+                if srvPage.Visible then
+                    local curPlrs = #Players:GetPlayers()
+                    local maxPlrs = Players.MaxPlayers or 0
+                    local pingMs = 0
+                    pcall(function()
+                        if localPlayer and typeof(localPlayer.GetNetworkPing) == "function" then
+                            pingMs = math.floor(localPlayer:GetNetworkPing() * 1000 + 0.5)
+                        end
+                    end)
+                    if pingMs <= 0 and StatsService then
+                        pcall(function()
+                            pingMs = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValue() + 0.5)
+                        end)
+                    end
+                    mySrvLbl.Text = string.format(
+                        "★ سيرفرك الحالي: %d / %d شخص  |  البنق: %d ms  |  الفريم: %d FPS",
+                        curPlrs, maxPlrs, math.max(0, pingMs), myCurFps
+                    )
+                end
+                task.wait(1)
+            end
+        end)
+
+        -- 2) Direct Join by Server Code (JobId)
+        local joinCodeCard = create("Frame", {
+            Name = "JoinByJobIdCard",
+            Size = UDim2.new(1, 0, 0, 48),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextSOrder(),
+            ZIndex = 4,
+        }, srvPage)
+        addCorner(10, joinCodeCard)
+        addStroke(THEME.BORDER, 1, 0.15, joinCodeCard)
+
+        local jobInput = create("TextBox", {
+            Size = UDim2.new(1, -108, 0, 32),
+            Position = UDim2.new(0, 98, 0.5, -16),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            BorderSizePixel = 0,
+            Text = "",
+            PlaceholderText = "الصق كود السيرفر (JobId) للانتقال المباشر...",
+            PlaceholderColor3 = THEME.TX_SUBTLE,
+            Font = FONT.Regular,
+            TextSize = 10,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ClearTextOnFocus = false,
+            ZIndex = 5,
+        }, joinCodeCard)
+        addCorner(8, jobInput)
+        addStroke(THEME.BORDER, 1, 0.3, jobInput)
+        create("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }, jobInput)
+
+        local joinJobBtn = create("TextButton", {
+            Size = UDim2.fromOffset(80, 32),
+            Position = UDim2.new(0, 10, 0.5, -16),
+            BackgroundColor3 = THEME.P_MAIN,
+            AutoButtonColor = false,
+            Text = "انتقال ⇄",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, joinCodeCard)
+        addCorner(8, joinJobBtn)
+        addStroke(THEME.P_GLOW, 1, 0.2, joinJobBtn)
+        joinJobBtn.MouseButton1Click:Connect(function()
+            local code = (jobInput.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+            if #code < 8 then
+                showToast("✕  اكتب أو الصق كود سيرفر صحيح أولاً")
+                return
+            end
+            showToast("⇄  جاري الانتقال للسيرفر المحدد...")
+            local okTp, errTp = pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, code, localPlayer)
+            end)
+            if not okTp then
+                showToast("✕  تعذر الانتقال: تأكد من صحة الكود")
+                warn("[LYNEX] Join JobId error:", errTp)
+            end
+        end)
+
+        -- 3) Filter, Sort & Refresh Controls Card
+        local filterCard = create("Frame", {
+            Name = "ServersFilterCard",
+            Size = UDim2.new(1, 0, 0, 88),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextSOrder(),
+            ZIndex = 4,
+        }, srvPage)
+        addCorner(12, filterCard)
+        addStroke(THEME.BORDER, 1, 0.15, filterCard)
+
+        local hideFullServers = false
+        local sortMode = "desc_players" -- "desc_players" | "asc_players" | "low_ping" | "high_fps"
+        local allServers = {}
+        local nextPageCursor = nil
+        local isFetchingServers = false
+        local visibleLimit = 50
+        local hasAutoLoaded = false
+
+        local refreshSrvBtn = create("TextButton", {
+            Size = UDim2.new(0.52, -14, 0, 32),
+            Position = UDim2.new(0.48, 2, 0, 10),
+            BackgroundColor3 = THEME.P_MAIN,
+            AutoButtonColor = false,
+            Text = "🔄  تحديث جميع السيرفرات",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, filterCard)
+        addCorner(8, refreshSrvBtn)
+        addStroke(THEME.P_GLOW, 1, 0.2, refreshSrvBtn)
+
+        local hideFullBtn = create("TextButton", {
+            Size = UDim2.new(0.48, -14, 0, 32),
+            Position = UDim2.new(0, 12, 0, 10),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "إخفاء الممتلئة: لا",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            ZIndex = 5,
+        }, filterCard)
+        addCorner(8, hideFullBtn)
+        local hideFullStroke = addStroke(THEME.BORDER, 1, 0.25, hideFullBtn)
+
+        local sortDefs = {
+            { id = "high_fps",     label = "الأعلى فريم 🎞" },
+            { id = "low_ping",     label = "الأقل بنق ⚡" },
+            { id = "asc_players",  label = "الأقل أشخاص" },
+            { id = "desc_players", label = "الأكثر أشخاص" },
+        }
+        local sortBtns = {}
+
+        -- Status Bar + Dynamic Server List Container
+        local statusLbl = create("TextLabel", {
+            Size = UDim2.new(1, -8, 0, 20),
+            BackgroundTransparency = 1,
+            Text = "اضغط على تحديث السيرفرات لجلب قائمة السيرفرات النشطة...",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            LayoutOrder = nextSOrder(),
+            ZIndex = 4,
+        }, srvPage)
+
+        local listContainer = create("Frame", {
+            Name = "ServersCardsContainer",
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = nextSOrder(),
+            ZIndex = 4,
+        }, srvPage)
+        create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, listContainer)
+
+        -- Multi-executor HTTP JSON helper (supports Delta, Codex, Arceus, Wave, Solara + RoProxy fallback)
+        local function fetchJsonUrl(url)
+            local reqFn = (typeof(request) == "function" and request)
+                or (typeof(http_request) == "function" and http_request)
+                or (typeof(http) == "table" and typeof(http.request) == "function" and http.request)
+                or (typeof(syn) == "table" and typeof(syn.request) == "function" and syn.request)
+                or (typeof(fluxus) == "table" and typeof(fluxus.request) == "function" and fluxus.request)
+
+            local urlsToTry = {
+                url,
+                (url:gsub("games%.roblox%.com", "games.roproxy.com")),
+            }
+
+            for _, candidateUrl in ipairs(urlsToTry) do
+                if reqFn then
+                    local okReq, res = pcall(function()
+                        return reqFn({ Url = candidateUrl, Method = "GET" })
+                    end)
+                    if okReq and type(res) == "table" and type(res.Body) == "string" and res.Body ~= "" then
+                        local code = tonumber(res.StatusCode) or 200
+                        if code >= 200 and code < 300 then
+                            local okDec, parsed = pcall(function()
+                                return HttpService:JSONDecode(res.Body)
+                            end)
+                            if okDec and type(parsed) == "table" and type(parsed.data) == "table" then
+                                return parsed
+                            end
+                        end
+                    end
+                end
+
+                local okHttp, raw = pcall(function()
+                    return game:HttpGet(candidateUrl)
+                end)
+                if okHttp and type(raw) == "string" and raw ~= "" then
+                    local okDec, parsed = pcall(function()
+                        return HttpService:JSONDecode(raw)
+                    end)
+                    if okDec and type(parsed) == "table" and type(parsed.data) == "table" then
+                        return parsed
+                    end
+                end
+            end
+            return nil
+        end
+
+        local renderServersList
+        local fetchMorePages
+
+        local function updateSummaryCounters()
+            local totalSrv = #allServers
+            local totalPlr = 0
+            local availSrv = 0
+            for _, s in ipairs(allServers) do
+                local p = tonumber(s.playing) or 0
+                local m = tonumber(s.maxPlayers) or 0
+                totalPlr += p
+                if m == 0 or p < m then
+                    availSrv += 1
+                end
+            end
+            totalServersLbl.Text = tostring(totalSrv) .. (nextPageCursor and "+" or "")
+            totalPlayersLbl.Text = tostring(totalPlr)
+            availCountLbl.Text = tostring(availSrv)
+        end
+
+        local function refreshSortUI()
+            for id, b in pairs(sortBtns) do
+                local active = (id == sortMode)
+                b.BackgroundColor3 = active and THEME.P_MAIN or THEME.BG_CARD_HI
+                b.TextColor3 = active and THEME.TX_MAIN or THEME.TX_DIM
+            end
+            hideFullBtn.Text = hideFullServers and "إخفاء الممتلئة: نعم ✓" or "إخفاء الممتلئة: لا"
+            hideFullBtn.BackgroundColor3 = hideFullServers and THEME.P_MAIN or THEME.BG_CARD_HI
+            hideFullBtn.TextColor3 = hideFullServers and THEME.TX_MAIN or THEME.TX_DIM
+            hideFullStroke.Color = hideFullServers and THEME.P_GLOW or THEME.BORDER
+        end
+
+        for idx, def in ipairs(sortDefs) do
+            local sb = create("TextButton", {
+                Size = UDim2.new(0.25, -9, 0, 28),
+                Position = UDim2.new((idx - 1) * 0.25, 10 - (idx - 1) * 2, 0, 50),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                AutoButtonColor = false,
+                Text = def.label,
+                Font = FONT.Bold,
+                TextSize = 9,
+                TextColor3 = THEME.TX_DIM,
+                ZIndex = 5,
+            }, filterCard)
+            addCorner(7, sb)
+            addStroke(THEME.BORDER, 1, 0.3, sb)
+            sortBtns[def.id] = sb
+            sb.MouseButton1Click:Connect(function()
+                sortMode = def.id
+                visibleLimit = 50
+                refreshSortUI()
+                renderServersList()
+            end)
+        end
+
+        hideFullBtn.MouseButton1Click:Connect(function()
+            hideFullServers = not hideFullServers
+            visibleLimit = 50
+            refreshSortUI()
+            renderServersList()
+        end)
+
+        renderServersList = function()
+            for _, ch in ipairs(listContainer:GetChildren()) do
+                if not ch:IsA("UIListLayout") then ch:Destroy() end
+            end
+
+            updateSummaryCounters()
+
+            local filtered = {}
+            for _, srv in ipairs(allServers) do
+                local playing = tonumber(srv.playing) or 0
+                local maxP = tonumber(srv.maxPlayers) or 0
+                if not (hideFullServers and maxP > 0 and playing >= maxP) then
+                    table.insert(filtered, srv)
+                end
+            end
+
+            table.sort(filtered, function(a, b)
+                local ap, bp = tonumber(a.playing) or 0, tonumber(b.playing) or 0
+                local aping, bping = tonumber(a.ping) or 9999, tonumber(b.ping) or 9999
+                local afps, bfps = tonumber(a.fps) or 0, tonumber(b.fps) or 0
+                if sortMode == "asc_players" then
+                    if ap ~= bp then return ap < bp end
+                    return aping < bping
+                elseif sortMode == "low_ping" then
+                    if aping ~= bping then return aping < bping end
+                    return ap < bp
+                elseif sortMode == "high_fps" then
+                    if afps ~= bfps then return afps > bfps end
+                    return aping < bping
+                else
+                    if ap ~= bp then return ap > bp end
+                    return aping < bping
+                end
+            end)
+
+            if #filtered == 0 then
+                if not isFetchingServers then
+                    local emptyCard = create("Frame", {
+                        Size = UDim2.new(1, 0, 0, 52),
+                        BackgroundColor3 = THEME.BG_CARD,
+                        BorderSizePixel = 0,
+                        LayoutOrder = 1,
+                        ZIndex = 4,
+                    }, listContainer)
+                    addCorner(10, emptyCard)
+                    addStroke(THEME.BORDER, 1, 0.2, emptyCard)
+                    create("TextLabel", {
+                        Size = UDim2.fromScale(1, 1),
+                        BackgroundTransparency = 1,
+                        Text = #allServers == 0 and "لا توجد سيرفرات معروضة حالياً — اضغط زر التحديث بالأعلى" or "جميع السيرفرات المجلوبة ممتلئة حالياً (جرب إيقاف إخفاء الممتلئة)",
+                        Font = FONT.Medium,
+                        TextSize = 10,
+                        TextColor3 = THEME.TX_SUBTLE,
+                        ZIndex = 5,
+                    }, emptyCard)
+                end
+                return
+            end
+
+            local countToShow = math.min(#filtered, visibleLimit)
+            local myJobId = tostring(game.JobId or "")
+
+            for i = 1, countToShow do
+                local srv = filtered[i]
+                local sid = tostring(srv.id or "")
+                local playing = tonumber(srv.playing) or 0
+                local maxP = math.max(1, tonumber(srv.maxPlayers) or Players.MaxPlayers or 20)
+                local rawPing = tonumber(srv.ping)
+                local rawFps = tonumber(srv.fps)
+                local isCurrent = (myJobId ~= "" and sid == myJobId)
+                local isFull = (playing >= maxP)
+
+                local card = create("Frame", {
+                    Name = "SrvCard_" .. tostring(i),
+                    Size = UDim2.new(1, 0, 0, 84),
+                    BackgroundColor3 = THEME.BG_CARD,
+                    BackgroundTransparency = 0.04,
+                    BorderSizePixel = 0,
+                    LayoutOrder = i,
+                    ZIndex = 4,
+                }, listContainer)
+                addCorner(10, card)
+                addStroke(isCurrent and THEME.OK or THEME.BORDER, isCurrent and 1.4 or 1, 0.18, card)
+
+                local shortId = (#sid >= 12) and (sid:sub(1, 8) .. "..." .. sid:sub(-4)) or sid
+                local headerText = string.format("سيرفر #%d  (%s)", i, shortId)
+                if isCurrent then
+                    headerText = "★ سيرفرك الحالي  —  " .. headerText
+                end
+
+                create("TextLabel", {
+                    Size = UDim2.new(1, -138, 0, 20),
+                    Position = UDim2.new(0, 126, 0, 7),
+                    BackgroundTransparency = 1,
+                    Text = headerText,
+                    Font = FONT.Bold,
+                    TextSize = 10,
+                    TextColor3 = isCurrent and THEME.OK or THEME.TX_MAIN,
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    ZIndex = 5,
+                }, card)
+
+                -- Players Badge + Ping Badge + FPS Badge
+                local fillRatio = math.clamp(playing / maxP, 0, 1)
+                local plrColor = isFull and THEME.DANGER_HI or (fillRatio >= 0.8 and Color3.fromRGB(255, 200, 75) or THEME.OK)
+
+                local pingText = rawPing and (tostring(math.floor(rawPing + 0.5)) .. " ms") or "-- ms"
+                local pingColor = THEME.TX_DIM
+                if rawPing then
+                    if rawPing <= 95 then pingColor = THEME.OK
+                    elseif rawPing <= 170 then pingColor = Color3.fromRGB(255, 200, 75)
+                    else pingColor = THEME.DANGER_HI end
+                end
+
+                local fpsVal = rawFps and math.clamp(math.floor(rawFps + 0.5), 1, 999) or nil
+                local fpsText = fpsVal and (tostring(fpsVal) .. " FPS") or "60 FPS"
+                local fpsColor = THEME.OK
+                if fpsVal then
+                    if fpsVal >= 50 then fpsColor = THEME.OK
+                    elseif fpsVal >= 30 then fpsColor = Color3.fromRGB(255, 200, 75)
+                    else fpsColor = THEME.DANGER_HI end
+                end
+
+                local function makeMiniMetric(posScaleX, posOffsetX, widthOffset, labelTxt, txtColor)
+                    local badge = create("Frame", {
+                        Size = UDim2.fromOffset(widthOffset, 24),
+                        Position = UDim2.new(posScaleX, posOffsetX, 0, 31),
+                        BackgroundColor3 = THEME.BG_CARD_HI,
+                        BorderSizePixel = 0,
+                        ZIndex = 5,
+                    }, card)
+                    addCorner(6, badge)
+                    addStroke(THEME.BORDER, 1, 0.35, badge)
+                    create("TextLabel", {
+                        Size = UDim2.fromScale(1, 1),
+                        BackgroundTransparency = 1,
+                        Text = labelTxt,
+                        Font = FONT.Bold,
+                        TextSize = 9,
+                        TextColor3 = txtColor,
+                        ZIndex = 6,
+                    }, badge)
+                end
+
+                -- Positioned cleanly on the right side of the card
+                makeMiniMetric(1, -110, 98, string.format("👥 %d / %d شخص", playing, maxP), plrColor)
+                makeMiniMetric(1, -206, 90, "📶 " .. pingText, pingColor)
+                makeMiniMetric(1, -298, 86, "🎞 " .. fpsText, fpsColor)
+
+                -- Capacity Progress Bar at bottom right
+                local capBg = create("Frame", {
+                    Size = UDim2.new(1, -138, 0, 7),
+                    Position = UDim2.new(0, 126, 0, 65),
+                    BackgroundColor3 = THEME.BG_CARD_HI,
+                    BorderSizePixel = 0,
+                    ZIndex = 5,
+                }, card)
+                addCorner(4, capBg)
+                local capFill = create("Frame", {
+                    Size = UDim2.fromScale(fillRatio, 1),
+                    BackgroundColor3 = plrColor,
+                    BorderSizePixel = 0,
+                    ZIndex = 6,
+                }, capBg)
+                addCorner(4, capFill)
+
+                -- Copy Server ID mini button
+                local copySidBtn = create("TextButton", {
+                    Size = UDim2.fromOffset(28, 34),
+                    Position = UDim2.new(0, 90, 0.5, -17),
+                    BackgroundColor3 = THEME.BG_CARD_HI,
+                    AutoButtonColor = false,
+                    Text = "📋",
+                    Font = FONT.Bold,
+                    TextSize = 12,
+                    TextColor3 = THEME.TX_MAIN,
+                    ZIndex = 5,
+                }, card)
+                addCorner(8, copySidBtn)
+                addStroke(THEME.BORDER, 1, 0.3, copySidBtn)
+                copySidBtn.MouseButton1Click:Connect(function()
+                    if copyToClipboard(sid) then
+                        showToast("📋  تم نسخ كود السيرفر #" .. tostring(i))
+                    else
+                        showToast("JobId: " .. sid)
+                    end
+                end)
+
+                -- Direct Teleport Join Button
+                local joinBtn = create("TextButton", {
+                    Size = UDim2.fromOffset(76, 34),
+                    Position = UDim2.new(0, 10, 0.5, -17),
+                    BackgroundColor3 = isCurrent and THEME.BG_CARD_HI or (isFull and Color3.fromRGB(85, 35, 55) or THEME.P_MAIN),
+                    AutoButtonColor = false,
+                    Text = isCurrent and "أنت هنا ✓" or (isFull and "ممتلئ ⇄" or "انتقال ⇄"),
+                    Font = FONT.Bold,
+                    TextSize = 10,
+                    TextColor3 = isCurrent and THEME.OK or THEME.TX_MAIN,
+                    ZIndex = 5,
+                }, card)
+                addCorner(8, joinBtn)
+                addStroke(isCurrent and THEME.OK or THEME.P_GLOW, 1, 0.2, joinBtn)
+                joinBtn.MouseButton1Click:Connect(function()
+                    if sid == "" then return end
+                    showToast(string.format("⇄  جاري الانتقال إلى سيرفر #%d (%d/%d)...", i, playing, maxP))
+                    local okTp, errTp = pcall(function()
+                        TeleportService:TeleportToPlaceInstance(game.PlaceId, sid, localPlayer)
+                    end)
+                    if not okTp then
+                        showToast("✕  فشل الانتقال للسيرفر، حاول سيرفراً آخر")
+                        warn("[LYNEX] Server teleport failed:", errTp)
+                    end
+                end)
+            end
+
+            -- Show More button if there are more filtered servers
+            if #filtered > countToShow then
+                local rem = #filtered - countToShow
+                local showMoreBtn = create("TextButton", {
+                    Size = UDim2.new(1, 0, 0, 38),
+                    BackgroundColor3 = THEME.BG_CARD_HI,
+                    AutoButtonColor = false,
+                    Text = string.format("▼  عرض المزيد من السيرفرات (متبقي %d سيرفر)", rem),
+                    Font = FONT.Bold,
+                    TextSize = 10,
+                    TextColor3 = THEME.P_GLOW,
+                    LayoutOrder = 9998,
+                    ZIndex = 4,
+                }, listContainer)
+                addCorner(9, showMoreBtn)
+                addStroke(THEME.BORDER_HI, 1, 0.25, showMoreBtn)
+                showMoreBtn.MouseButton1Click:Connect(function()
+                    visibleLimit += 50
+                    renderServersList()
+                end)
+            end
+
+            -- Load Extra Cloud Pages button if game has > 500 servers
+            if nextPageCursor and not isFetchingServers then
+                local fetchExtraBtn = create("TextButton", {
+                    Size = UDim2.new(1, 0, 0, 38),
+                    BackgroundColor3 = THEME.P_MAIN,
+                    AutoButtonColor = false,
+                    Text = "🌐  جلب دفعة إضافية من سيرفرات الماب...",
+                    Font = FONT.Bold,
+                    TextSize = 10,
+                    TextColor3 = THEME.TX_MAIN,
+                    LayoutOrder = 9999,
+                    ZIndex = 4,
+                }, listContainer)
+                addCorner(9, fetchExtraBtn)
+                addStroke(THEME.P_GLOW, 1, 0.2, fetchExtraBtn)
+                fetchExtraBtn.MouseButton1Click:Connect(function()
+                    fetchMorePages(false)
+                end)
+            end
+        end
+
+        fetchMorePages = function(resetAll)
+            if isFetchingServers then return end
+            isFetchingServers = true
+            if resetAll then
+                allServers = {}
+                nextPageCursor = nil
+                visibleLimit = 50
+            end
+
+            refreshSrvBtn.Text = "⏳  جاري جلب السيرفرات..."
+            statusLbl.Text = "⏳  جاري فحص وجلب جميع سيرفرات الماب النشطة..."
+            updateSummaryCounters()
+
+            task.spawn(function()
+                local seenIds = {}
+                for _, existing in ipairs(allServers) do
+                    if existing.id then seenIds[tostring(existing.id)] = true end
+                end
+
+                local pagesFetched = 0
+                local maxPagesBatch = 5 -- up to 500 servers per fetch batch!
+                local anySuccess = false
+
+                while pagesFetched < maxPagesBatch do
+                    local apiUrl = string.format(
+                        "https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Desc&limit=100",
+                        tostring(game.PlaceId)
+                    )
+                    if nextPageCursor and nextPageCursor ~= "" then
+                        apiUrl = apiUrl .. "&cursor=" .. tostring(HttpService:UrlEncode(nextPageCursor))
+                    end
+
+                    local res = fetchJsonUrl(apiUrl)
+                    if not res or type(res.data) ~= "table" then
+                        break
+                    end
+
+                    anySuccess = true
+                    pagesFetched += 1
+
+                    for _, item in ipairs(res.data) do
+                        local sid = item and item.id and tostring(item.id) or nil
+                        if sid and not seenIds[sid] then
+                            seenIds[sid] = true
+                            table.insert(allServers, {
+                                id = sid,
+                                playing = tonumber(item.playing) or 0,
+                                maxPlayers = tonumber(item.maxPlayers) or Players.MaxPlayers or 20,
+                                ping = tonumber(item.ping),
+                                fps = tonumber(item.fps),
+                            })
+                        end
+                    end
+
+                    nextPageCursor = (type(res.nextPageCursor) == "string" and res.nextPageCursor ~= "") and res.nextPageCursor or nil
+
+                    -- Render immediately after first page so the player doesn't wait!
+                    statusLbl.Text = string.format("⏳  تم العثور على %d سيرفر حتى الآن...", #allServers)
+                    renderServersList()
+
+                    if not nextPageCursor then
+                        break
+                    end
+                    task.wait(0.15)
+                end
+
+                isFetchingServers = false
+                refreshSrvBtn.Text = "🔄  تحديث جميع السيرفرات"
+
+                if anySuccess or #allServers > 0 then
+                    statusLbl.Text = string.format(
+                        "✓  تم جلب %d سيرفر نشط في هذا الماب%s",
+                        #allServers,
+                        nextPageCursor and " (توجد سيرفرات إضافية بالأسفل)" or ""
+                    )
+                else
+                    statusLbl.Text = "✕  تعذر جلب السيرفرات مؤقتاً (قد يكون ضغط من روبلوكس — اضغط تحديث بعد ثوانٍ)"
+                end
+                renderServersList()
+            end)
+        end
+
+        refreshSortUI()
+        refreshSrvBtn.MouseButton1Click:Connect(function()
+            fetchMorePages(true)
+        end)
+
+        -- Auto-load server list the first time the player opens the `السيرفرات` tab!
+        srvPage:GetPropertyChangedSignal("Visible"):Connect(function()
+            if srvPage.Visible and not hasAutoLoaded then
+                hasAutoLoaded = true
+                fetchMorePages(true)
+            end
+        end)
+    end)
+
+    if okSrv then
+        print("[LYNEX] ✓ Servers Browser (السيرفرات) section loaded OK")
+    else
+        warn("[LYNEX] ✗ Servers Browser section FAILED:", errSrv)
     end
 end
 
