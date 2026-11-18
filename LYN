@@ -8598,7 +8598,7 @@ do
 
                 local card = create("Frame", {
                     Name = "SrvCard_" .. tostring(i),
-                    Size = UDim2.new(1, 0, 0, 84),
+                    Size = UDim2.new(1, 0, 0, 122),
                     BackgroundColor3 = THEME.BG_CARD,
                     BackgroundTransparency = 0.04,
                     BorderSizePixel = 0,
@@ -8614,9 +8614,10 @@ do
                     headerText = "★ سيرفرك الحالي  —  " .. headerText
                 end
 
+                -- Row 1: server title (full width, never sits under any button)
                 create("TextLabel", {
-                    Size = UDim2.new(1, -138, 0, 20),
-                    Position = UDim2.new(0, 126, 0, 7),
+                    Size = UDim2.new(1, -20, 0, 20),
+                    Position = UDim2.new(0, 10, 0, 8),
                     BackgroundTransparency = 1,
                     Text = headerText,
                     Font = FONT.Bold,
@@ -8648,14 +8649,26 @@ do
                     else fpsColor = THEME.DANGER_HI end
                 end
 
-                local function makeMiniMetric(posScaleX, posOffsetX, widthOffset, labelTxt, txtColor)
+                -- Row 2: players / ping / FPS, each in its own third of the width.
+                -- Scale-based widths keep the 3 badges side-by-side with a fixed
+                -- 6px gap on ANY screen width, so they can never overlap buttons.
+                local metricsRow = create("Frame", {
+                    Name = "SrvMetricsRow",
+                    Size = UDim2.new(1, -20, 0, 26),
+                    Position = UDim2.new(0, 10, 0, 34),
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    ZIndex = 5,
+                }, card)
+
+                local function makeMiniMetric(posScaleX, posOffsetX, labelTxt, txtColor)
                     local badge = create("Frame", {
-                        Size = UDim2.fromOffset(widthOffset, 24),
-                        Position = UDim2.new(posScaleX, posOffsetX, 0, 31),
+                        Size = UDim2.new(0.333, -4, 1, 0),
+                        Position = UDim2.new(posScaleX, posOffsetX, 0, 0),
                         BackgroundColor3 = THEME.BG_CARD_HI,
                         BorderSizePixel = 0,
                         ZIndex = 5,
-                    }, card)
+                    }, metricsRow)
                     addCorner(6, badge)
                     addStroke(THEME.BORDER, 1, 0.35, badge)
                     create("TextLabel", {
@@ -8665,19 +8678,19 @@ do
                         Font = FONT.Bold,
                         TextSize = 9,
                         TextColor3 = txtColor,
+                        TextTruncate = Enum.TextTruncate.AtEnd,
                         ZIndex = 6,
                     }, badge)
                 end
 
-                -- Positioned cleanly on the right side of the card
-                makeMiniMetric(1, -110, 98, string.format("👥 %d / %d شخص", playing, maxP), plrColor)
-                makeMiniMetric(1, -206, 90, "📶 " .. pingText, pingColor)
-                makeMiniMetric(1, -298, 86, "🎞 " .. fpsText, fpsColor)
+                makeMiniMetric(0, 0, "🎞 " .. fpsText, fpsColor)
+                makeMiniMetric(0.333, 2, "📶 " .. pingText, pingColor)
+                makeMiniMetric(0.666, 4, string.format("👥 %d / %d شخص", playing, maxP), plrColor)
 
-                -- Capacity Progress Bar at bottom right
+                -- Row 3: capacity progress bar (full width, own row)
                 local capBg = create("Frame", {
-                    Size = UDim2.new(1, -138, 0, 7),
-                    Position = UDim2.new(0, 126, 0, 65),
+                    Size = UDim2.new(1, -20, 0, 7),
+                    Position = UDim2.new(0, 10, 0, 66),
                     BackgroundColor3 = THEME.BG_CARD_HI,
                     BorderSizePixel = 0,
                     ZIndex = 5,
@@ -8691,10 +8704,11 @@ do
                 }, capBg)
                 addCorner(4, capFill)
 
-                -- Copy Server ID mini button
+                -- Row 4: action buttons (own row under the bar: copy = fixed
+                -- small button, join = fills the rest, fixed 6px gap between)
                 local copySidBtn = create("TextButton", {
-                    Size = UDim2.fromOffset(28, 34),
-                    Position = UDim2.new(0, 90, 0.5, -17),
+                    Size = UDim2.fromOffset(36, 32),
+                    Position = UDim2.new(0, 10, 0, 81),
                     BackgroundColor3 = THEME.BG_CARD_HI,
                     AutoButtonColor = false,
                     Text = "📋",
@@ -8715,8 +8729,8 @@ do
 
                 -- Direct Teleport Join Button
                 local joinBtn = create("TextButton", {
-                    Size = UDim2.fromOffset(76, 34),
-                    Position = UDim2.new(0, 10, 0.5, -17),
+                    Size = UDim2.new(1, -62, 0, 32),
+                    Position = UDim2.new(0, 52, 0, 81),
                     BackgroundColor3 = isCurrent and THEME.BG_CARD_HI or (isFull and Color3.fromRGB(85, 35, 55) or THEME.P_MAIN),
                     AutoButtonColor = false,
                     Text = isCurrent and "أنت هنا ✓" or (isFull and "ممتلئ ⇄" or "انتقال ⇄"),
