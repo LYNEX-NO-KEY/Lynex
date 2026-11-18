@@ -582,6 +582,8 @@ local settings = {
     theme = "purple",
     favorites = {},
     waypoints = {},
+    keybinds = {},
+    _keybindsActive = false,
     _startTime = os.clock(),
     _registeredToggles = {},
     _charFrozen = false,
@@ -686,6 +688,7 @@ do
                 theme = settings.theme,
                 favorites = settings.favorites,
                 waypoints = settings.waypoints,
+                keybinds = settings.keybinds,
             }
             writefile(CONFIG_FILE, HttpService:JSONEncode(payload))
         end)
@@ -707,6 +710,7 @@ do
             end
             if type(data.favorites) == "table" then settings.favorites = data.favorites end
             if type(data.waypoints) == "table" then settings.waypoints = data.waypoints end
+            if type(data.keybinds) == "table" then settings.keybinds = data.keybinds end
         end)
     end
 
@@ -1112,8 +1116,9 @@ local pagesContainer = create("Frame", {
 -- 10) Tabs
 --==================================================================
 local TABS = {
-    { id = "home",          name = "المنزل",            icon = "⌂"  },
-    { id = "dashboard",     name = "لوحة التحكم",       icon = "⊞"  },
+    { id = "home",          name = "المنزل",                   icon = "⌂"  },
+    { id = "dashboard",     name = "لوحة التحكم",              icon = "⊞"  },
+    { id = "keybinds",      name = "اختصارات لوحة المفاتيح",   icon = "⌨"  },
     { id = "players",       name = "اللاعبين",          icon = "◉"  },
     { id = "player",        name = "الاعب",             icon = "●"  },
     { id = "autofish",      name = "صيد تلقائي",        icon = "≋"  },
@@ -2573,6 +2578,10 @@ local function createPlayerToggle(parent, order, titleText, subtitleText, initia
         turnOff = function()
             if isOn then setOn(false, true) end
         end,
+        toggle = function()
+            setOn(not isOn, true)
+            if settings._refreshDashboardFeatures then pcall(settings._refreshDashboardFeatures) end
+        end,
     }
     table.insert(settings._registeredToggles, ctrl)
     return ctrl
@@ -3211,6 +3220,10 @@ settings._resetCustomStats = function()
 end
 
 _G.LYNEX_CLEANUP = function()
+    if settings._keybindConn then
+        pcall(function() settings._keybindConn:Disconnect() end)
+        settings._keybindConn = nil
+    end
     if playerState.gravity.applied then
         pcall(function() workspace.Gravity = playerState.gravity.original end)
     end
@@ -7487,10 +7500,11 @@ do
             return b
         end
 
-        -- زر 1: إطفاء جميع الأزرار والميزات فوراً
-        makeDashActionBtn(36, "🚨  إطفاء جميع الأزرار والميزات فوراً", THEME.DANGER, THEME.DANGER_HI, function()
+        local function doPanicOff()
             for _, ctrl in ipairs(settings._registeredToggles) do
-                pcall(ctrl.turnOff)
+                if not ctrl._skipPanic then
+                    pcall(ctrl.turnOff)
+                end
             end
             if settings._resetCustomStats then pcall(settings._resetCustomStats) end
             if spectate.active then pcall(function() stopSpectating("silent") end) end
@@ -7498,24 +7512,9 @@ do
             if _G.LYNEX_CLEANUP_MISC then pcall(_G.LYNEX_CLEANUP_MISC) end
             refreshActiveFeatures(true)
             showToast("🚨  تم إطفاء جميع الأزرار والميزات فوراً!")
-        end)
+        end
 
-        -- زر 2: ريسيت سريع للشخصية
-        makeDashActionBtn(82, "🔄  ريسيت سريع للشخصية", THEME.P_MAIN, THEME.P_GLOW, function()
-            local char = localPlayer.Character
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            if not hum then
-                showToast("✕  الشخصية غير جاهزة")
-                return
-            end
-            setFreezeCharacter(false)
-            pcall(function() hum.Health = 0 end)
-            pcall(function() char:BreakJoints() end)
-            showToast("🔄  تم عمل ريسيت سريع للشخصية!")
-        end)
-
-        -- زر 3: ريسيت بنفس المكان (Refresh Character)
-        makeDashActionBtn(128, "📍  ريسيت مع الرجوع لنفس المكان", THEME.BG_CARD_HI, THEME.P_GLOW, function()
+        local function doRefreshChar()
             local char = localPlayer.Character
             local hum = char and char:FindFirstChildOfClass("Humanoid")
             local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -7538,10 +7537,9 @@ do
             end)
             pcall(function() hum.Health = 0 end)
             pcall(function() char:BreakJoints() end)
-        end)
+        end
 
-        -- زر 4: تجميد / فك تجميد الشخصية
-        freezeBtnLblRef = makeDashActionBtn(174, "🧊  تجميد الشخصية بمكانها", THEME.BG_CARD_HI, THEME.BORDER_HI, function()
+        local function doToggleFreeze()
             local char = localPlayer.Character
             local root = char and char:FindFirstChild("HumanoidRootPart")
             if not root then
@@ -7552,7 +7550,34 @@ do
             setFreezeCharacter(nextState)
             refreshActiveFeatures(true)
             showToast(nextState and "🧊  تم تجميد الشخصية بمكانها" or "🧊  تم فك تجميد الشخصية")
+        end
+
+        settings._triggerPanicOff = doPanicOff
+        settings._triggerRefreshChar = doRefreshChar
+        settings._toggleFreezeChar = doToggleFreeze
+
+        -- زر 1: إطفاء جميع الأزرار والميزات فوراً
+        makeDashActionBtn(36, "🚨  إطفاء جميع الأزرار والميزات فوراً", THEME.DANGER, THEME.DANGER_HI, doPanicOff)
+
+        -- زر 2: ريسيت سريع للشخصية
+        makeDashActionBtn(82, "🔄  ريسيت سريع للشخصية", THEME.P_MAIN, THEME.P_GLOW, function()
+            local char = localPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if not hum then
+                showToast("✕  الشخصية غير جاهزة")
+                return
+            end
+            setFreezeCharacter(false)
+            pcall(function() hum.Health = 0 end)
+            pcall(function() char:BreakJoints() end)
+            showToast("🔄  تم عمل ريسيت سريع للشخصية!")
         end)
+
+        -- زر 3: ريسيت بنفس المكان (Refresh Character)
+        makeDashActionBtn(128, "📍  ريسيت مع الرجوع لنفس المكان", THEME.BG_CARD_HI, THEME.P_GLOW, doRefreshChar)
+
+        -- زر 4: تجميد / فك تجميد الشخصية
+        freezeBtnLblRef = makeDashActionBtn(174, "🧊  تجميد الشخصية بمكانها", THEME.BG_CARD_HI, THEME.BORDER_HI, doToggleFreeze)
 
         -- Live Updater Loop for Uptime, Performance, and Active Features
         local StatsSvc = nil
@@ -7624,6 +7649,394 @@ do
         print("[LYNEX] ✓ Dashboard (لوحة التحكم) section loaded OK")
     else
         warn("[LYNEX] ✗ Dashboard section FAILED:", errDash)
+    end
+end
+
+--==================================================================
+-- 16.96) ⌨ اختصارات لوحة المفاتيح (Keybinds Page)
+--==================================================================
+do
+    local okKb, errKb = pcall(function()
+        local kbPage = createPage("keybinds", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, kbPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
+        }, kbPage)
+
+        local kbOrder = 0
+        local function nextKbOrder()
+            kbOrder += 1
+            return kbOrder
+        end
+
+        -- Header Banner
+        local kbHeader = create("Frame", {
+            Name = "KeybindsBanner",
+            Size = UDim2.new(1, 0, 0, 76),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextKbOrder(),
+            ZIndex = 4,
+        }, kbPage)
+        addCorner(12, kbHeader)
+        addStroke(THEME.BORDER, 1, 0.15, kbHeader)
+
+        local kbIcon = create("Frame", {
+            Size = UDim2.fromOffset(50, 50),
+            Position = UDim2.new(0, 12, 0.5, -25),
+            BackgroundColor3 = THEME.P_MAIN,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, kbHeader)
+        addCorner(25, kbIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, kbIcon)
+        addGradient(kbIcon, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            Text = "⌨",
+            Font = FONT.Logo,
+            TextSize = 24,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 6,
+        }, kbIcon)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 22),
+            Position = UDim2.new(0, 70, 0, 12),
+            BackgroundTransparency = 1,
+            Text = "اختصارات لوحة المفاتيح",
+            Font = FONT.Bold,
+            TextSize = 14,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, kbHeader)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 30),
+            Position = UDim2.new(0, 70, 0, 34),
+            BackgroundTransparency = 1,
+            Text = "شغّل النظام ثم اختر الحرف أو الزر الذي تريده لكل ميزة بحرية.",
+            Font = FONT.Regular,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            TextWrapped = true,
+            ZIndex = 5,
+        }, kbHeader)
+
+        local KEYBIND_ACTIONS = {
+            { id = "toggle_ui",   label = "⊞  إظهار / إخفاء قائمة السكربت",      kind = "custom" },
+            { id = "panic_off",   label = "🚨  إطفاء جميع الميزات فوراً (طوارئ)", kind = "custom" },
+            { id = "flight",      label = "◈  الطيران (تشغيل / إيقاف)",           kind = "toggle", targetTitle = "◈ الطيران" },
+            { id = "noclip",      label = "◈  اختراق الجدران (تشغيل / إيقاف)",    kind = "toggle", targetTitle = "◈ اختراق الجدران" },
+            { id = "inf_jump",    label = "◈  قفز لا نهائي (تشغيل / إيقاف)",      kind = "toggle", targetTitle = "◈ قفز لا نهائي" },
+            { id = "lock_move",   label = "◈  تثبيت السرعة والقفز",               kind = "toggle", targetTitle = "◈ تثبيت السرعة والقفز" },
+            { id = "swim_air",    label = "◈  السباحة في الهواء",                 kind = "toggle", targetTitle = "◈ السباحة في الهواء" },
+            { id = "click_tp",    label = "◈  أداة الانتقال باللمس",              kind = "toggle", targetTitle = "◈ أداة الانتقال باللمس" },
+            { id = "ipad_view",   label = "▣  منظور الآيباد",                     kind = "toggle", targetTitle = "▣ منظور الآيباد" },
+            { id = "invisible",   label = "◈  الاختفاء",                          kind = "toggle", targetTitle = "◈ الاختفاء" },
+            { id = "fullbright",  label = "☀  إضاءة كاملة",                       kind = "toggle", targetTitle = "☀ إضاءة كاملة" },
+            { id = "anti_afk",    label = "◉  مانع الفصل التلقائي",               kind = "toggle", targetTitle = "◉ مانع الفصل التلقائي" },
+            { id = "freeze_char", label = "🧊  تجميد / فك تجميد الشخصية",         kind = "custom" },
+            { id = "refresh_pos", label = "📍  ريسيت مع الرجوع لنفس المكان",      kind = "custom" },
+        }
+
+        local function findToggleByTitle(tTitle)
+            for _, ctrl in ipairs(settings._registeredToggles) do
+                if ctrl.title == tTitle then return ctrl end
+            end
+            return nil
+        end
+
+        local function runKeybindAction(act)
+            if act.kind == "toggle" and act.targetTitle then
+                local ctrl = findToggleByTitle(act.targetTitle)
+                if ctrl and ctrl.toggle then
+                    ctrl.toggle()
+                end
+            elseif act.id == "toggle_ui" then
+                if settings._toggleMainWindow then settings._toggleMainWindow() end
+            elseif act.id == "panic_off" then
+                if settings._triggerPanicOff then settings._triggerPanicOff() end
+            elseif act.id == "freeze_char" then
+                if settings._toggleFreezeChar then settings._toggleFreezeChar() end
+            elseif act.id == "refresh_pos" then
+                if settings._triggerRefreshChar then settings._triggerRefreshChar() end
+            end
+        end
+
+        local waitingActionId = nil
+        local rowUIRefs = {}
+
+        -- Notice shown when Keybinds Master Toggle is OFF
+        local lockedNotice = create("Frame", {
+            Name = "KeybindsLockedNotice",
+            Size = UDim2.new(1, 0, 0, 58),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = 3,
+            Visible = true,
+            ZIndex = 4,
+        }, kbPage)
+        addCorner(10, lockedNotice)
+        addStroke(THEME.BORDER, 1, 0.2, lockedNotice)
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 1, 0),
+            Position = UDim2.new(0, 12, 0, 0),
+            BackgroundTransparency = 1,
+            Text = "🔒  الاختصارات متوقفة حالياً — شغّل الزر بالأعلى لاختيار وتفعيل الأحرف التي تريدها.",
+            Font = FONT.Medium,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextWrapped = true,
+            ZIndex = 5,
+        }, lockedNotice)
+
+        -- Container shown as soon as player turns Master Toggle ON
+        local bindsContainer = create("Frame", {
+            Name = "KeybindsListContainer",
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = 4,
+            Visible = false,
+            ZIndex = 4,
+        }, kbPage)
+        create("UIListLayout", { Padding = UDim.new(0, 7), SortOrder = Enum.SortOrder.LayoutOrder }, bindsContainer)
+
+        -- Master Toggle (starts OFF every session so nothing fires until enabled!)
+        local masterKbToggle = createPlayerToggle(
+            kbPage,
+            2,
+            "◉ تشغيل اختصارات لوحة المفاتيح",
+            "فعّل الخيار لاختيار الأحرف وتشغيل الاختصارات بالكيبورد",
+            false,
+            function(enabled)
+                settings._keybindsActive = enabled
+                waitingActionId = nil
+                lockedNotice.Visible = not enabled
+                bindsContainer.Visible = enabled
+                if settings._refreshKeybindRows then pcall(settings._refreshKeybindRows) end
+                if enabled then
+                    showToast("⌨  تم تفعيل اختصارات الكيبورد — اختر أزرارك الآن!")
+                else
+                    showToast("⌨  تم إيقاف اختصارات الكيبورد")
+                end
+            end
+        )
+        masterKbToggle._skipPanic = true
+
+        create("TextLabel", {
+            Size = UDim2.new(1, 0, 0, 22),
+            BackgroundTransparency = 1,
+            Text = "✦  اضغط على المستطيل بجانب أي ميزة ثم اضغط الزر من الكيبورد:",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            LayoutOrder = 1,
+            ZIndex = 5,
+        }, bindsContainer)
+
+        local function refreshAllKeybindButtons()
+            for _, act in ipairs(KEYBIND_ACTIONS) do
+                local ref = rowUIRefs[act.id]
+                if ref then
+                    local isWaiting = (waitingActionId == act.id)
+                    local boundKey = settings.keybinds[act.id]
+                    if isWaiting then
+                        ref.keyBtn.Text = "اضغط أي زر..."
+                        ref.keyBtn.BackgroundColor3 = THEME.P_MAIN
+                        ref.keyBtn.TextColor3 = THEME.TX_MAIN
+                        ref.stroke.Color = THEME.P_GLOW
+                        ref.clearBtn.Visible = false
+                    elseif boundKey and boundKey ~= "" then
+                        ref.keyBtn.Text = "[ " .. tostring(boundKey) .. " ]"
+                        ref.keyBtn.BackgroundColor3 = THEME.BG_CARD_HI
+                        ref.keyBtn.TextColor3 = THEME.P_GLOW
+                        ref.stroke.Color = THEME.P_BRIGHT
+                        ref.clearBtn.Visible = true
+                    else
+                        ref.keyBtn.Text = "اختر زر"
+                        ref.keyBtn.BackgroundColor3 = THEME.BG_CARD_HI
+                        ref.keyBtn.TextColor3 = THEME.TX_SUBTLE
+                        ref.stroke.Color = THEME.BORDER
+                        ref.clearBtn.Visible = false
+                    end
+                end
+            end
+        end
+        settings._refreshKeybindRows = refreshAllKeybindButtons
+
+        for idx, act in ipairs(KEYBIND_ACTIONS) do
+            local row = create("Frame", {
+                Name = "KbRow_" .. act.id,
+                Size = UDim2.new(1, 0, 0, 44),
+                BackgroundColor3 = THEME.BG_CARD,
+                BackgroundTransparency = 0.05,
+                BorderSizePixel = 0,
+                LayoutOrder = idx + 1,
+                ZIndex = 4,
+            }, bindsContainer)
+            addCorner(9, row)
+            addStroke(THEME.BORDER, 1, 0.2, row)
+
+            create("TextLabel", {
+                Size = UDim2.new(1, -138, 1, 0),
+                Position = UDim2.new(0, 128, 0, 0),
+                BackgroundTransparency = 1,
+                Text = act.label,
+                Font = FONT.Bold,
+                TextSize = 10,
+                TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 5,
+            }, row)
+
+            local keyBtn = create("TextButton", {
+                Size = UDim2.fromOffset(84, 28),
+                Position = UDim2.new(0, 36, 0.5, -14),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                AutoButtonColor = false,
+                Text = "اختر زر",
+                Font = FONT.Bold,
+                TextSize = 10,
+                TextColor3 = THEME.TX_SUBTLE,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 5,
+            }, row)
+            addCorner(7, keyBtn)
+            local keyStroke = addStroke(THEME.BORDER, 1, 0.25, keyBtn)
+
+            local clearKeyBtn = create("TextButton", {
+                Size = UDim2.fromOffset(24, 28),
+                Position = UDim2.new(0, 8, 0.5, -14),
+                BackgroundColor3 = THEME.BG_CARD_HI,
+                AutoButtonColor = false,
+                Text = "✕",
+                Font = FONT.Bold,
+                TextSize = 11,
+                TextColor3 = THEME.DANGER_HI,
+                Visible = false,
+                ZIndex = 5,
+            }, row)
+            addCorner(7, clearKeyBtn)
+            addStroke(THEME.DANGER, 1, 0.35, clearKeyBtn)
+
+            rowUIRefs[act.id] = { keyBtn = keyBtn, stroke = keyStroke, clearBtn = clearKeyBtn }
+
+            keyBtn.MouseButton1Click:Connect(function()
+                if waitingActionId == act.id then
+                    waitingActionId = nil
+                else
+                    waitingActionId = act.id
+                end
+                refreshAllKeybindButtons()
+            end)
+
+            clearKeyBtn.MouseButton1Click:Connect(function()
+                if waitingActionId == act.id then waitingActionId = nil end
+                settings.keybinds[act.id] = nil
+                settings.saveConfig()
+                refreshAllKeybindButtons()
+                showToast("✕  تم مسح اختصار: " .. act.label)
+            end)
+        end
+
+        local clearAllKbBtn = create("TextButton", {
+            Size = UDim2.new(1, 0, 0, 38),
+            BackgroundColor3 = THEME.BG_CARD,
+            AutoButtonColor = false,
+            Text = "↻  مسح جميع الاختصارات المحددة",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.DANGER_HI,
+            LayoutOrder = 100,
+            ZIndex = 4,
+        }, bindsContainer)
+        addCorner(9, clearAllKbBtn)
+        addStroke(THEME.DANGER, 1.1, 0.2, clearAllKbBtn)
+        clearAllKbBtn.MouseButton1Click:Connect(function()
+            waitingActionId = nil
+            settings.keybinds = {}
+            settings.saveConfig()
+            refreshAllKeybindButtons()
+            showToast("↻  تم مسح جميع اختصارات الكيبورد")
+        end)
+
+        refreshAllKeybindButtons()
+
+        -- Global Keyboard Listener (automatically ignores chat & textboxes!)
+        if settings._keybindConn then
+            pcall(function() settings._keybindConn:Disconnect() end)
+        end
+
+        settings._keybindConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+            local keyCode = input.KeyCode
+            if not keyCode or keyCode == Enum.KeyCode.Unknown then return end
+            local keyName = keyCode.Name
+
+            -- Mode 1: Assigning a key right now
+            if waitingActionId ~= nil then
+                local targetActId = waitingActionId
+                waitingActionId = nil
+
+                if keyCode == Enum.KeyCode.Escape then
+                    refreshAllKeybindButtons()
+                    showToast("◈  تم إلغاء تحديد الزر")
+                    return
+                end
+                if keyCode == Enum.KeyCode.Backspace or keyCode == Enum.KeyCode.Delete then
+                    settings.keybinds[targetActId] = nil
+                    settings.saveConfig()
+                    refreshAllKeybindButtons()
+                    showToast("✕  تم مسح الزر")
+                    return
+                end
+
+                -- Prevent duplicate key conflicts across actions
+                for otherId, existingKey in pairs(settings.keybinds) do
+                    if otherId ~= targetActId and existingKey == keyName then
+                        settings.keybinds[otherId] = nil
+                    end
+                end
+
+                settings.keybinds[targetActId] = keyName
+                settings.saveConfig()
+                refreshAllKeybindButtons()
+                showToast("⌨  تم تعيين الزر [ " .. keyName .. " ] بنجاح!")
+                return
+            end
+
+            -- Mode 2: Triggering shortcuts while playing (ONLY when Master Toggle is ON!)
+            if not settings._keybindsActive then return end
+            if gameProcessed then return end
+            local focusedBox = nil
+            pcall(function() focusedBox = UserInputService:GetFocusedTextBox() end)
+            if focusedBox ~= nil then return end
+
+            for _, act in ipairs(KEYBIND_ACTIONS) do
+                if settings.keybinds[act.id] == keyName then
+                    pcall(runKeybindAction, act)
+                    break
+                end
+            end
+        end)
+    end)
+
+    if okKb then
+        print("[LYNEX] ✓ Keybinds (اختصارات لوحة المفاتيح) section loaded OK")
+    else
+        warn("[LYNEX] ✗ Keybinds section FAILED:", errKb)
     end
 end
 
@@ -8428,6 +8841,9 @@ local function showWindow()
 end
 closeBtn.MouseButton1Click:Connect(hideWindow)
 floatingBtn.MouseButton1Click:Connect(showWindow)
+settings._toggleMainWindow = function()
+    if windowHidden then showWindow() else hideWindow() end
+end
 
 --==================================================================
 -- 25) Profile
