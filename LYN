@@ -9115,7 +9115,7 @@ do
         -- Actions Card
         local actionsCard = create("Frame", {
             Name = "TargetActionsCard",
-            Size = UDim2.new(1, 0, 0, 130),
+            Size = UDim2.new(1, 0, 0, 178),
             BackgroundColor3 = THEME.BG_CARD,
             BackgroundTransparency = 0.05,
             BorderSizePixel = 0,
@@ -9197,6 +9197,36 @@ do
         addCorner(8, clearBtn)
         addStroke(THEME.BORDER, 1, 0.25, clearBtn)
 
+        local headSitBtn = create("TextButton", {
+            Name = "TargetHeadSitBtn",
+            Size = UDim2.new(0.52, -14, 0, 36),
+            Position = UDim2.new(0.48, 2, 0, 130),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "🧢  الجلوس فوق الرأس",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            ZIndex = 5,
+        }, actionsCard)
+        addCorner(8, headSitBtn)
+        local headSitStroke = addStroke(THEME.BORDER, 1, 0.25, headSitBtn)
+
+        local backSitBtn = create("TextButton", {
+            Name = "TargetBackSitBtn",
+            Size = UDim2.new(0.48, -14, 0, 36),
+            Position = UDim2.new(0, 12, 0, 130),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "🎒  الجلوس خلف الظهر",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            ZIndex = 5,
+        }, actionsCard)
+        addCorner(8, backSitBtn)
+        local backSitStroke = addStroke(THEME.BORDER, 1, 0.25, backSitBtn)
+
         local statusLbl = create("TextLabel", {
             Size = UDim2.new(1, -8, 0, 20),
             BackgroundTransparency = 1,
@@ -9215,6 +9245,9 @@ do
         local loopTpGen = 0
         local recentNames = {}
         local suppressSearch = false
+        local sitMode = "none" -- "none" | "head" | "back"
+        local sitGen = 0
+        local setSitMode
 
         local function formatAge(days)
             days = math.max(0, math.floor(tonumber(days) or 0))
@@ -9231,6 +9264,19 @@ do
             loopBtn.BackgroundColor3 = loopTpOn and THEME.P_MAIN or THEME.BG_CARD_HI
             loopBtn.TextColor3 = loopTpOn and THEME.TX_MAIN or THEME.TX_DIM
             loopStroke.Color = loopTpOn and THEME.P_GLOW or THEME.BORDER
+        end
+
+        local function refreshSitBtns()
+            local headOn = (sitMode == "head")
+            local backOn = (sitMode == "back")
+            headSitBtn.Text = headOn and "🧢  فوق الرأس: يعمل ✓" or "🧢  الجلوس فوق الرأس"
+            headSitBtn.BackgroundColor3 = headOn and THEME.P_MAIN or THEME.BG_CARD_HI
+            headSitBtn.TextColor3 = headOn and THEME.TX_MAIN or THEME.TX_DIM
+            headSitStroke.Color = headOn and THEME.P_GLOW or THEME.BORDER
+            backSitBtn.Text = backOn and "🎒  خلف الظهر: يعمل ✓" or "🎒  الجلوس خلف الظهر"
+            backSitBtn.BackgroundColor3 = backOn and THEME.P_MAIN or THEME.BG_CARD_HI
+            backSitBtn.TextColor3 = backOn and THEME.TX_MAIN or THEME.TX_DIM
+            backSitStroke.Color = backOn and THEME.P_GLOW or THEME.BORDER
         end
 
         local function updateProfile()
@@ -9272,6 +9318,7 @@ do
             local myGen = loopTpGen
             refreshLoopBtn()
             if loopTpOn then
+                if setSitMode then setSitMode("none", true) end
                 if not silent then showToast("🔁  بدأ الانتقال المتكرر إلى " .. displayNameOf(selectedTarget)) end
                 task.spawn(function()
                     while loopTpOn and loopTpGen == myGen do
@@ -9296,6 +9343,93 @@ do
             else
                 if not silent then showToast("🔁  تم إيقاف الانتقال المتكرر") end
             end
+        end
+
+        setSitMode = function(mode, silent)
+            if mode ~= "none" and not selectedTarget then
+                if not silent then showToast("🎯  اختر لاعباً أولاً من البحث") end
+                return
+            end
+            local activating = (mode ~= "none")
+            if activating and loopTpOn then setLoopTp(false, true) end
+            sitMode = mode
+            sitGen += 1
+            local myGen = sitGen
+            refreshSitBtns()
+            if not activating then
+                pcall(function()
+                    local myChar = localPlayer.Character
+                    local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+                    if myHum then
+                        myHum.Sit = false
+                        myHum.PlatformStand = false
+                    end
+                    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                    if myRoot then myRoot.CanCollide = true end
+                end)
+                if not silent then showToast("🎯  تم إيقاف الجلوس على اللاعب") end
+                return
+            end
+            if not silent then
+                showToast(mode == "head" and "🧢  جالس فوق رأس " .. displayNameOf(selectedTarget) or "🎒  صرت شنطة خلف " .. displayNameOf(selectedTarget))
+            end
+            task.spawn(function()
+                while sitMode == mode and sitGen == myGen do
+                    local tgt = selectedTarget
+                    if not tgt or not tgt.Parent then
+                        sitMode = "none"
+                        refreshSitBtns()
+                        break
+                    end
+                    pcall(function()
+                        local myChar = localPlayer.Character
+                        local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+                        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                        local tChar = tgt.Character
+                        if not (myChar and myHum and myRoot and tChar) then return end
+                        myRoot.CanCollide = false
+                        pcall(function()
+                            myRoot.AssemblyLinearVelocity = Vector3.zero
+                            myRoot.AssemblyAngularVelocity = Vector3.zero
+                        end)
+                        if mode == "head" then
+                            local head = tChar:FindFirstChild("Head")
+                            if not head then return end
+                            myHum.PlatformStand = false
+                            myHum.Sit = true
+                            myRoot.CFrame = head.CFrame * CFrame.new(0, 2, 0)
+                        else
+                            local tRoot = tChar:FindFirstChild("HumanoidRootPart")
+                            if not tRoot then return end
+                            myHum.Sit = false
+                            myHum.PlatformStand = true
+                            myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0.1, 1.35)
+                        end
+                    end)
+                    task.wait(0.03)
+                end
+            end)
+        end
+
+        if settings and settings._registeredToggles then
+            table.insert(settings._registeredToggles, {
+                title = "🎯 جلوس فوق رأس الهدف",
+                get = function() return sitMode == "head" end,
+                turnOff = function() if sitMode == "head" then setSitMode("none", true) end end,
+                setOn = function(v)
+                    if v then setSitMode("head", true)
+                    elseif sitMode == "head" then setSitMode("none", true) end
+                end,
+            })
+            table.insert(settings._registeredToggles, {
+                title = "🎯 جلوس خلف الهدف (شنطة)",
+                get = function() return sitMode == "back" end,
+                turnOff = function() if sitMode == "back" then setSitMode("none", true) end end,
+                setOn = function(v)
+                    if v then setSitMode("back", true)
+                    elseif sitMode == "back" then setSitMode("none", true) end
+                end,
+            })
         end
 
         if settings and settings._registeredToggles then
@@ -9495,8 +9629,23 @@ do
             if not loopTpOn and not needTarget() then return end
             setLoopTp(not loopTpOn)
         end)
+        headSitBtn.MouseButton1Click:Connect(function()
+            if sitMode == "head" then
+                setSitMode("none")
+            elseif needTarget() then
+                setSitMode("head")
+            end
+        end)
+        backSitBtn.MouseButton1Click:Connect(function()
+            if sitMode == "back" then
+                setSitMode("none")
+            elseif needTarget() then
+                setSitMode("back")
+            end
+        end)
         clearBtn.MouseButton1Click:Connect(function()
             setLoopTp(false, true)
+            setSitMode("none", true)
             if spectate.active and spectate.target == selectedTarget then
                 stopSpectating("silent")
             end
@@ -9512,6 +9661,7 @@ do
         Players.PlayerRemoving:Connect(function(plr)
             if selectedTarget and plr.UserId == selectedTarget.UserId then
                 setLoopTp(false, true)
+                setSitMode("none", true)
                 selectedTarget = nil
                 updateProfile()
                 showToast("🎯  غادر اللاعب المستهدف السيرفر")
@@ -9559,6 +9709,7 @@ do
 
         updateProfile()
         refreshLoopBtn()
+        refreshSitBtns()
     end)
 
     if okTgt then
