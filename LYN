@@ -1151,7 +1151,9 @@ local TABS = {
     { id = "chat",          name = "شات",               icon = "✎"  },
     { id = "news",          name = "الاخبار",           icon = "✉"  },
     { id = "settings",      name = "اعدادات",           icon = "⚙"  },
-    { id = "about",         name = "حول",                icon = "ℹ️" },
+    { id = "faq",           name = "أسئلة شائعة",        icon = "❓" },
+    { id = "instructions",  name = "تعليمات",             icon = "📖" },
+    { id = "updates",       name = "تحديثات",             icon = "🆕" },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -10463,319 +10465,441 @@ do
 end
 
 --==================================================================
--- 16.99) ℹ️ حول (About LYNEX)
+-- 16.99) ❓ أسئلة شائعة (FAQ)
 --==================================================================
 do
-    local okAbout, errAbout = pcall(function()
-        local aboutPage = createPage("about", true)
-        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, aboutPage)
+    local okFaq, errFaq = pcall(function()
+        local faqPage = createPage("faq", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, faqPage)
         create("UIPadding", {
             PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
-        }, aboutPage)
+        }, faqPage)
 
-        local aOrder = 0
-        local function nextAOrder()
-            aOrder += 1
-            return aOrder
-        end
-        local AB = {}
-        local function copyAboutText(txt, what)
-            local copied = false
-            if typeof(setclipboard) == "function" then
-                copied = pcall(setclipboard, txt)
-            elseif typeof(toclipboard) == "function" then
-                copied = pcall(toclipboard, txt)
-            end
-            showToast(copied and ("📋  تم نسخ " .. what) or (what .. ": " .. txt))
-        end
-        local function makeACard(name, height)
-            local c = create("Frame", {
-                Name = name, Size = UDim2.new(1, 0, 0, height),
-                BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
-                BorderSizePixel = 0, LayoutOrder = nextAOrder(), ZIndex = 4,
-            }, aboutPage)
-            addCorner(12, c)
-            addStroke(THEME.BORDER, 1, 0.15, c)
-            return c
-        end
-        local function makeATitle(parent, txt)
-            create("TextLabel", {
-                Size = UDim2.new(1, -24, 0, 20), Position = UDim2.new(0, 12, 0, 9),
-                BackgroundTransparency = 1, Text = txt, Font = FONT.Bold, TextSize = 11,
-                TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
-            }, parent)
-        end
-        local function makeABtn(parent, name, size, pos, text, main, ts)
-            local b = create("TextButton", {
-                Name = name, Size = size, Position = pos,
-                BackgroundColor3 = main and THEME.P_MAIN or THEME.BG_CARD_HI,
-                AutoButtonColor = false, Text = text, Font = FONT.Bold,
-                TextSize = ts or 10, TextColor3 = main and THEME.TX_MAIN or THEME.TX_DIM, ZIndex = 5,
-            }, parent)
-            addCorner(8, b)
-            addStroke(main and THEME.P_GLOW or THEME.BORDER, 1, 0.25, b)
-            return b
-        end
+        local fOrder = 0
+        local function nextFOrder() fOrder += 1 return fOrder end
 
-        -- 1) Identity card
-        local idCard = makeACard("AboutIdentityCard", 176)
-        local idIcon = create("Frame", {
-            Size = UDim2.fromOffset(54, 54), Position = UDim2.new(0, 12, 0, 14),
+        local banner = create("Frame", {
+            Name = "FaqBanner", Size = UDim2.new(1, 0, 0, 74),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = nextFOrder(), ZIndex = 4,
+        }, faqPage)
+        addCorner(12, banner)
+        addStroke(THEME.BORDER, 1, 0.15, banner)
+        local bIcon = create("Frame", {
+            Size = UDim2.fromOffset(50, 50), Position = UDim2.new(0, 12, 0.5, -25),
             BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
-        }, idCard)
-        addCorner(27, idIcon)
-        addStroke(THEME.P_GLOW, 1.5, 0.2, idIcon)
-        addGradient(idIcon, {
-            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
-            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
-        }, 45)
+        }, banner)
+        addCorner(25, bIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, bIcon)
+        addGradient(bIcon, { ColorSequenceKeypoint.new(0, THEME.P_MAIN), ColorSequenceKeypoint.new(1, THEME.P_BRIGHT) }, 45)
         create("TextLabel", {
-            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "✦",
-            Font = FONT.Logo, TextSize = 24, TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-        }, idIcon)
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "❓",
+            Font = FONT.Logo, TextSize = 22, TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, bIcon)
         create("TextLabel", {
-            Size = UDim2.new(1, -84, 0, 26), Position = UDim2.new(0, 74, 0, 14),
-            BackgroundTransparency = 1, Text = "LYNEX HUB", Font = FONT.Logo, TextSize = 17,
+            Size = UDim2.new(1, -76, 0, 22), Position = UDim2.new(0, 70, 0, 12),
+            BackgroundTransparency = 1, Text = "أسئلة شائعة", Font = FONT.Bold, TextSize = 14,
             TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
-        }, idCard)
+        }, banner)
         create("TextLabel", {
-            Size = UDim2.new(1, -84, 0, 20), Position = UDim2.new(0, 74, 0, 42),
-            BackgroundTransparency = 1, Text = "الإصدار v4.1  •  واجهة احترافية", Font = FONT.Medium, TextSize = 10,
-            TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
-        }, idCard)
-        create("TextLabel", {
-            Size = UDim2.new(1, -84, 0, 20), Position = UDim2.new(0, 74, 0, 62),
-            BackgroundTransparency = 1, Text = "أقوى وأخف سكربت — كل أدواتك بمكان واحد", Font = FONT.Regular, TextSize = 10,
-            TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
-        }, idCard)
+            Size = UDim2.new(1, -76, 0, 28), Position = UDim2.new(0, 70, 0, 34),
+            BackgroundTransparency = 1, Text = "دوس على أي سؤال وبيظهر جوابه. اكتب بالبحث لتصفية الأسئلة.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true, ZIndex = 5,
+        }, banner)
 
-        local function makeAboutTile(xScale, xOff, title, init)
-            local tile = create("Frame", {
-                Size = UDim2.new(0.333, -10, 0, 52), Position = UDim2.new(xScale, xOff, 0, 106),
-                BackgroundColor3 = THEME.BG_CARD_HI, BorderSizePixel = 0, ZIndex = 5,
-            }, idCard)
-            addCorner(9, tile)
-            addStroke(THEME.BORDER, 1, 0.3, tile)
-            create("TextLabel", {
-                Size = UDim2.new(1, -6, 0, 16), Position = UDim2.new(0, 3, 0, 5),
-                BackgroundTransparency = 1, Text = title, Font = FONT.Medium, TextSize = 9,
-                TextColor3 = THEME.TX_SUBTLE, ZIndex = 6,
-            }, tile)
-            local v = create("TextLabel", {
-                Size = UDim2.new(1, -6, 0, 24), Position = UDim2.new(0, 3, 0, 22),
-                BackgroundTransparency = 1, Text = init, Font = FONT.Logo, TextSize = 14,
-                TextColor3 = THEME.TX_MAIN, ZIndex = 6,
-            }, tile)
-            return v
-        end
-        AB.uptimeVal = makeAboutTile(0, 10, "⏱  مدة التشغيل", "00:00:00")
-        AB.featuresVal = makeAboutTile(0.333, 5, "⚡  ميزات مسجلة", "0")
-        AB.tabsVal = makeAboutTile(0.666, 0, "🗂  التبويبات", tostring(#TABS))
+        local searchCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 52),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = nextFOrder(), ZIndex = 4,
+        }, faqPage)
+        addCorner(10, searchCard)
+        addStroke(THEME.BORDER, 1, 0.15, searchCard)
+        local faqSearch = create("TextBox", {
+            Name = "FaqSearchBox",
+            Size = UDim2.new(1, -24, 0, 34), Position = UDim2.new(0, 12, 0.5, -17),
+            BackgroundColor3 = THEME.BG_CARD_HI, BorderSizePixel = 0, Text = "",
+            PlaceholderText = "🔎  ابحث بسؤال... مثال: جوال، حفظ، مش شغالة",
+            PlaceholderColor3 = THEME.TX_SUBTLE, Font = FONT.Regular, TextSize = 10,
+            TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right,
+            ClearTextOnFocus = false, ZIndex = 5,
+        }, searchCard)
+        addCorner(8, faqSearch)
+        addStroke(THEME.BORDER, 1, 0.3, faqSearch)
+        create("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }, faqSearch)
 
-        -- 2) Get the script
-        local getCard = makeACard("AboutGetScriptCard", 154)
-        makeATitle(getCard, "📥  احصل على السكربت")
-        AB.loadstringBtn = makeABtn(getCard, "AboutCopyLoadstringBtn", UDim2.new(1, -24, 0, 36), UDim2.new(0, 12, 0, 38), "📋  نسخ كود التشغيل (LYNEX.lua)", true)
-        AB.discordCopyBtn = makeABtn(getCard, "AboutCopyDiscordBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 84), "📋  نسخ رابط الديسكورد", false)
-        AB.discordOpenBtn = makeABtn(getCard, "AboutOpenDiscordBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 84), "💬  فتح الديسكورد", false)
-        create("TextLabel", {
-            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 126),
-            BackgroundTransparency = 1, Text = "ما عندك ملف السكربت؟ احصل على أحدث نسخة من سيرفر الديسكورد",
-            Font = FONT.Medium, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
-            TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
-        }, getCard)
-        AB.loadstringBtn.MouseButton1Click:Connect(function()
-            copyAboutText('loadstring(readfile("LYNEX.lua"))()', "كود التشغيل")
-        end)
-        AB.discordCopyBtn.MouseButton1Click:Connect(function()
-            copyAboutText(DISCORD_URL, "رابط الديسكورد")
-        end)
-        AB.discordOpenBtn.MouseButton1Click:Connect(function()
-            openURL(DISCORD_URL)
-        end)
-
-        -- 3) Team (expanded)
-        local teamCard = makeACard("AboutTeamCard", 282)
-        makeATitle(teamCard, "👥  فريق العمل")
-        local TEAM = {
-            { icon = "★", name = "Ghaith", role = "اونر ديسكورد", desc = "صاحب سيرفر الديسكورد والمجتمع", discord = "oday9734", canCopy = true },
-            { icon = "⚒", name = "Habash", role = "مطور السكربت", desc = "المبرمج الأساسي ومسؤول الميزات", discord = "غير معروف", canCopy = false },
-            { icon = "✦", name = "hamza", role = "مساعد المطور", desc = "مساعد المطور وشريك التطوير", discord = "hamza.abc0", canCopy = true },
+        local QA = {
+            { q = "ليش في ميزة مش شغالة عندي؟", a = "تأكد إنك فعّلت الميزة من تبويبها أو شفت حالتها بلوحة التحكم، وجرّب توقفها وترجع تشغلها. بعض الميزات بتحتاج منفّذ (Executor) يدعم HTTP مثل ميزات السيرفرات، وبعض ميزات المابات بتشتغل بس بالماب المخصص إلها. إذا ضلت مش شغالة، انسخ تقرير مشكلتك وابعثه بالديسكورد." },
+            { q = "هل السكربت آمن على حسابي؟", a = "ولا أي سكربت بالعالم بيضمن حماية 100% من أنظمة اللعبة. LYNEX مصمم يكون خفيف وحذر، بس الاستخدام دايماً على مسؤوليتك. إذا قلقان على حسابك الأساسي، جرّب الميزات أولاً بحساب ثاني ولا تبالغ باستخدام الميزات الواضحة قدام الناس." },
+            { q = "هل السكربت يدعم الجوال؟", a = "نعم، الواجهة مصممة بالكامل للمس وبتشتغل على الجوال والكمبيوتر. كل التبويبات والأزرار والسلايدرات بتتجاوب مع اللمس، وتبويب الاستهداف والسيرفرات مرتبين بصفوف منفصلة عشان ما تتراكب العناصر على شاشات الجوال الضيقة." },
+            { q = "كيف أحفظ إعداداتي لجلسة ثانية؟", a = "أغلب خياراتك بتنحفظ تلقائياً بملف إعدادات LYNEX: الثيم اللي اخترته، التبويبات المثبتة بالنجمة، الأماكن المحفوظة (Waypoints)، اختصارات الكيبورد، والأهداف المفضلة بتبويب الاستهداف. عدّل اللي بدك ياه من تبويب الإعدادات وخلص — بيرجع مثل ما تركته." },
+            { q = "كيف أوقف كل الميزات بسرعة إذا صار شي؟", a = "افتح تبويب لوحة التحكم ودوس زر إيقاف الكل (Panic) — بيوقف كل الميزات الشغالة مرة وحدة بما فيها أوضاع الاستهداف والمتابعة والجلوس. وهناك كمان بتشوف قائمة بكل ميزة شغالة حالياً وبتقدر توقف أي وحدة لحالها." },
+            { q = "كيف أربط اختصارات لوحة المفاتيح؟", a = "افتح تبويب اختصارات لوحة المفاتيح، فعّل المفتاح الرئيسي (هو مطفي أول ما تشغل السكربت)، وبعدها دوس «اختر زر» جنب أي فعل واضغط الزر اللي بدك ياه من الكيبورد. إذا الزر مستخدم بفعل ثاني بيتنظف لحاله عشان ما يصير تعارض، واختياراتك بتنحفظ تلقائياً." },
+            { q = "كيف أنتقل لسيرفر ثاني من تبويب السيرفرات؟", a = "افتح تبويب السيرفرات واستنى القائمة تحمل أو دوس تحديث. كل بطاقة سيرفر فيها عدد اللاعبين والبنق والفريم وزر انتقال مباشر. بتقدر ترتب من الأزرار فوق (الأقل بنق، الأعلى فريم...) وتخفي السيرفرات الممتلئة، أو تلصق كود سيرفر (JobId) بخانة الانتقال المباشر إذا صاحبك بعثلك ياه." },
+            { q = "كيف أستهدف لاعب وأقعد فوق رأسه أو وراه؟", a = "افتح تبويب الاستهداف واكتب أول حرفين من اسم اللاعب بالبحث، اختاره من الاقتراحات وبتطلع صورته ومعلوماته. تحت بتلاقي الانتقال والمشاهدة والانتقال المتكرر، وزر الجلوس فوق الرأس وزر الجلوس خلفه مثل الشنطة (بوضعية جلوس). وبتقدر كمان تميزه بإضاءة وسهم وتتابعه أو تدور حوله من نفس التبويب." },
+            { q = "الواجهة اختفت أو علّقت، شو أعمل؟", a = "إذا اختفت الواجهة دوس على الزر العائم تبع LYNEX عشان ترجع تظهر. إذا علّق شي، وقف الميزة من لوحة التحكم (إيقاف الكل) وكمل لعب. وإذا ضلت المشكلة، أغلق السكربت وشغله من جديد، أو انسخ وصف المشكلة وابعثه بسيرفر الديسكورد ونساعدك." },
+            { q = "كيف أقترح ميزة جديدة أو أبلغ عن مشكلة؟", a = "انضم لسيرفر الديسكورد تبع LYNEX (بينسخ رابطه تلقائياً أول ما تشغل السكربت، وفي زر إله بالمنزل) وابعث اقتراحك أو مشكلتك هناك. كل ما كان وصفك أوضح — وشو كنت مشغل وشو صار بالضبط — كل ما قدرنا نساعدك ونضيف طلبك أسرع." },
         }
-        for i, dev in ipairs(TEAM) do
-            local d = dev
-            local row = create("Frame", {
-                Size = UDim2.new(1, -24, 0, 54), Position = UDim2.new(0, 12, 0, 38 + (i - 1) * 60),
-                BackgroundColor3 = THEME.BG_CARD_HI, BorderSizePixel = 0, ZIndex = 5,
-            }, teamCard)
-            addCorner(9, row)
-            addStroke(THEME.BORDER, 1, 0.3, row)
+
+        local faqItems = {}
+        for i, item in ipairs(QA) do
+            local it = item
+            local itemFrame = create("Frame", {
+                Name = "FaqItem_" .. tostring(i),
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+                BorderSizePixel = 0, LayoutOrder = nextFOrder(), ZIndex = 4,
+            }, faqPage)
+            addCorner(10, itemFrame)
+            addStroke(THEME.BORDER, 1, 0.2, itemFrame)
+            create("UIListLayout", { Padding = UDim.new(0, 0), SortOrder = Enum.SortOrder.LayoutOrder }, itemFrame)
+
+            local qBtn = create("TextButton", {
+                Name = "FaqQBtn_" .. tostring(i),
+                Size = UDim2.new(1, 0, 0, 44),
+                BackgroundTransparency = 1, AutoButtonColor = false, Text = "",
+                LayoutOrder = 1, ZIndex = 5,
+            }, itemFrame)
             create("TextLabel", {
-                Size = UDim2.new(1, -70, 0, 22), Position = UDim2.new(0, 10, 0, 5),
-                BackgroundTransparency = 1,
-                Text = d.icon .. "  " .. d.name .. " — " .. d.role,
+                Size = UDim2.new(1, -52, 1, 0), Position = UDim2.new(0, 12, 0, 0),
+                BackgroundTransparency = 1, Text = "❓  " .. it.q,
                 Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
-                TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 6,
-            }, row)
-            create("TextLabel", {
-                Size = UDim2.new(1, -70, 0, 18), Position = UDim2.new(0, 10, 0, 28),
-                BackgroundTransparency = 1,
-                Text = d.desc .. "  •  ◈ " .. d.discord,
-                Font = FONT.Medium, TextSize = 9, TextColor3 = THEME.TX_DIM,
                 TextXAlignment = Enum.TextXAlignment.Right,
                 TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
-            }, row)
-            if d.canCopy then
-                local cp = makeABtn(row, "AboutCopyDev_" .. tostring(i), UDim2.fromOffset(46, 30), UDim2.new(0, 8, 0.5, -15), "📋", false, 12)
-                cp.MouseButton1Click:Connect(function()
-                    copyAboutText(d.discord, "ديسكورد " .. d.name)
-                end)
-            end
-        end
-        AB.joinBtn = makeABtn(teamCard, "AboutJoinDiscordBtn", UDim2.new(1, -24, 0, 38), UDim2.new(0, 12, 0, 224), "💬  انضم إلى سيرفر الديسكورد", true)
-        AB.joinBtn.MouseButton1Click:Connect(function()
-            copyAboutText(DISCORD_URL, "رابط الديسكورد")
-        end)
-
-        -- 4) What's new
-        local newCard = makeACard("AboutWhatsNewCard", 196)
-        makeATitle(newCard, "🆕  شو الجديد بهذا الإصدار")
-        create("TextLabel", {
-            Size = UDim2.new(1, -24, 0, 146), Position = UDim2.new(0, 12, 0, 38),
-            BackgroundTransparency = 1,
-            Text = "• تبويب 🎯 الاستهداف الكامل: بحث فوري، انتقال، مشاهدة، جلوس وتمييز وتتبع\n• تبويب 🌐 السيرفرات: كل سيرفرات الماب مع البنق والفريم والانتقال المباشر\n• تبويب ⌨ اختصارات لوحة المفاتيح القابلة للتخصيص وحفظ إعداداتك\n• تبويب ⊞ لوحة التحكم: حالة السكربت والميزات الشغالة وإيقاف الكل\n• تحسينات أداء وإصلاحات عامة على الواجهة",
-            Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true,
-            VerticalAlignment = Enum.VerticalAlignment.Top, ZIndex = 5,
-        }, newCard)
-
-        -- 5) FAQ
-        local faqCard = makeACard("AboutFaqCard", 196)
-        makeATitle(faqCard, "❓  أسئلة شائعة ومساعدة")
-        local FAQ = {
-            { q = "ليش ميزة مش شغالة؟", a = "تأكد إنك شغلت الميزة من تبويبها أو من لوحة التحكم، وجرّب توقفها وترجع تشغلها. بعض الميزات بتحتاج منفّذ يدعم HTTP، وبعضها بيشتغل بمابات معينة بس." },
-            { q = "هل السكربت آمن؟", a = "ولا سكربت بيضمن حماية 100% من أنظمة اللعبة. استخدم LYNEX بحذر وعلى مسؤوليتك، وإذا قلقان على حسابك الأساسي جرّب بحساب ثاني أولاً." },
-            { q = "كيف أحفظ إعداداتي؟", a = "من تبويب الإعدادات فعّل الثيم والخيارات اللي بدك ياها ودوس حفظ الإعدادات — بينحفظ ثيمك والمفضلة والأماكن والاختصارات والأهداف المفضلة تلقائياً لجلستك الجاية." },
-            { q = "هل يدعم الجوال؟", a = "نعم! الواجهة مصممة للمس، وكل التبويبات والأزرار بتشتغل على الجوال والكمبيوتر. على الكمبيوتر بتقدر كمان تربط اختصارات كيبورد من تبويب الاختصارات." },
-        }
-        AB.faqAnswer = create("TextLabel", {
-            Size = UDim2.new(1, -24, 0, 54), Position = UDim2.new(0, 12, 0, 130),
-            BackgroundTransparency = 1,
-            Text = "دوس على أي سؤال فوق وبيظهر جوابه هون 👇",
-            Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.P_GLOW,
-            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true,
-            VerticalAlignment = Enum.VerticalAlignment.Top, ZIndex = 5,
-        }, faqCard)
-        for i, item in ipairs(FAQ) do
-            local it = item
-            local rowIdx = math.floor((i - 1) / 2)
-            local colIdx = (i - 1) % 2
-            local size = colIdx == 0 and UDim2.new(0.52, -14, 0, 36) or UDim2.new(0.48, -14, 0, 36)
-            local pos = colIdx == 0 and UDim2.new(0.48, 2, 0, 38 + rowIdx * 46) or UDim2.new(0, 12, 0, 38 + rowIdx * 46)
-            local qb = makeABtn(faqCard, "AboutFaqBtn_" .. tostring(i), size, pos, "❓  " .. it.q, false, 9)
-            qb.MouseButton1Click:Connect(function()
-                AB.faqAnswer.Text = it.a
+            }, qBtn)
+            local arrowLbl = create("TextLabel", {
+                Size = UDim2.fromOffset(30, 44), Position = UDim2.new(0, 8, 0, 0),
+                BackgroundTransparency = 1, Text = "▼",
+                Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.P_GLOW, ZIndex = 6,
+            }, qBtn)
+            local aLbl = create("TextLabel", {
+                Name = "FaqAnswer_" .. tostring(i),
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1, Text = it.a,
+                Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_DIM,
+                TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true,
+                Visible = (i == 1), LayoutOrder = 2, ZIndex = 5,
+            }, itemFrame)
+            create("UIPadding", {
+                PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
+                PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 10),
+            }, aLbl)
+            if i == 1 then arrowLbl.Text = "▲" end
+            qBtn.MouseButton1Click:Connect(function()
+                aLbl.Visible = not aLbl.Visible
+                arrowLbl.Text = aLbl.Visible and "▲" or "▼"
             end)
+            faqItems[i] = { frame = itemFrame, q = it.q, a = it.a }
         end
 
-        -- 6) Script controls
-        local ctrlCard = makeACard("AboutControlsCard", 140)
-        makeATitle(ctrlCard, "⚙️  التحكم بالسكربت")
-        AB.reportBtn = makeABtn(ctrlCard, "AboutReportBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 38), "📋  نسخ تقرير دعم", false)
-        AB.restartBtn = makeABtn(ctrlCard, "AboutRestartBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 38), "🔄  إعادة تشغيل الواجهة", false)
-        AB.unloadBtn = makeABtn(ctrlCard, "AboutUnloadBtn", UDim2.new(1, -24, 0, 38), UDim2.new(0, 12, 0, 84), "⛔  إغلاق السكربت نهائياً", false)
-        AB.unloadBtn.BackgroundColor3 = THEME.DANGER
-        AB.unloadBtn.TextColor3 = THEME.TX_MAIN
-
-        AB.reportBtn.MouseButton1Click:Connect(function()
-            local execName = "غير معروف"
-            pcall(function()
-                if typeof(getexecutorname) == "function" then
-                    execName = tostring(getexecutorname())
-                elseif typeof(identifyexecutor) == "function" then
-                    execName = tostring(identifyexecutor())
+        faqSearch:GetPropertyChangedSignal("Text"):Connect(function()
+            local query = (faqSearch.Text or ""):gsub("^%s+", ""):gsub("%s+$", ""):lower()
+            for _, entry in ipairs(faqItems) do
+                if query == "" then
+                    entry.frame.Visible = true
+                else
+                    entry.frame.Visible = (entry.q:lower():find(query, 1, true) ~= nil)
+                        or (entry.a:lower():find(query, 1, true) ~= nil)
                 end
-            end)
-            local device = UserInputService.TouchEnabled and "جوال 📱" or "كمبيوتر 💻"
-            local vpTxt, pingTxt = "--", "--"
-            pcall(function()
-                local vp = workspace.CurrentCamera.ViewportSize
-                vpTxt = tostring(math.floor(vp.X)) .. "x" .. tostring(math.floor(vp.Y))
-            end)
-            pcall(function()
-                pingTxt = tostring(math.floor(localPlayer:GetNetworkPing() * 1000 + 0.5)) .. "ms"
-            end)
-            local upSecs = math.floor(os.clock() - (settings._startTime or os.clock()))
-            local report = table.concat({
-                "LYNEX HUB v4.1 — تقرير دعم",
-                "اللاعب: @" .. tostring(localPlayer.Name) .. " (" .. tostring(localPlayer.UserId) .. ")",
-                "المنفذ: " .. execName .. "  •  الجهاز: " .. device .. "  •  الشاشة: " .. vpTxt,
-                "اللعبة: " .. tostring(game.Name) .. "  •  PlaceId: " .. tostring(game.PlaceId),
-                "السيرفر: " .. tostring(game.JobId or "-") .. "  •  اللاعبون: " .. tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers),
-                "البنق: " .. pingTxt .. "  •  مدة التشغيل: " .. tostring(upSecs) .. " ثانية",
-                "التبويبات: " .. tostring(#TABS) .. "  •  ميزات مسجلة: " .. tostring(#(settings._registeredToggles or {})),
-                "صف مشكلتك هنا: ",
-            }, "\n")
-            copyAboutText(report, "تقرير الدعم — ابعثه بالديسكورد")
-        end)
-        AB.restartBtn.MouseButton1Click:Connect(function()
-            if settings._toggleMainWindow then
-                settings._toggleMainWindow()
-                task.delay(0.3, function()
-                    if settings._toggleMainWindow then settings._toggleMainWindow() end
-                end)
-                showToast("🔄  تمت إعادة تشغيل الواجهة")
-            else
-                showToast("🔄  الواجهة شغالة بشكل طبيعي")
             end
         end)
-        AB.unloadBtn.MouseButton1Click:Connect(function()
-            showToast("⛔  جاري إغلاق LYNEX...")
-            task.delay(0.35, function()
-                if _G.LYNEX_CLEANUP then pcall(_G.LYNEX_CLEANUP) end
-                pcall(function()
-                    local blur = Lighting:FindFirstChild("LYNEX_HUB_Blur")
-                    if blur then blur:Destroy() end
-                end)
-                if screenGui then pcall(function() screenGui:Destroy() end) end
-            end)
-        end)
 
-        -- 7) Footer
-        local footCard = makeACard("AboutFooterCard", 104)
+        local helpCard = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 96),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = nextFOrder(), ZIndex = 4,
+        }, faqPage)
+        addCorner(12, helpCard)
+        addStroke(THEME.BORDER, 1, 0.15, helpCard)
         create("TextLabel", {
-            Size = UDim2.new(1, -16, 0, 24), Position = UDim2.new(0, 8, 0, 10),
-            BackgroundTransparency = 1,
-            Text = "صُنع بواسطة فريق LYNEX © 2026 — شكراً لاستخدامك السكربت ❤️",
-            Font = FONT.Bold, TextSize = 10, TextColor3 = THEME.TX_DIM,
-            TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5,
-        }, footCard)
-        AB.suggestBtn = makeABtn(footCard, "AboutSuggestBtn", UDim2.new(1, -24, 0, 38), UDim2.new(0, 12, 0, 44), "💡  اقترح ميزة جديدة", true)
-        AB.suggestBtn.MouseButton1Click:Connect(function()
-            copyAboutText("اقتراح ميزة لسكربت LYNEX:\nاسم الميزة: \nشرح الميزة: \nوين رح أستخدمها: ", "قالب الاقتراح — ابعثه بالديسكورد")
-        end)
-
-        -- Live counters
-        task.spawn(function()
-            while screenGui and screenGui.Parent do
-                if aboutPage.Visible then
-                    local secs = math.max(0, math.floor(os.clock() - (settings._startTime or os.clock())))
-                    AB.uptimeVal.Text = string.format("%02d:%02d:%02d", math.floor(secs / 3600), math.floor(secs / 60) % 60, secs % 60)
-                    AB.featuresVal.Text = tostring(#(settings._registeredToggles or {}))
-                    AB.tabsVal.Text = tostring(#TABS)
-                end
-                task.wait(1)
+            Size = UDim2.new(1, -24, 0, 20), Position = UDim2.new(0, 12, 0, 10),
+            BackgroundTransparency = 1, Text = "لسا عندك سؤال؟ اسألنا بالديسكورد 💬",
+            Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, helpCard)
+        local dcBtn = create("TextButton", {
+            Size = UDim2.new(0.52, -14, 0, 38), Position = UDim2.new(0.48, 2, 0, 42),
+            BackgroundColor3 = THEME.P_MAIN, AutoButtonColor = false,
+            Text = "💬  فتح الديسكورد", Font = FONT.Bold, TextSize = 10,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, helpCard)
+        addCorner(8, dcBtn)
+        addStroke(THEME.P_GLOW, 1, 0.2, dcBtn)
+        local dcCopyBtn = create("TextButton", {
+            Size = UDim2.new(0.48, -14, 0, 38), Position = UDim2.new(0, 12, 0, 42),
+            BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
+            Text = "📋  نسخ رابط الديسكورد", Font = FONT.Bold, TextSize = 10,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 5,
+        }, helpCard)
+        addCorner(8, dcCopyBtn)
+        addStroke(THEME.BORDER_HI, 1, 0.25, dcCopyBtn)
+        dcBtn.MouseButton1Click:Connect(function() openURL(DISCORD_URL) end)
+        dcCopyBtn.MouseButton1Click:Connect(function()
+            local copied = false
+            if typeof(setclipboard) == "function" then
+                copied = pcall(setclipboard, DISCORD_URL)
+            elseif typeof(toclipboard) == "function" then
+                copied = pcall(toclipboard, DISCORD_URL)
             end
+            showToast(copied and "📋  تم نسخ رابط الديسكورد" or ("رابط الديسكورد: " .. DISCORD_URL))
         end)
     end)
 
-    if okAbout then
-        print("[LYNEX] ✓ About (حول) section loaded OK")
+    if okFaq then
+        print("[LYNEX] ✓ FAQ (أسئلة شائعة) section loaded OK")
     else
-        warn("[LYNEX] ✗ About section FAILED:", errAbout)
+        warn("[LYNEX] ✗ FAQ section FAILED:", errFaq)
     end
 end
 
+--==================================================================
+-- 16.100) 📖 تعليمات (How to use LYNEX buttons & tabs)
+--==================================================================
+do
+    local okIns, errIns = pcall(function()
+        local insPage = createPage("instructions", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, insPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
+        }, insPage)
+
+        local iOrder = 0
+        local function nextIOrder() iOrder += 1 return iOrder end
+
+        local banner = create("Frame", {
+            Name = "InstructionsBanner", Size = UDim2.new(1, 0, 0, 74),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = nextIOrder(), ZIndex = 4,
+        }, insPage)
+        addCorner(12, banner)
+        addStroke(THEME.BORDER, 1, 0.15, banner)
+        local bIcon = create("Frame", {
+            Size = UDim2.fromOffset(50, 50), Position = UDim2.new(0, 12, 0.5, -25),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, banner)
+        addCorner(25, bIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, bIcon)
+        addGradient(bIcon, { ColorSequenceKeypoint.new(0, THEME.P_MAIN), ColorSequenceKeypoint.new(1, THEME.P_BRIGHT) }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "📖",
+            Font = FONT.Logo, TextSize = 22, TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, bIcon)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 22), Position = UDim2.new(0, 70, 0, 12),
+            BackgroundTransparency = 1, Text = "تعليمات الاستخدام", Font = FONT.Bold, TextSize = 14,
+            TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, banner)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 28), Position = UDim2.new(0, 70, 0, 34),
+            BackgroundTransparency = 1, Text = "شرح سريع: شو فايدة كل زر وتبويب بالسكربت.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true, ZIndex = 5,
+        }, banner)
+
+        local function makeInsCard(title, body)
+            local c = create("Frame", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+                BorderSizePixel = 0, LayoutOrder = nextIOrder(), ZIndex = 4,
+            }, insPage)
+            addCorner(12, c)
+            addStroke(THEME.BORDER, 1, 0.15, c)
+            create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, c)
+            create("UIPadding", {
+                PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
+                PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10),
+            }, c)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, Text = title,
+                Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 1, ZIndex = 5,
+            }, c)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1, Text = body,
+                Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_DIM,
+                TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true,
+                LayoutOrder = 2, ZIndex = 5,
+            }, c)
+            return c
+        end
+
+        makeInsCard("🎛  كيف بتشتغل أزرار السكربت؟",
+            "• زر تشغيل/إيقاف (مفتاح صغير): بيضل شغال لحد ما تطفيه — مثل الطيران أو النوكليب.\n" ..
+            "• زر فعل (كبير وملون): بينفذ شغلة مرة وحدة وبس — مثل الانتقال أو نسخ كود سيرفر.\n" ..
+            "• شريط التمرير (Slider): اسحبه بصباعك أو بالماوس لتغيير قيمة مثل السرعة أو قوة القفز.\n" ..
+            "• خانة كتابة: اكتب فيها ودوس Enter أو الزر اللي جنبها — مثل بحث اللاعبين أو كود السيرفر.\n" ..
+            "• زر «اختر زر» بالاختصارات: دوسه وبعدها اضغط أي زر كيبورد عشان يرتبط بالفعل.")
+
+        makeInsCard("🗂  أزرار القائمة الجانبية",
+            "• خانة «بحث التبويبات» فوق القائمة: اكتب اسم أي تبويب وبيصفى فوراً — أسرع طريقة توصل للي بدك ياه.\n" ..
+            "• النجمة ⭐ جنب اسم التبويب: بتثبت التبويب بأعلى القائمة بالمفضلة، ودوسها كمان مرة بتشيله.\n" ..
+            "• زر الإغلاق ✕ فوق النافذة بيخفي الواجهة، والزر العائم تبع LYNEX بيرجع يظهرها وين ما كنت.\n" ..
+            "• أرقام الفريمات والبنق اللي فوق النافذة بتتحدث لحظياً — إذا نزلت كتير فعّل FPS Booster من الإعدادات.")
+
+        makeInsCard("🏠  المنزل ولوحة التحكم",
+            "• المنزل: معلومات سيرفرك الحالي (اللاعبين، الفريم/البنق، اسم الماب)، معلومات المطورين، وزر الانضمام للديسكورد.\n" ..
+            "• لوحة التحكم: بتشوف حالة السكربت ومدة تشغيله وأداء جهازك، وقائمة بكل ميزة شغالة حالياً مع زر إيقاف لكل وحدة.\n" ..
+            "• زر إيقاف الكل بلوحة التحكم هو زر الطوارئ تبعك: بيوقف كل شي مرة وحدة إذا صار أي شي مفاجئ.\n" ..
+            "• أزرار سريعة هناك: إعادة تعيين شخصيتك، تحديث شخصيتك بنفس مكانك، وتجميد شخصيتك مكانها.")
+
+        makeInsCard("⌨  الاختصارات والسيرفرات",
+            "• تبويب اختصارات لوحة المفاتيح: فيه مفتاح رئيسي بيكون مطفي أول مرة — شغله أولاً وبعدها اربط كل فعل بالزر اللي يعجبك، وبيشتغل بس برا الشات وخانات الكتابة.\n" ..
+            "• تبويب السيرفرات: زر التحديث بيجلب كل سيرفرات الماب، وأزرار الترتيب بترتبهم بالأشخاص أو البنق أو الفريم.\n" ..
+            "• زر إخفاء الممتلئة بيخفي السيرفرات اللي ما فيها مكان، وزر 📋 بينسخ كود أي سيرفر (JobId) تبعثه لصاحبك.\n" ..
+            "• خانة كود السيرفر فوق: الصق أي JobId ودوس انتقال وبتروحله مباشرة.")
+
+        makeInsCard("🎯  الاستهداف (أهم تبويب)",
+            "• البحث فوق: اكتب أول حرفين من اسم أي لاعب واختاره من الاقتراحات — بتطلع صورته وعمر حسابه ومسافته وصحته مباشرة.\n" ..
+            "• انتقال: بيوديك لعنده مرة وحدة. مشاهدة: الكاميرا بتصير عليه وبترجعلك بنفس الزر.\n" ..
+            "• انتقال متكرر: بيضل ينقلك لعنده كل لحظة. الجلوس فوق الرأس: بتقعد على رأسه. الجلوس خلفه: بتصير مثل الشنطة ورا ظهره وبوضعية جلوس.\n" ..
+            "• التمييز بيضويه من ورا الجدران، والسهم بيدلك على مكانه، والمتابعة بيمشي وراه، والدوران بيلف حوله، والتقليد بيقلد حركاته.\n" ..
+            "• النجمة بتحفظه بالمفضلة عشان تنبه أول ما يدخل سيرفرك، والبطاقة العائمة بتخلي صورته وصحته ظاهرة وانت تلعب.")
+
+        makeInsCard("👤  اللاعب واللاعبين والإعدادات",
+            "• تبويب اللاعب: أزرار شخصيتك انت — السرعة والقفز والنوكليب وغيرها، مع أزرار قفل السرعة والقفز عشان ما يرجعوا يتغيروا.\n" ..
+            "• تبويب اللاعبين: قائمة بكل اللي بالسيرفر، ومن عند كل لاعب بتقدر تنتقل له أو تشاهده.\n" ..
+            "• تبويب الإعدادات: غيّر ثيم الواجهة من 5 ألوان، فعّل Anti-AFK و FPS Booster، واحفظ إعداداتك والأماكن المفضلة عندك.\n" ..
+            "• باقي التبويبات (صيد، ضرب تلقائي، رقصات، بيانو...) كل واحد مختص بميزته وبنفس الأسلوب: مفتاح تشغيل وخلص.")
+
+        makeInsCard("💡  نصائح سريعة",
+            "• إذا أي ميزة علّقت: وقفها وشغلها، أو استخدم إيقاف الكل من لوحة التحكم.\n" ..
+            "• ثبّت التبويبات اللي تستخدمها كل يوم بالنجمة ⭐ عشان توصلها بثانية.\n" ..
+            "• اربط أفعالك اليومية باختصارات كيبورد إذا تلعب على كمبيوتر — أسرع من فتح الواجهة كل مرة.\n" ..
+            "• أسئلة أكثر؟ افتح تبويب الأسئلة الشائعة أو اسألنا بسيرفر الديسكورد.")
+    end)
+
+    if okIns then
+        print("[LYNEX] ✓ Instructions (تعليمات) section loaded OK")
+    else
+        warn("[LYNEX] ✗ Instructions section FAILED:", errIns)
+    end
+end
+
+--==================================================================
+-- 16.101) 🆕 تحديثات (LYNEX Changelog)
+--==================================================================
+do
+    local okUpd, errUpd = pcall(function()
+        local updPage = createPage("updates", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, updPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
+        }, updPage)
+
+        local uOrder = 0
+        local function nextUOrder() uOrder += 1 return uOrder end
+
+        local banner = create("Frame", {
+            Name = "UpdatesBanner", Size = UDim2.new(1, 0, 0, 74),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+            BorderSizePixel = 0, LayoutOrder = nextUOrder(), ZIndex = 4,
+        }, updPage)
+        addCorner(12, banner)
+        addStroke(THEME.BORDER, 1, 0.15, banner)
+        local bIcon = create("Frame", {
+            Size = UDim2.fromOffset(50, 50), Position = UDim2.new(0, 12, 0.5, -25),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, banner)
+        addCorner(25, bIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, bIcon)
+        addGradient(bIcon, { ColorSequenceKeypoint.new(0, THEME.P_MAIN), ColorSequenceKeypoint.new(1, THEME.P_BRIGHT) }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "🆕",
+            Font = FONT.Logo, TextSize = 22, TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, bIcon)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 22), Position = UDim2.new(0, 70, 0, 12),
+            BackgroundTransparency = 1, Text = "تحديثات LYNEX", Font = FONT.Bold, TextSize = 14,
+            TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, banner)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 28), Position = UDim2.new(0, 70, 0, 34),
+            BackgroundTransparency = 1, Text = "الإصدار الحالي v4.1 — كل ما انضاف وانعدّل بالسكربت، من الأحدث للأقدم.",
+            Font = FONT.Regular, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true, ZIndex = 5,
+        }, banner)
+
+        local function makeUpdCard(title, body)
+            local c = create("Frame", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+                BorderSizePixel = 0, LayoutOrder = nextUOrder(), ZIndex = 4,
+            }, updPage)
+            addCorner(12, c)
+            addStroke(THEME.BORDER, 1, 0.15, c)
+            create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, c)
+            create("UIPadding", {
+                PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
+                PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10),
+            }, c)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, Text = title,
+                Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.P_GLOW,
+                TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 1, ZIndex = 5,
+            }, c)
+            create("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1, Text = body,
+                Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_DIM,
+                TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true,
+                LayoutOrder = 2, ZIndex = 5,
+            }, c)
+            return c
+        end
+
+        makeUpdCard("⭐  الأحدث — تبويبات مساعدة جديدة",
+            "• تبويب ❓ أسئلة شائعة: 10 أسئلة بأجوبتها القابلة للفتح مع بحث فوري بالأسئلة.\n" ..
+            "• تبويب 📖 تعليمات: شرح فايدة كل زر وتبويب بالسكربت للمستخدمين الجداد.\n" ..
+            "• تبويب 🆕 تحديثات هذا اللي بتقرأه هسة، وتغيير لقب hamza إلى «مساعد المطور» بكل السكربت.")
+
+        makeUpdCard("🎯  تحديث الاستهداف الكبير",
+            "• تبويب استهداف جديد بالكامل: بحث فوري من أول حرفين يطلع صورة اللاعب واسمه وعمر حسابه وتاريخ إنشاءه ومسافته وصحته مباشرة.\n" ..
+            "• انتقال فوري، مشاهدة، وانتقال متكرر، مع مسح كامل للهدف بضغطة.\n" ..
+            "• جلوس فوق رأس اللاعب، وجلوس خلفه مثل الشنطة وبوضعية جلوس حقيقية — وبيضلوا لاصقين فيه وهو يتحرك.\n" ..
+            "• تمييز مضيء من ورا الجدران + سهم اتجاه على الشاشة مع المسافة.\n" ..
+            "• متابعة تلقائية بمسافة قابلة للضبط، دوران حول اللاعب بسرعة قابلة للضبط، وقوف وجهاً لوجه، ورقص قدامه.\n" ..
+            "• ركوب معه بالسيارة تلقائياً، تقليد حركاته (مشي وقفز وقعود)، وتنبيهات موت وعودة واقتراب.\n" ..
+            "• أزرار سريعة: أقرب لاعب، عشوائي، السابق/التالي، ونسخ الاسم والـ UserID والموقع.\n" ..
+            "• أهداف مفضلة محفوظة حتى بعد إغلاق السكربت مع تنبيه أول ما المفضل يدخل سيرفرك، وبطاقة عائمة بمعلومات الهدف.")
+
+        makeUpdCard("🌐  تبويب السيرفرات",
+            "• متصفح سيرفرات كامل: كل سيرفرات الماب الحالية بعدد اللاعبين والبنق والفريم لكل سيرفر.\n" ..
+            "• انتقال مباشر لأي سيرفر بضغطة، ونسخ كود أي سيرفر (JobId)، وانتقال مباشر بلصق الكود.\n" ..
+            "• ترتيب بالأكثر أشخاص أو الأقل بنق أو الأعلى فريم، وإخفاء السيرفرات الممتلئة، وعدادات إجمالية للسيرفرات واللاعبين.\n" ..
+            "• معلومات سيرفرك الحالي مباشرة مع أزرار نسخ كودك وإعادة الدخول لنفس السيرفر، وإصلاح ترتيب البطاقات على شاشات الجوال.")
+
+        makeUpdCard("⊞  لوحة التحكم واختصارات الكيبورد",
+            "• تبويب لوحة تحكم جديد: حالة السكربت، ساعة مدة التشغيل، الأداء واستهلاك الذاكرة مع تنظيفها.\n" ..
+            "• قائمة حية بكل ميزة شغالة عندك مع زر إيقاف لكل وحدة، وزر إيقاف الكل الطارئ.\n" ..
+            "• أزرار تحكم سريعة: إعادة تعيين، تحديث بنفس المكان، وتجميد الشخصية.\n" ..
+            "• تبويب اختصارات لوحة مفاتيح: مفتاح رئيسي (مطفي افتراضياً) و14 فعل قابل للربط بأي زر، مع حفظ تلقائي ومنع التعارض بين الأزرار وتجاهل الكتابة بالشات.")
+
+        makeUpdCard("⚡  التحسينات العشرة وتجربة الاستخدام",
+            "• بحث فوري بالتبويبات من القائمة الجانبية مع تثبيت المفضلة بالنجمة ⭐.\n" ..
+            "• عداد فريمات وبنق مباشر أعلى النافذة، و5 ثيمات ألوان للواجهة مع حفظ كل إعداداتك بملف.\n" ..
+            "• Anti-AFK ضد الطرد من الخمول، و FPS Booster لرفع الأداء، وانتقال لسيرفر قليل (Low Server Hop).\n" ..
+            "• FullBright لإضاءة كاملة، وأماكن محفوظة (Waypoints) تتنقل لها، وأداة Click TP للنقل بالضغط.\n" ..
+            "• قفل السرعة والقفز على قيمك، وميزة Noclip لعبور الجدران.")
+
+        makeUpdCard("✦  التعريف والتعريب",
+            "• نسخ رابط سيرفر الديسكورد تلقائياً أول ما تشغل السكربت، وزر انضمام واضح بالمنزل.\n" ..
+            "• بطاقة معلومات المطورين بالمنزل: Ghaith (اونر ديسكورد)، Habash (مطور السكربت)، hamza (مساعد المطور).\n" ..
+            "• تعريب التبويبات الأساسية بالكامل: المنزل، اللاعب، اللاعبين، الإعدادات، ومتنوع.")
+    end)
+
+    if okUpd then
+        print("[LYNEX] ✓ Updates (تحديثات) section loaded OK")
+    else
+        warn("[LYNEX] ✗ Updates section FAILED:", errUpd)
+    end
+end
 
 --==================================================================
 -- 16.10) Anti-strike Page
