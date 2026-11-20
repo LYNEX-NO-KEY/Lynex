@@ -1151,6 +1151,7 @@ local TABS = {
     { id = "chat",          name = "شات",               icon = "✎"  },
     { id = "news",          name = "الاخبار",           icon = "✉"  },
     { id = "settings",      name = "اعدادات",           icon = "⚙"  },
+    { id = "about",         name = "حول",                icon = "ℹ️" },
 }
 
 local tabButtons, tabPages, currentTab = {}, {}, nil
@@ -1516,7 +1517,7 @@ do
         local DEV_ROWS = {
             { icon = "★", role = "اونر ديسكورد",  name = "Ghaith", discord = "oday9734",   canCopy = true  },
             { icon = "⚒", role = "مطور السكربت",  name = "Habash", discord = "غير معروف", canCopy = false },
-            { icon = "✦", role = "مصمم الواجهة",  name = "hamza",  discord = "hamza.abc0", canCopy = true  },
+            { icon = "✦", role = "مساعد المطور",  name = "hamza",  discord = "hamza.abc0", canCopy = true  },
         }
 
         local devRowH = 44
@@ -10460,6 +10461,321 @@ do
         warn("[LYNEX] ✗ Targeting section FAILED:", errTgt)
     end
 end
+
+--==================================================================
+-- 16.99) ℹ️ حول (About LYNEX)
+--==================================================================
+do
+    local okAbout, errAbout = pcall(function()
+        local aboutPage = createPage("about", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, aboutPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
+        }, aboutPage)
+
+        local aOrder = 0
+        local function nextAOrder()
+            aOrder += 1
+            return aOrder
+        end
+        local AB = {}
+        local function copyAboutText(txt, what)
+            local copied = false
+            if typeof(setclipboard) == "function" then
+                copied = pcall(setclipboard, txt)
+            elseif typeof(toclipboard) == "function" then
+                copied = pcall(toclipboard, txt)
+            end
+            showToast(copied and ("📋  تم نسخ " .. what) or (what .. ": " .. txt))
+        end
+        local function makeACard(name, height)
+            local c = create("Frame", {
+                Name = name, Size = UDim2.new(1, 0, 0, height),
+                BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+                BorderSizePixel = 0, LayoutOrder = nextAOrder(), ZIndex = 4,
+            }, aboutPage)
+            addCorner(12, c)
+            addStroke(THEME.BORDER, 1, 0.15, c)
+            return c
+        end
+        local function makeATitle(parent, txt)
+            create("TextLabel", {
+                Size = UDim2.new(1, -24, 0, 20), Position = UDim2.new(0, 12, 0, 9),
+                BackgroundTransparency = 1, Text = txt, Font = FONT.Bold, TextSize = 11,
+                TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+            }, parent)
+        end
+        local function makeABtn(parent, name, size, pos, text, main, ts)
+            local b = create("TextButton", {
+                Name = name, Size = size, Position = pos,
+                BackgroundColor3 = main and THEME.P_MAIN or THEME.BG_CARD_HI,
+                AutoButtonColor = false, Text = text, Font = FONT.Bold,
+                TextSize = ts or 10, TextColor3 = main and THEME.TX_MAIN or THEME.TX_DIM, ZIndex = 5,
+            }, parent)
+            addCorner(8, b)
+            addStroke(main and THEME.P_GLOW or THEME.BORDER, 1, 0.25, b)
+            return b
+        end
+
+        -- 1) Identity card
+        local idCard = makeACard("AboutIdentityCard", 176)
+        local idIcon = create("Frame", {
+            Size = UDim2.fromOffset(54, 54), Position = UDim2.new(0, 12, 0, 14),
+            BackgroundColor3 = THEME.P_MAIN, BorderSizePixel = 0, ZIndex = 5,
+        }, idCard)
+        addCorner(27, idIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, idIcon)
+        addGradient(idIcon, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "✦",
+            Font = FONT.Logo, TextSize = 24, TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+        }, idIcon)
+        create("TextLabel", {
+            Size = UDim2.new(1, -84, 0, 26), Position = UDim2.new(0, 74, 0, 14),
+            BackgroundTransparency = 1, Text = "LYNEX HUB", Font = FONT.Logo, TextSize = 17,
+            TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, idCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -84, 0, 20), Position = UDim2.new(0, 74, 0, 42),
+            BackgroundTransparency = 1, Text = "الإصدار v4.1  •  واجهة احترافية", Font = FONT.Medium, TextSize = 10,
+            TextColor3 = THEME.P_GLOW, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, idCard)
+        create("TextLabel", {
+            Size = UDim2.new(1, -84, 0, 20), Position = UDim2.new(0, 74, 0, 62),
+            BackgroundTransparency = 1, Text = "أقوى وأخف سكربت — كل أدواتك بمكان واحد", Font = FONT.Regular, TextSize = 10,
+            TextColor3 = THEME.TX_DIM, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, idCard)
+
+        local function makeAboutTile(xScale, xOff, title, init)
+            local tile = create("Frame", {
+                Size = UDim2.new(0.333, -10, 0, 52), Position = UDim2.new(xScale, xOff, 0, 106),
+                BackgroundColor3 = THEME.BG_CARD_HI, BorderSizePixel = 0, ZIndex = 5,
+            }, idCard)
+            addCorner(9, tile)
+            addStroke(THEME.BORDER, 1, 0.3, tile)
+            create("TextLabel", {
+                Size = UDim2.new(1, -6, 0, 16), Position = UDim2.new(0, 3, 0, 5),
+                BackgroundTransparency = 1, Text = title, Font = FONT.Medium, TextSize = 9,
+                TextColor3 = THEME.TX_SUBTLE, ZIndex = 6,
+            }, tile)
+            local v = create("TextLabel", {
+                Size = UDim2.new(1, -6, 0, 24), Position = UDim2.new(0, 3, 0, 22),
+                BackgroundTransparency = 1, Text = init, Font = FONT.Logo, TextSize = 14,
+                TextColor3 = THEME.TX_MAIN, ZIndex = 6,
+            }, tile)
+            return v
+        end
+        AB.uptimeVal = makeAboutTile(0, 10, "⏱  مدة التشغيل", "00:00:00")
+        AB.featuresVal = makeAboutTile(0.333, 5, "⚡  ميزات مسجلة", "0")
+        AB.tabsVal = makeAboutTile(0.666, 0, "🗂  التبويبات", tostring(#TABS))
+
+        -- 2) Get the script
+        local getCard = makeACard("AboutGetScriptCard", 154)
+        makeATitle(getCard, "📥  احصل على السكربت")
+        AB.loadstringBtn = makeABtn(getCard, "AboutCopyLoadstringBtn", UDim2.new(1, -24, 0, 36), UDim2.new(0, 12, 0, 38), "📋  نسخ كود التشغيل (LYNEX.lua)", true)
+        AB.discordCopyBtn = makeABtn(getCard, "AboutCopyDiscordBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 84), "📋  نسخ رابط الديسكورد", false)
+        AB.discordOpenBtn = makeABtn(getCard, "AboutOpenDiscordBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 84), "💬  فتح الديسكورد", false)
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 126),
+            BackgroundTransparency = 1, Text = "ما عندك ملف السكربت؟ احصل على أحدث نسخة من سيرفر الديسكورد",
+            Font = FONT.Medium, TextSize = 9, TextColor3 = THEME.TX_SUBTLE,
+            TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+        }, getCard)
+        AB.loadstringBtn.MouseButton1Click:Connect(function()
+            copyAboutText('loadstring(readfile("LYNEX.lua"))()', "كود التشغيل")
+        end)
+        AB.discordCopyBtn.MouseButton1Click:Connect(function()
+            copyAboutText(DISCORD_URL, "رابط الديسكورد")
+        end)
+        AB.discordOpenBtn.MouseButton1Click:Connect(function()
+            openURL(DISCORD_URL)
+        end)
+
+        -- 3) Team (expanded)
+        local teamCard = makeACard("AboutTeamCard", 282)
+        makeATitle(teamCard, "👥  فريق العمل")
+        local TEAM = {
+            { icon = "★", name = "Ghaith", role = "اونر ديسكورد", desc = "صاحب سيرفر الديسكورد والمجتمع", discord = "oday9734", canCopy = true },
+            { icon = "⚒", name = "Habash", role = "مطور السكربت", desc = "المبرمج الأساسي ومسؤول الميزات", discord = "غير معروف", canCopy = false },
+            { icon = "✦", name = "hamza", role = "مساعد المطور", desc = "مساعد المطور وشريك التطوير", discord = "hamza.abc0", canCopy = true },
+        }
+        for i, dev in ipairs(TEAM) do
+            local d = dev
+            local row = create("Frame", {
+                Size = UDim2.new(1, -24, 0, 54), Position = UDim2.new(0, 12, 0, 38 + (i - 1) * 60),
+                BackgroundColor3 = THEME.BG_CARD_HI, BorderSizePixel = 0, ZIndex = 5,
+            }, teamCard)
+            addCorner(9, row)
+            addStroke(THEME.BORDER, 1, 0.3, row)
+            create("TextLabel", {
+                Size = UDim2.new(1, -70, 0, 22), Position = UDim2.new(0, 10, 0, 5),
+                BackgroundTransparency = 1,
+                Text = d.icon .. "  " .. d.name .. " — " .. d.role,
+                Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 6,
+            }, row)
+            create("TextLabel", {
+                Size = UDim2.new(1, -70, 0, 18), Position = UDim2.new(0, 10, 0, 28),
+                BackgroundTransparency = 1,
+                Text = d.desc .. "  •  ◈ " .. d.discord,
+                Font = FONT.Medium, TextSize = 9, TextColor3 = THEME.TX_DIM,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
+            }, row)
+            if d.canCopy then
+                local cp = makeABtn(row, "AboutCopyDev_" .. tostring(i), UDim2.fromOffset(46, 30), UDim2.new(0, 8, 0.5, -15), "📋", false, 12)
+                cp.MouseButton1Click:Connect(function()
+                    copyAboutText(d.discord, "ديسكورد " .. d.name)
+                end)
+            end
+        end
+        AB.joinBtn = makeABtn(teamCard, "AboutJoinDiscordBtn", UDim2.new(1, -24, 0, 38), UDim2.new(0, 12, 0, 224), "💬  انضم إلى سيرفر الديسكورد", true)
+        AB.joinBtn.MouseButton1Click:Connect(function()
+            copyAboutText(DISCORD_URL, "رابط الديسكورد")
+        end)
+
+        -- 4) What's new
+        local newCard = makeACard("AboutWhatsNewCard", 196)
+        makeATitle(newCard, "🆕  شو الجديد بهذا الإصدار")
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 146), Position = UDim2.new(0, 12, 0, 38),
+            BackgroundTransparency = 1,
+            Text = "• تبويب 🎯 الاستهداف الكامل: بحث فوري، انتقال، مشاهدة، جلوس وتمييز وتتبع\n• تبويب 🌐 السيرفرات: كل سيرفرات الماب مع البنق والفريم والانتقال المباشر\n• تبويب ⌨ اختصارات لوحة المفاتيح القابلة للتخصيص وحفظ إعداداتك\n• تبويب ⊞ لوحة التحكم: حالة السكربت والميزات الشغالة وإيقاف الكل\n• تحسينات أداء وإصلاحات عامة على الواجهة",
+            Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true,
+            VerticalAlignment = Enum.VerticalAlignment.Top, ZIndex = 5,
+        }, newCard)
+
+        -- 5) FAQ
+        local faqCard = makeACard("AboutFaqCard", 196)
+        makeATitle(faqCard, "❓  أسئلة شائعة ومساعدة")
+        local FAQ = {
+            { q = "ليش ميزة مش شغالة؟", a = "تأكد إنك شغلت الميزة من تبويبها أو من لوحة التحكم، وجرّب توقفها وترجع تشغلها. بعض الميزات بتحتاج منفّذ يدعم HTTP، وبعضها بيشتغل بمابات معينة بس." },
+            { q = "هل السكربت آمن؟", a = "ولا سكربت بيضمن حماية 100% من أنظمة اللعبة. استخدم LYNEX بحذر وعلى مسؤوليتك، وإذا قلقان على حسابك الأساسي جرّب بحساب ثاني أولاً." },
+            { q = "كيف أحفظ إعداداتي؟", a = "من تبويب الإعدادات فعّل الثيم والخيارات اللي بدك ياها ودوس حفظ الإعدادات — بينحفظ ثيمك والمفضلة والأماكن والاختصارات والأهداف المفضلة تلقائياً لجلستك الجاية." },
+            { q = "هل يدعم الجوال؟", a = "نعم! الواجهة مصممة للمس، وكل التبويبات والأزرار بتشتغل على الجوال والكمبيوتر. على الكمبيوتر بتقدر كمان تربط اختصارات كيبورد من تبويب الاختصارات." },
+        }
+        AB.faqAnswer = create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 54), Position = UDim2.new(0, 12, 0, 130),
+            BackgroundTransparency = 1,
+            Text = "دوس على أي سؤال فوق وبيظهر جوابه هون 👇",
+            Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true,
+            VerticalAlignment = Enum.VerticalAlignment.Top, ZIndex = 5,
+        }, faqCard)
+        for i, item in ipairs(FAQ) do
+            local it = item
+            local rowIdx = math.floor((i - 1) / 2)
+            local colIdx = (i - 1) % 2
+            local size = colIdx == 0 and UDim2.new(0.52, -14, 0, 36) or UDim2.new(0.48, -14, 0, 36)
+            local pos = colIdx == 0 and UDim2.new(0.48, 2, 0, 38 + rowIdx * 46) or UDim2.new(0, 12, 0, 38 + rowIdx * 46)
+            local qb = makeABtn(faqCard, "AboutFaqBtn_" .. tostring(i), size, pos, "❓  " .. it.q, false, 9)
+            qb.MouseButton1Click:Connect(function()
+                AB.faqAnswer.Text = it.a
+            end)
+        end
+
+        -- 6) Script controls
+        local ctrlCard = makeACard("AboutControlsCard", 140)
+        makeATitle(ctrlCard, "⚙️  التحكم بالسكربت")
+        AB.reportBtn = makeABtn(ctrlCard, "AboutReportBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 38), "📋  نسخ تقرير دعم", false)
+        AB.restartBtn = makeABtn(ctrlCard, "AboutRestartBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 38), "🔄  إعادة تشغيل الواجهة", false)
+        AB.unloadBtn = makeABtn(ctrlCard, "AboutUnloadBtn", UDim2.new(1, -24, 0, 38), UDim2.new(0, 12, 0, 84), "⛔  إغلاق السكربت نهائياً", false)
+        AB.unloadBtn.BackgroundColor3 = THEME.DANGER
+        AB.unloadBtn.TextColor3 = THEME.TX_MAIN
+
+        AB.reportBtn.MouseButton1Click:Connect(function()
+            local execName = "غير معروف"
+            pcall(function()
+                if typeof(getexecutorname) == "function" then
+                    execName = tostring(getexecutorname())
+                elseif typeof(identifyexecutor) == "function" then
+                    execName = tostring(identifyexecutor())
+                end
+            end)
+            local device = UserInputService.TouchEnabled and "جوال 📱" or "كمبيوتر 💻"
+            local vpTxt, pingTxt = "--", "--"
+            pcall(function()
+                local vp = workspace.CurrentCamera.ViewportSize
+                vpTxt = tostring(math.floor(vp.X)) .. "x" .. tostring(math.floor(vp.Y))
+            end)
+            pcall(function()
+                pingTxt = tostring(math.floor(localPlayer:GetNetworkPing() * 1000 + 0.5)) .. "ms"
+            end)
+            local upSecs = math.floor(os.clock() - (settings._startTime or os.clock()))
+            local report = table.concat({
+                "LYNEX HUB v4.1 — تقرير دعم",
+                "اللاعب: @" .. tostring(localPlayer.Name) .. " (" .. tostring(localPlayer.UserId) .. ")",
+                "المنفذ: " .. execName .. "  •  الجهاز: " .. device .. "  •  الشاشة: " .. vpTxt,
+                "اللعبة: " .. tostring(game.Name) .. "  •  PlaceId: " .. tostring(game.PlaceId),
+                "السيرفر: " .. tostring(game.JobId or "-") .. "  •  اللاعبون: " .. tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers),
+                "البنق: " .. pingTxt .. "  •  مدة التشغيل: " .. tostring(upSecs) .. " ثانية",
+                "التبويبات: " .. tostring(#TABS) .. "  •  ميزات مسجلة: " .. tostring(#(settings._registeredToggles or {})),
+                "صف مشكلتك هنا: ",
+            }, "\n")
+            copyAboutText(report, "تقرير الدعم — ابعثه بالديسكورد")
+        end)
+        AB.restartBtn.MouseButton1Click:Connect(function()
+            if settings._toggleMainWindow then
+                settings._toggleMainWindow()
+                task.delay(0.3, function()
+                    if settings._toggleMainWindow then settings._toggleMainWindow() end
+                end)
+                showToast("🔄  تمت إعادة تشغيل الواجهة")
+            else
+                showToast("🔄  الواجهة شغالة بشكل طبيعي")
+            end
+        end)
+        AB.unloadBtn.MouseButton1Click:Connect(function()
+            showToast("⛔  جاري إغلاق LYNEX...")
+            task.delay(0.35, function()
+                if _G.LYNEX_CLEANUP then pcall(_G.LYNEX_CLEANUP) end
+                pcall(function()
+                    local blur = Lighting:FindFirstChild("LYNEX_HUB_Blur")
+                    if blur then blur:Destroy() end
+                end)
+                if screenGui then pcall(function() screenGui:Destroy() end) end
+            end)
+        end)
+
+        -- 7) Footer
+        local footCard = makeACard("AboutFooterCard", 104)
+        create("TextLabel", {
+            Size = UDim2.new(1, -16, 0, 24), Position = UDim2.new(0, 8, 0, 10),
+            BackgroundTransparency = 1,
+            Text = "صُنع بواسطة فريق LYNEX © 2026 — شكراً لاستخدامك السكربت ❤️",
+            Font = FONT.Bold, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5,
+        }, footCard)
+        AB.suggestBtn = makeABtn(footCard, "AboutSuggestBtn", UDim2.new(1, -24, 0, 38), UDim2.new(0, 12, 0, 44), "💡  اقترح ميزة جديدة", true)
+        AB.suggestBtn.MouseButton1Click:Connect(function()
+            copyAboutText("اقتراح ميزة لسكربت LYNEX:\nاسم الميزة: \nشرح الميزة: \nوين رح أستخدمها: ", "قالب الاقتراح — ابعثه بالديسكورد")
+        end)
+
+        -- Live counters
+        task.spawn(function()
+            while screenGui and screenGui.Parent do
+                if aboutPage.Visible then
+                    local secs = math.max(0, math.floor(os.clock() - (settings._startTime or os.clock())))
+                    AB.uptimeVal.Text = string.format("%02d:%02d:%02d", math.floor(secs / 3600), math.floor(secs / 60) % 60, secs % 60)
+                    AB.featuresVal.Text = tostring(#(settings._registeredToggles or {}))
+                    AB.tabsVal.Text = tostring(#TABS)
+                end
+                task.wait(1)
+            end
+        end)
+    end)
+
+    if okAbout then
+        print("[LYNEX] ✓ About (حول) section loaded OK")
+    else
+        warn("[LYNEX] ✗ About section FAILED:", errAbout)
+    end
+end
+
 
 --==================================================================
 -- 16.10) Anti-strike Page
