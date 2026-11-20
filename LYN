@@ -583,6 +583,7 @@ local settings = {
     favorites = {},
     waypoints = {},
     keybinds = {},
+    targetFavs = {},
     _keybindsActive = false,
     _startTime = os.clock(),
     _registeredToggles = {},
@@ -689,6 +690,7 @@ do
                 favorites = settings.favorites,
                 waypoints = settings.waypoints,
                 keybinds = settings.keybinds,
+                targetFavs = settings.targetFavs,
             }
             writefile(CONFIG_FILE, HttpService:JSONEncode(payload))
         end)
@@ -711,6 +713,7 @@ do
             if type(data.favorites) == "table" then settings.favorites = data.favorites end
             if type(data.waypoints) == "table" then settings.waypoints = data.waypoints end
             if type(data.keybinds) == "table" then settings.keybinds = data.keybinds end
+            if type(data.targetFavs) == "table" then settings.targetFavs = data.targetFavs end
         end)
     end
 
@@ -9227,6 +9230,130 @@ do
         addCorner(8, backSitBtn)
         local backSitStroke = addStroke(THEME.BORDER, 1, 0.25, backSitBtn)
 
+        -- ===== Extra cards: tracking / quick actions / interaction / favorites =====
+        local XB = {}
+        local function makeXBtn(parent, name, size, pos, text, ts)
+            local b = create("TextButton", {
+                Name = name, Size = size, Position = pos,
+                BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
+                Text = text, Font = FONT.Bold, TextSize = ts or 10,
+                TextColor3 = THEME.TX_DIM, ZIndex = 5,
+            }, parent)
+            addCorner(8, b)
+            local st = addStroke(THEME.BORDER, 1, 0.25, b)
+            return b, st
+        end
+        local function makeXTitle(parent, txt, y)
+            create("TextLabel", {
+                Size = UDim2.new(1, -24, 0, 20), Position = UDim2.new(0, 12, 0, y or 9),
+                BackgroundTransparency = 1, Text = txt, Font = FONT.Bold, TextSize = 11,
+                TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5,
+            }, parent)
+        end
+        local function makeXCard(name, height)
+            local c = create("Frame", {
+                Name = name, Size = UDim2.new(1, 0, 0, height),
+                BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.05,
+                BorderSizePixel = 0, LayoutOrder = nextTOrder(), ZIndex = 4,
+            }, tgtPage)
+            addCorner(12, c)
+            addStroke(THEME.BORDER, 1, 0.15, c)
+            return c
+        end
+
+        local trackCard = makeXCard("TargetTrackingCard", 272)
+        makeXTitle(trackCard, "🔦  التمييز والتتبع")
+        XB.highlight, XB.highlightS = makeXBtn(trackCard, "TargetHighlightBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 38), "🔦  التمييز: إيقاف")
+        XB.arrow, XB.arrowS = makeXBtn(trackCard, "TargetArrowBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 38), "➤  سهم الهدف: إيقاف")
+        XB.follow, XB.followS = makeXBtn(trackCard, "TargetFollowBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 84), "🚶  متابعة: إيقاف")
+        XB.orbit, XB.orbitS = makeXBtn(trackCard, "TargetOrbitBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 84), "🌀  دوران حوله: إيقاف")
+        XB.followDist, XB.followDistS = makeXBtn(trackCard, "TargetFollowDistBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 130), "📏  مسافة المتابعة: 10")
+        XB.orbitSpeed, XB.orbitSpeedS = makeXBtn(trackCard, "TargetOrbitSpeedBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 130), "💨  سرعة الدوران: 4")
+        XB.alerts, XB.alertsS = makeXBtn(trackCard, "TargetAlertsBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 176), "🔔  التنبيهات: إيقاف")
+        XB.guard, XB.guardS = makeXBtn(trackCard, "TargetGuardBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 176), "⚠️  تنبيه اقتراب: 25")
+        XB.miniBtn, XB.miniBtnS = makeXBtn(trackCard, "TargetMiniBtn", UDim2.new(1, -24, 0, 36), UDim2.new(0, 12, 0, 222), "📌  البطاقة العائمة: إيقاف")
+
+        local quickCard = makeXCard("TargetQuickCard", 176)
+        makeXTitle(quickCard, "⚡  أزرار سريعة ومعلومات")
+        XB.nearest, XB.nearestS = makeXBtn(quickCard, "TargetNearestBtn", UDim2.new(0.25, -9, 0, 36), UDim2.new(0.75, 4, 0, 38), "🎯  الأقرب", 9)
+        XB.random, XB.randomS = makeXBtn(quickCard, "TargetRandomBtn", UDim2.new(0.25, -9, 0, 36), UDim2.new(0.5, 6, 0, 38), "🎲  عشوائي", 9)
+        XB.prev, XB.prevS = makeXBtn(quickCard, "TargetPrevBtn", UDim2.new(0.25, -9, 0, 36), UDim2.new(0.25, 8, 0, 38), "◀  السابق", 9)
+        XB.next, XB.nextS = makeXBtn(quickCard, "TargetNextBtn", UDim2.new(0.25, -9, 0, 36), UDim2.new(0, 10, 0, 38), "التالي  ▶", 9)
+        XB.copyName, XB.copyNameS = makeXBtn(quickCard, "TargetCopyNameBtn", UDim2.new(0.333, -8, 0, 34), UDim2.new(0.666, 4, 0, 84), "📋  الاسم", 9)
+        XB.copyId, XB.copyIdS = makeXBtn(quickCard, "TargetCopyIdBtn", UDim2.new(0.333, -8, 0, 34), UDim2.new(0.333, 7, 0, 84), "📋  UserID", 9)
+        XB.copyPos, XB.copyPosS = makeXBtn(quickCard, "TargetCopyPosBtn", UDim2.new(0.333, -8, 0, 34), UDim2.new(0, 10, 0, 84), "📋  الموقع", 9)
+        XB.adv = create("TextLabel", {
+            Name = "TargetAdvancedInfo",
+            Size = UDim2.new(1, -24, 0, 42), Position = UDim2.new(0, 12, 0, 126),
+            BackgroundTransparency = 1,
+            Text = "📊  معلومات متقدمة: اختر لاعباً لعرض أداته وحالته وسرعته وإحصائياته",
+            Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right, TextWrapped = true, ZIndex = 5,
+        }, quickCard)
+
+        local interactCard = makeXCard("TargetInteractCard", 178)
+        makeXTitle(interactCard, "🎭  التفاعل والمفضلة")
+        XB.front, XB.frontS = makeXBtn(interactCard, "TargetFrontBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 38), "🤝  وجهاً لوجه: إيقاف")
+        XB.dance, XB.danceS = makeXBtn(interactCard, "TargetDanceBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 38), "🕺  رقص قدامه: إيقاف")
+        XB.ride, XB.rideS = makeXBtn(interactCard, "TargetRideBtn", UDim2.new(0.52, -14, 0, 36), UDim2.new(0.48, 2, 0, 84), "🚗  ركوب معه")
+        XB.mimic, XB.mimicS = makeXBtn(interactCard, "TargetMimicBtn", UDim2.new(0.48, -14, 0, 36), UDim2.new(0, 12, 0, 84), "🪞  تقليد: إيقاف")
+        XB.fav, XB.favS = makeXBtn(interactCard, "TargetFavoriteBtn", UDim2.new(1, -24, 0, 36), UDim2.new(0, 12, 0, 130), "⭐  حفظ الهدف بالمفضلة")
+
+        XB.favList = create("Frame", {
+            Name = "TargetFavoritesList",
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = nextTOrder(),
+            ZIndex = 4,
+        }, tgtPage)
+        create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, XB.favList)
+
+        -- Floating overlays on the game screen (arrow + mini target card)
+        XB.arrowGui = create("Frame", {
+            Name = "LYNEX_TargetArrow",
+            Size = UDim2.fromOffset(54, 66),
+            BackgroundTransparency = 1,
+            Visible = false,
+            ZIndex = 90,
+        }, screenGui)
+        XB.arrowLbl = create("TextLabel", {
+            Size = UDim2.fromOffset(54, 40), Position = UDim2.fromOffset(0, 0),
+            BackgroundTransparency = 1, Text = "➤", Font = FONT.Logo, TextSize = 30,
+            TextColor3 = THEME.DANGER_HI, ZIndex = 91,
+        }, XB.arrowGui)
+        XB.arrowDist = create("TextLabel", {
+            Size = UDim2.fromOffset(54, 20), Position = UDim2.fromOffset(0, 42),
+            BackgroundTransparency = 1, Text = "", Font = FONT.Bold, TextSize = 10,
+            TextColor3 = THEME.TX_MAIN, ZIndex = 91,
+        }, XB.arrowGui)
+
+        XB.mini = create("Frame", {
+            Name = "LYNEX_TargetMiniCard",
+            Size = UDim2.fromOffset(200, 70),
+            Position = UDim2.new(0.5, -100, 0, 64),
+            BackgroundColor3 = THEME.BG_CARD, BackgroundTransparency = 0.08,
+            BorderSizePixel = 0, Visible = false, ZIndex = 90,
+        }, screenGui)
+        addCorner(10, XB.mini)
+        addStroke(THEME.P_GLOW, 1.2, 0.25, XB.mini)
+        XB.miniAvatar = create("ImageLabel", {
+            Size = UDim2.fromOffset(46, 46), Position = UDim2.new(0, 8, 0.5, -23),
+            BackgroundTransparency = 1, Image = "", ScaleType = Enum.ScaleType.Fit, ZIndex = 91,
+        }, XB.mini)
+        XB.miniName = create("TextLabel", {
+            Size = UDim2.new(1, -64, 0, 24), Position = UDim2.new(0, 58, 0, 10),
+            BackgroundTransparency = 1, Text = "🎯  --", Font = FONT.Bold, TextSize = 11,
+            TextColor3 = THEME.TX_MAIN, TextXAlignment = Enum.TextXAlignment.Right,
+            TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 91,
+        }, XB.mini)
+        XB.miniInfo = create("TextLabel", {
+            Size = UDim2.new(1, -64, 0, 22), Position = UDim2.new(0, 58, 0, 36),
+            BackgroundTransparency = 1, Text = "--", Font = FONT.Medium, TextSize = 10,
+            TextColor3 = THEME.OK, TextXAlignment = Enum.TextXAlignment.Right,
+            TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 91,
+        }, XB.mini)
+
         local statusLbl = create("TextLabel", {
             Size = UDim2.new(1, -8, 0, 20),
             BackgroundTransparency = 1,
@@ -9248,6 +9375,11 @@ do
         local sitMode = "none" -- "none" | "head" | "back"
         local sitGen = 0
         local setSitMode
+        local moveMode = "none" -- "none" | "follow" | "orbit" | "front" | "dance"
+        local setMoveMode
+        local selectTarget
+        local refreshTargetExtras
+        local renderFavsList
 
         local function formatAge(days)
             days = math.max(0, math.floor(tonumber(days) or 0))
@@ -9319,6 +9451,7 @@ do
             refreshLoopBtn()
             if loopTpOn then
                 if setSitMode then setSitMode("none", true) end
+                if setMoveMode then setMoveMode("none", true) end
                 if not silent then showToast("🔁  بدأ الانتقال المتكرر إلى " .. displayNameOf(selectedTarget)) end
                 task.spawn(function()
                     while loopTpOn and loopTpGen == myGen do
@@ -9352,6 +9485,7 @@ do
             end
             local activating = (mode ~= "none")
             if activating and loopTpOn then setLoopTp(false, true) end
+            if activating and setMoveMode then setMoveMode("none", true) end
             sitMode = mode
             sitGen += 1
             local myGen = sitGen
@@ -9401,9 +9535,9 @@ do
                         else
                             local tRoot = tChar:FindFirstChild("HumanoidRootPart")
                             if not tRoot then return end
-                            myHum.Sit = false
-                            myHum.PlatformStand = true
-                            myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0.1, 1.35)
+                            myHum.PlatformStand = false
+                            myHum.Sit = true
+                            myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0.55, 1.45)
                         end
                     end)
                     task.wait(0.03)
@@ -9432,6 +9566,386 @@ do
             })
         end
 
+
+        -- ===== Extra logic: highlight / arrow / move modes / mimic / favorites / quick =====
+        local highlightOn, arrowOn = false, false
+        local highlightInst, highlightChar = nil, nil
+        local moveGen, orbitAngle, danceTrack = 0, 0, nil
+        local followDists, followDistIdx = { 6, 10, 16, 24 }, 2
+        local orbitSpeeds, orbitSpeedIdx = { 2, 4, 7, 12 }, 2
+        local guardDists, guardDistIdx = { 15, 25, 40, 60 }, 2
+        local alertsOn, miniOn, mimicOn, mimicGen = false, false, false, 0
+        local prevTargetDead, lastGuardAt = false, 0
+        local hookedTargetId, hookedCharConn = nil, nil
+
+        local function styleXBtn(b, s, on, onText, offText)
+            if not b then return end
+            b.Text = on and onText or offText
+            b.BackgroundColor3 = on and THEME.P_MAIN or THEME.BG_CARD_HI
+            b.TextColor3 = on and THEME.TX_MAIN or THEME.TX_DIM
+            if s then s.Color = on and THEME.P_GLOW or THEME.BORDER end
+        end
+
+        local function refreshTrackingBtns()
+            styleXBtn(XB.highlight, XB.highlightS, highlightOn, "🔦  التمييز: يعمل ✓", "🔦  التمييز: إيقاف")
+            styleXBtn(XB.arrow, XB.arrowS, arrowOn, "➤  سهم الهدف: يعمل ✓", "➤  سهم الهدف: إيقاف")
+            styleXBtn(XB.follow, XB.followS, moveMode == "follow", "🚶  متابعة: تعمل ✓", "🚶  متابعة: إيقاف")
+            styleXBtn(XB.orbit, XB.orbitS, moveMode == "orbit", "🌀  دوران حوله: يعمل ✓", "🌀  دوران حوله: إيقاف")
+            styleXBtn(XB.front, XB.frontS, moveMode == "front", "🤝  وجهاً لوجه: يعمل ✓", "🤝  وجهاً لوجه: إيقاف")
+            styleXBtn(XB.dance, XB.danceS, moveMode == "dance", "🕺  رقص قدامه: يعمل ✓", "🕺  رقص قدامه: إيقاف")
+            styleXBtn(XB.mimic, XB.mimicS, mimicOn, "🪞  تقليد: يعمل ✓", "🪞  تقليد: إيقاف")
+            styleXBtn(XB.alerts, XB.alertsS, alertsOn, "🔔  التنبيهات: تعمل ✓", "🔔  التنبيهات: إيقاف")
+            if XB.mini then XB.mini.Visible = miniOn and selectedTarget ~= nil end
+            styleXBtn(XB.miniBtn, XB.miniBtnS, miniOn, "📌  البطاقة العائمة: تعمل ✓", "📌  البطاقة العائمة: إيقاف")
+            XB.followDist.Text = "📏  مسافة المتابعة: " .. tostring(followDists[followDistIdx])
+            XB.orbitSpeed.Text = "💨  سرعة الدوران: " .. tostring(orbitSpeeds[orbitSpeedIdx])
+            XB.guard.Text = "⚠️  تنبيه اقتراب: " .. tostring(guardDists[guardDistIdx])
+        end
+
+        local function applyHighlight()
+            local char = selectedTarget and selectedTarget.Character
+            if highlightInst and (not highlightOn or highlightChar ~= char) then
+                pcall(function() highlightInst:Destroy() end)
+                highlightInst, highlightChar = nil, nil
+            end
+            if highlightOn and char and not highlightInst then
+                highlightInst = create("Highlight", {
+                    Name = "LYNEX_TargetHighlight",
+                    FillColor = THEME.DANGER_HI, OutlineColor = THEME.TX_MAIN,
+                    FillTransparency = 0.5, OutlineTransparency = 0,
+                    DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
+                }, char)
+                highlightChar = char
+            end
+        end
+
+        local function stopDance()
+            if danceTrack then
+                pcall(function() danceTrack:Stop() end)
+                danceTrack = nil
+            end
+        end
+
+        setMoveMode = function(mode, silent)
+            if mode ~= "none" and not selectedTarget then
+                if not silent then showToast("🎯  اختر لاعباً أولاً من البحث") end
+                return
+            end
+            if mode ~= "dance" then stopDance() end
+            if mode ~= "none" then
+                setLoopTp(false, true)
+                setSitMode("none", true)
+            end
+            moveMode = mode
+            moveGen += 1
+            local myGen = moveGen
+            refreshTrackingBtns()
+            if mode == "none" then
+                stopDance()
+                if not silent then showToast("🎯  تم إيقاف وضع الحركة") end
+                return
+            end
+            if not silent then
+                local msgs = {
+                    follow = "🚶  بدأت متابعة " .. displayNameOf(selectedTarget),
+                    orbit = "🌀  بدأ الدوران حول " .. displayNameOf(selectedTarget),
+                    front = "🤝  واقف قدام " .. displayNameOf(selectedTarget),
+                    dance = "🕺  رقص قدام " .. displayNameOf(selectedTarget),
+                }
+                showToast(msgs[mode] or "🎯  بدأ الوضع")
+            end
+            task.spawn(function()
+                while moveMode == mode and moveGen == myGen do
+                    local tgt = selectedTarget
+                    if not tgt or not tgt.Parent then
+                        moveMode = "none"
+                        stopDance()
+                        refreshTrackingBtns()
+                        break
+                    end
+                    if mode == "follow" then
+                        pcall(function()
+                            local myChar = localPlayer.Character
+                            local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+                            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                            local tChar = tgt.Character
+                            local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+                            if myHum and myRoot and tRoot then
+                                local want = (tRoot.CFrame * CFrame.new(0, 0, followDists[followDistIdx])).Position
+                                if (myRoot.Position - want).Magnitude > 1.2 then
+                                    myHum:MoveTo(want)
+                                end
+                            end
+                        end)
+                        task.wait(0.2)
+                    else
+                        pcall(function()
+                            local myChar = localPlayer.Character
+                            local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+                            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                            local tChar = tgt.Character
+                            local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+                            if not (myChar and myHum and myRoot and tRoot) then return end
+                            myRoot.CanCollide = false
+                            if mode == "orbit" then
+                                orbitAngle += orbitSpeeds[orbitSpeedIdx] * 0.035
+                                local pos = tRoot.Position + Vector3.new(math.sin(orbitAngle) * 6, 0.5, math.cos(orbitAngle) * 6)
+                                myRoot.CFrame = CFrame.lookAt(pos, tRoot.Position)
+                            elseif mode == "front" or mode == "dance" then
+                                local pos = (tRoot.CFrame * CFrame.new(0, 0, -3.2)).Position
+                                myRoot.CFrame = CFrame.lookAt(pos, Vector3.new(tRoot.Position.X, pos.Y, tRoot.Position.Z))
+                                if mode == "dance" and not danceTrack then
+                                    local anim = create("Animation", { AnimationId = "rbxassetid://591745936" }, myChar)
+                                    local animator = myHum:FindFirstChildOfClass("Animator")
+                                    if animator then
+                                        danceTrack = animator:LoadAnimation(anim)
+                                    else
+                                        danceTrack = myHum:LoadAnimation(anim)
+                                    end
+                                    if danceTrack then
+                                        danceTrack.Looped = true
+                                        danceTrack:Play()
+                                    end
+                                end
+                            end
+                        end)
+                        task.wait(0.03)
+                    end
+                end
+            end)
+        end
+
+        local function setMimic(on, silent)
+            if on and not selectedTarget then
+                if not silent then showToast("🎯  اختر لاعباً أولاً من البحث") end
+                return
+            end
+            mimicOn = on and true or false
+            mimicGen += 1
+            local myGen = mimicGen
+            refreshTrackingBtns()
+            if not mimicOn then
+                pcall(function()
+                    local myHum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if myHum and sitMode == "none" then myHum.Sit = false end
+                end)
+                if not silent then showToast("🪞  تم إيقاف التقليد") end
+                return
+            end
+            if not silent then showToast("🪞  تقلد " .. displayNameOf(selectedTarget)) end
+            task.spawn(function()
+                while mimicOn and mimicGen == myGen do
+                    local tgt = selectedTarget
+                    if not tgt or not tgt.Parent then
+                        mimicOn = false
+                        refreshTrackingBtns()
+                        break
+                    end
+                    pcall(function()
+                        local myChar = localPlayer.Character
+                        local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+                        local tChar = tgt.Character
+                        local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
+                        local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+                        if myHum and tHum then
+                            myHum:Move(tHum.MoveDirection, false)
+                            if sitMode == "none" and moveMode ~= "dance" then
+                                myHum.Sit = tHum.Sit and true or false
+                            end
+                            if tRoot and tRoot.AssemblyLinearVelocity.Y > 7 then
+                                myHum.Jump = true
+                            end
+                        end
+                    end)
+                    task.wait(0.08)
+                end
+            end)
+        end
+
+        local function stopTargetExtras()
+            highlightOn, arrowOn = false, false
+            applyHighlight()
+            if XB.arrowGui then XB.arrowGui.Visible = false end
+            setMoveMode("none", true)
+            setMimic(false, true)
+            refreshTrackingBtns()
+        end
+
+        local function copyTargetText(txt, what)
+            local copied = false
+            if typeof(setclipboard) == "function" then
+                copied = pcall(setclipboard, txt)
+            elseif typeof(toclipboard) == "function" then
+                copied = pcall(toclipboard, txt)
+            end
+            if copied then
+                showToast("📋  تم نسخ " .. what)
+            else
+                showToast(what .. ": " .. txt)
+            end
+        end
+
+        local function isFavName(name)
+            for _, n in ipairs(settings.targetFavs or {}) do
+                if n == name then return true end
+            end
+            return false
+        end
+
+        renderFavsList = function()
+            if not XB.favList then return end
+            for _, ch in ipairs(XB.favList:GetChildren()) do
+                if not ch:IsA("UIListLayout") then ch:Destroy() end
+            end
+            local favs = settings.targetFavs or {}
+            if #favs == 0 then
+                create("TextLabel", {
+                    Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1,
+                    Text = "⭐  لا توجد أهداف مفضلة محفوظة بعد",
+                    Font = FONT.Medium, TextSize = 10, TextColor3 = THEME.TX_SUBTLE,
+                    LayoutOrder = 1, ZIndex = 4,
+                }, XB.favList)
+                return
+            end
+            for i, name in ipairs(favs) do
+                local plr = Players:FindFirstChild(name)
+                local row = create("TextButton", {
+                    Name = "TargetFav_" .. tostring(name),
+                    Size = UDim2.new(1, 0, 0, 42),
+                    BackgroundColor3 = THEME.BG_CARD, AutoButtonColor = false, Text = "",
+                    LayoutOrder = i, ZIndex = 4,
+                }, XB.favList)
+                addCorner(9, row)
+                addStroke(THEME.BORDER, 1, 0.25, row)
+                create("TextLabel", {
+                    Size = UDim2.new(1, -52, 1, 0), Position = UDim2.new(0, 8, 0, 0),
+                    BackgroundTransparency = 1,
+                    Text = "⭐  @" .. tostring(name) .. (plr and "   🟢 بالسيرفر" or "   ⚪ غير موجود"),
+                    Font = FONT.Bold, TextSize = 10,
+                    TextColor3 = plr and THEME.OK or THEME.TX_DIM,
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5,
+                }, row)
+                local rmBtn = create("TextButton", {
+                    Size = UDim2.fromOffset(30, 30), Position = UDim2.new(0, 8, 0.5, -15),
+                    BackgroundColor3 = THEME.BG_CARD_HI, AutoButtonColor = false,
+                    Text = "✕", Font = FONT.Bold, TextSize = 11, TextColor3 = THEME.DANGER_HI, ZIndex = 6,
+                }, row)
+                addCorner(7, rmBtn)
+                rmBtn.MouseButton1Click:Connect(function()
+                    for j = #settings.targetFavs, 1, -1 do
+                        if settings.targetFavs[j] == name then table.remove(settings.targetFavs, j) end
+                    end
+                    if settings.saveConfig then settings.saveConfig() end
+                    renderFavsList()
+                    if refreshTargetExtras then refreshTargetExtras() end
+                    showToast("⭐  تمت إزالة @" .. tostring(name) .. " من المفضلة")
+                end)
+                row.MouseButton1Click:Connect(function()
+                    local p = Players:FindFirstChild(name)
+                    if p and p ~= localPlayer then
+                        selectTarget(p)
+                    else
+                        showToast("⭐  @" .. tostring(name) .. " مش موجود بهذا السيرفر")
+                    end
+                end)
+            end
+        end
+
+        refreshTargetExtras = function()
+            if selectedTarget then
+                local fav = isFavName(selectedTarget.Name)
+                styleXBtn(XB.fav, XB.favS, fav, "⭐  محفوظ بالمفضلة ✓ (دوس للإزالة)", "⭐  حفظ الهدف بالمفضلة")
+                XB.miniAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(selectedTarget.UserId) .. "&w=150&h=150"
+                XB.miniName.Text = "🎯  " .. displayNameOf(selectedTarget)
+            else
+                styleXBtn(XB.fav, XB.favS, false, "", "⭐  حفظ الهدف بالمفضلة")
+            end
+            applyHighlight()
+            if XB.mini then XB.mini.Visible = miniOn and selectedTarget ~= nil end
+            if selectedTarget and hookedTargetId ~= selectedTarget.UserId then
+                if hookedCharConn then pcall(function() hookedCharConn:Disconnect() end) end
+                hookedTargetId = selectedTarget.UserId
+                local tgtRef = selectedTarget
+                hookedCharConn = tgtRef.CharacterAdded:Connect(function()
+                    applyHighlight()
+                    prevTargetDead = false
+                    if alertsOn then
+                        showToast("💚  رجع " .. displayNameOf(tgtRef) .. " للحياة")
+                    end
+                end)
+            elseif not selectedTarget and hookedCharConn then
+                pcall(function() hookedCharConn:Disconnect() end)
+                hookedCharConn, hookedTargetId = nil, nil
+            end
+        end
+
+        local function otherPlayers()
+            local list = {}
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= localPlayer then table.insert(list, p) end
+            end
+            return list
+        end
+
+        local function stepTarget(dir)
+            local list = otherPlayers()
+            if #list == 0 then showToast("🎯  لا يوجد لاعبون آخرون بالسيرفر") return end
+            local idx = 0
+            for i, p in ipairs(list) do
+                if selectedTarget and p.UserId == selectedTarget.UserId then idx = i break end
+            end
+            local nxt
+            if idx == 0 then
+                nxt = dir > 0 and list[1] or list[#list]
+            else
+                nxt = list[((idx - 1 + dir) % #list) + 1]
+            end
+            if nxt then selectTarget(nxt) end
+        end
+
+        local function nearestTarget()
+            local best, bestDist = nil, math.huge
+            local myRoot = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+            for _, p in ipairs(otherPlayers()) do
+                local tRoot = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+                if myRoot and tRoot then
+                    local d = (myRoot.Position - tRoot.Position).Magnitude
+                    if d < bestDist then best, bestDist = p, d end
+                elseif not best then
+                    best = p
+                end
+            end
+            if best then selectTarget(best) else showToast("🎯  لا يوجد لاعبون آخرون بالسيرفر") end
+        end
+
+        local function rideWithTarget()
+            local okRide = pcall(function()
+                local tHum = selectedTarget.Character and selectedTarget.Character:FindFirstChildOfClass("Humanoid")
+                local seatPart = tHum and tHum.SeatPart
+                if not seatPart then
+                    showToast("🚗  الهدف مش راكب سيارة حالياً")
+                    return
+                end
+                local vehicle = seatPart.Parent
+                local myChar = localPlayer.Character
+                local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+                local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                if not (vehicle and myHum and myRoot) then return end
+                for _, obj in ipairs(vehicle:GetDescendants()) do
+                    if (obj:IsA("Seat") or obj:IsA("VehicleSeat")) and obj ~= seatPart and not obj.Occupant then
+                        myRoot.CFrame = obj.CFrame * CFrame.new(0, 2.5, 0)
+                        local sat = pcall(function() obj:Sit(myHum) end)
+                        if not sat then myHum.Sit = true end
+                        showToast("🚗  ركبت مع " .. displayNameOf(selectedTarget))
+                        return
+                    end
+                end
+                showToast("🚗  لا يوجد مقعد فاضي بسيارة الهدف")
+            end)
+            if not okRide then showToast("🚗  تعذر الركوب مع الهدف") end
+        end
+
         if settings and settings._registeredToggles then
             table.insert(settings._registeredToggles, {
                 title = "🎯 انتقال متكرر (الاستهداف)",
@@ -9447,7 +9961,7 @@ do
             end
         end
 
-        local function selectTarget(plr)
+        selectTarget = function(plr)
             if not plr or plr == localPlayer then return end
             selectedTarget = plr
             for i = #recentNames, 1, -1 do
@@ -9460,6 +9974,7 @@ do
             suppressSearch = false
             clearSuggestions()
             updateProfile()
+            if refreshTargetExtras then refreshTargetExtras() end
             showToast("🎯  تم استهداف " .. displayNameOf(plr))
         end
 
@@ -9643,9 +10158,116 @@ do
                 setSitMode("back")
             end
         end)
+
+        XB.highlight.MouseButton1Click:Connect(function()
+            if highlightOn then
+                highlightOn = false
+                applyHighlight()
+                refreshTrackingBtns()
+            elseif needTarget() then
+                highlightOn = true
+                applyHighlight()
+                refreshTrackingBtns()
+            end
+        end)
+        XB.arrow.MouseButton1Click:Connect(function()
+            if arrowOn then
+                arrowOn = false
+                if XB.arrowGui then XB.arrowGui.Visible = false end
+                refreshTrackingBtns()
+            elseif needTarget() then
+                arrowOn = true
+                refreshTrackingBtns()
+                showToast("➤  سهم الهدف يعمل — يدلك على مكانه دائماً")
+            end
+        end)
+        XB.follow.MouseButton1Click:Connect(function()
+            if moveMode == "follow" then setMoveMode("none") elseif needTarget() then setMoveMode("follow") end
+        end)
+        XB.orbit.MouseButton1Click:Connect(function()
+            if moveMode == "orbit" then setMoveMode("none") elseif needTarget() then setMoveMode("orbit") end
+        end)
+        XB.front.MouseButton1Click:Connect(function()
+            if moveMode == "front" then setMoveMode("none") elseif needTarget() then setMoveMode("front") end
+        end)
+        XB.dance.MouseButton1Click:Connect(function()
+            if moveMode == "dance" then setMoveMode("none") elseif needTarget() then setMoveMode("dance") end
+        end)
+        XB.mimic.MouseButton1Click:Connect(function()
+            if mimicOn then setMimic(false) elseif needTarget() then setMimic(true) end
+        end)
+        XB.alerts.MouseButton1Click:Connect(function()
+            alertsOn = not alertsOn
+            refreshTrackingBtns()
+            showToast(alertsOn and "🔔  تنبيهات الهدف تعمل" or "🔔  تنبيهات الهدف توقفت")
+        end)
+        XB.miniBtn.MouseButton1Click:Connect(function()
+            miniOn = not miniOn
+            if XB.mini then XB.mini.Visible = miniOn and selectedTarget ~= nil end
+            refreshTrackingBtns()
+            showToast(miniOn and "📌  البطاقة العائمة تعمل" or "📌  البطاقة العائمة توقفت")
+        end)
+        XB.followDist.MouseButton1Click:Connect(function()
+            followDistIdx = followDistIdx % #followDists + 1
+            refreshTrackingBtns()
+        end)
+        XB.orbitSpeed.MouseButton1Click:Connect(function()
+            orbitSpeedIdx = orbitSpeedIdx % #orbitSpeeds + 1
+            refreshTrackingBtns()
+        end)
+        XB.guard.MouseButton1Click:Connect(function()
+            guardDistIdx = guardDistIdx % #guardDists + 1
+            refreshTrackingBtns()
+        end)
+        XB.nearest.MouseButton1Click:Connect(function() nearestTarget() end)
+        XB.random.MouseButton1Click:Connect(function()
+            local list = otherPlayers()
+            if #list == 0 then showToast("🎯  لا يوجد لاعبون آخرون بالسيرفر") return end
+            selectTarget(list[math.random(1, #list)])
+        end)
+        XB.prev.MouseButton1Click:Connect(function() stepTarget(-1) end)
+        XB.next.MouseButton1Click:Connect(function() stepTarget(1) end)
+        XB.copyName.MouseButton1Click:Connect(function()
+            if needTarget() then copyTargetText("@" .. tostring(selectedTarget.Name), "اسم اللاعب") end
+        end)
+        XB.copyId.MouseButton1Click:Connect(function()
+            if needTarget() then copyTargetText(tostring(selectedTarget.UserId), "الـ UserID") end
+        end)
+        XB.copyPos.MouseButton1Click:Connect(function()
+            if not needTarget() then return end
+            local tRoot = selectedTarget.Character and selectedTarget.Character:FindFirstChild("HumanoidRootPart")
+            if tRoot then
+                local p = tRoot.Position
+                copyTargetText(string.format("%.0f, %.0f, %.0f", p.X, p.Y, p.Z), "موقع الهدف")
+            else
+                showToast("🎯  الهدف ما عنده شخصية حالياً")
+            end
+        end)
+        XB.ride.MouseButton1Click:Connect(function()
+            if needTarget() then rideWithTarget() end
+        end)
+        XB.fav.MouseButton1Click:Connect(function()
+            if not needTarget() then return end
+            settings.targetFavs = settings.targetFavs or {}
+            local nm = selectedTarget.Name
+            if isFavName(nm) then
+                for j = #settings.targetFavs, 1, -1 do
+                    if settings.targetFavs[j] == nm then table.remove(settings.targetFavs, j) end
+                end
+                showToast("⭐  انشال @" .. nm .. " من المفضلة")
+            else
+                table.insert(settings.targetFavs, nm)
+                showToast("⭐  انحفظ @" .. nm .. " بالمفضلة")
+            end
+            if settings.saveConfig then settings.saveConfig() end
+            renderFavsList()
+            refreshTargetExtras()
+        end)
+
         clearBtn.MouseButton1Click:Connect(function()
             setLoopTp(false, true)
             setSitMode("none", true)
+            stopTargetExtras()
             if spectate.active and spectate.target == selectedTarget then
                 stopSpectating("silent")
             end
@@ -9662,15 +10284,21 @@ do
             if selectedTarget and plr.UserId == selectedTarget.UserId then
                 setLoopTp(false, true)
                 setSitMode("none", true)
+                stopTargetExtras()
                 selectedTarget = nil
                 updateProfile()
                 showToast("🎯  غادر اللاعب المستهدف السيرفر")
             end
+            if renderFavsList then renderFavsList() end
             if (searchBox.Text or "") ~= "" then
                 renderSuggestions(false)
             end
         end)
-        Players.PlayerAdded:Connect(function()
+        Players.PlayerAdded:Connect(function(joinedPlr)
+            if joinedPlr and isFavName(joinedPlr.Name) then
+                showToast("⭐  المفضل @" .. tostring(joinedPlr.Name) .. " دخل السيرفر!")
+            end
+            if renderFavsList then renderFavsList() end
             if (searchBox.Text or "") ~= "" and not selectedTarget then
                 renderSuggestions(false)
             end
@@ -9707,9 +10335,123 @@ do
             end
         end)
 
+
+        -- Periodic extras: advanced info, mini card, death/guard alerts, highlight upkeep
+        task.spawn(function()
+            while screenGui and screenGui.Parent do
+                if selectedTarget and selectedTarget.Parent then
+                    applyHighlight()
+                    local distVal = nil
+                    pcall(function()
+                        local myRoot = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        local tChar = selectedTarget.Character
+                        local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+                        local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
+                        if myRoot and tRoot then
+                            distVal = (myRoot.Position - tRoot.Position).Magnitude
+                        end
+                        local toolName = "لا شيء"
+                        if tChar then
+                            local tool = tChar:FindFirstChildOfClass("Tool")
+                            if tool then toolName = tool.Name end
+                        end
+                        local stateTxt, speedTxt, statsTxt = "--", "0", ""
+                        if tHum then
+                            stateTxt = tostring(tHum:GetState()):gsub("^.*%.", "")
+                            if tRoot then
+                                local v = tRoot.AssemblyLinearVelocity
+                                speedTxt = tostring(math.floor(math.sqrt(v.X * v.X + v.Z * v.Z) + 0.5))
+                            end
+                        end
+                        local ls = selectedTarget:FindFirstChild("leaderstats")
+                        if ls then
+                            local parts = {}
+                            for _, stat in ipairs(ls:GetChildren()) do
+                                if stat:IsA("ValueBase") then
+                                    table.insert(parts, stat.Name .. ": " .. tostring(stat.Value))
+                                    if #parts >= 2 then break end
+                                end
+                            end
+                            if #parts > 0 then statsTxt = "  •  " .. table.concat(parts, "  •  ") end
+                        end
+                        XB.adv.Text = "📊  الأداة: " .. toolName .. "  •  الحالة: " .. stateTxt .. "  •  السرعة: " .. speedTxt .. statsTxt
+                        if tHum then
+                            XB.miniInfo.Text = "❤ " .. tostring(math.floor(tHum.Health + 0.5)) .. "/" .. tostring(math.floor(tHum.MaxHealth + 0.5))
+                                .. (distVal and ("  •  " .. tostring(math.floor(distVal + 0.5)) .. " m") or "")
+                        end
+                        if alertsOn and tHum then
+                            if tHum.Health <= 0 and not prevTargetDead then
+                                prevTargetDead = true
+                                showToast("☠️  مات الهدف " .. displayNameOf(selectedTarget))
+                            elseif tHum.Health > 0 and prevTargetDead then
+                                prevTargetDead = false
+                            end
+                        end
+                    end)
+                    if alertsOn and distVal and distVal <= guardDists[guardDistIdx] then
+                        local now = os.clock()
+                        if now - lastGuardAt > 6 then
+                            lastGuardAt = now
+                            showToast("⚠️  الهدف قريب منك! (" .. tostring(math.floor(distVal + 0.5)) .. " m)")
+                        end
+                    end
+                    if XB.mini then XB.mini.Visible = miniOn end
+                else
+                    if XB.mini then XB.mini.Visible = false end
+                end
+                task.wait(0.5)
+            end
+        end)
+
+        -- On-screen direction arrow (points to the target anywhere in the map)
+        local arrowConn
+        arrowConn = RunService.RenderStepped:Connect(function()
+            if not XB.arrowGui or not XB.arrowGui.Parent then
+                if arrowConn then arrowConn:Disconnect() end
+                return
+            end
+            if not (arrowOn and selectedTarget and selectedTarget.Parent) then
+                XB.arrowGui.Visible = false
+                return
+            end
+            pcall(function()
+                local cam = workspace.CurrentCamera
+                local tRoot = selectedTarget.Character and selectedTarget.Character:FindFirstChild("HumanoidRootPart")
+                if not (cam and tRoot) then
+                    XB.arrowGui.Visible = false
+                    return
+                end
+                local vp = cam.ViewportSize
+                local screenPos, onScreen = cam:WorldToViewportPoint(tRoot.Position + Vector3.new(0, 3.5, 0))
+                local myRoot = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if myRoot then
+                    XB.arrowDist.Text = tostring(math.floor((myRoot.Position - tRoot.Position).Magnitude + 0.5)) .. "m"
+                end
+                if onScreen and screenPos.Z > 0 then
+                    local x = math.clamp(screenPos.X - 27, 4, math.max(4, vp.X - 58))
+                    local y = math.clamp(screenPos.Y - 96, 4, math.max(4, vp.Y - 70))
+                    XB.arrowGui.Position = UDim2.fromOffset(x, y)
+                    XB.arrowLbl.Rotation = 90
+                else
+                    local cx, cy = vp.X / 2, vp.Y / 2
+                    local dx, dy = screenPos.X - cx, screenPos.Y - cy
+                    if screenPos.Z < 0 then dx, dy = -dx, -dy end
+                    local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+                    local reach = math.min(cx, cy) - 70
+                    local x = math.clamp(cx + dx / len * reach - 27, 4, math.max(4, vp.X - 58))
+                    local y = math.clamp(cy + dy / len * reach - 33, 4, math.max(4, vp.Y - 70))
+                    XB.arrowGui.Position = UDim2.fromOffset(x, y)
+                    XB.arrowLbl.Rotation = math.deg(math.atan(dy, dx))
+                end
+                XB.arrowGui.Visible = true
+            end)
+        end)
+
         updateProfile()
         refreshLoopBtn()
         refreshSitBtns()
+        refreshTrackingBtns()
+        if renderFavsList then renderFavsList() end
     end)
 
     if okTgt then
