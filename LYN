@@ -1121,6 +1121,7 @@ local TABS = {
     { id = "keybinds",      name = "اختصارات لوحة المفاتيح",   icon = "⌨"  },
     { id = "servers",       name = "السيرفرات",                icon = "🌐" },
     { id = "players",       name = "اللاعبين",          icon = "◉"  },
+    { id = "targeting",     name = "الاستهداف",            icon = "🎯" },
     { id = "player",        name = "الاعب",             icon = "●"  },
     { id = "autofish",      name = "صيد تلقائي",        icon = "≋"  },
     { id = "car",           name = "تحكم بالسياره",     icon = "🚗" },
@@ -8897,6 +8898,673 @@ do
         print("[LYNEX] ✓ Servers Browser (السيرفرات) section loaded OK")
     else
         warn("[LYNEX] ✗ Servers Browser section FAILED:", errSrv)
+    end
+end
+
+--==================================================================
+-- 16.98) 🎯 الاستهداف (Target Finder: search, profile, TP / View / Loop TP)
+--==================================================================
+do
+    local okTgt, errTgt = pcall(function()
+        local tgtPage = createPage("targeting", true)
+        create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, tgtPage)
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 12), PaddingRight = UDim.new(0, 6),
+        }, tgtPage)
+
+        local tOrder = 0
+        local function nextTOrder()
+            tOrder += 1
+            return tOrder
+        end
+
+        -- Banner
+        local tgtBanner = create("Frame", {
+            Name = "TargetingBanner",
+            Size = UDim2.new(1, 0, 0, 74),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextTOrder(),
+            ZIndex = 4,
+        }, tgtPage)
+        addCorner(12, tgtBanner)
+        addStroke(THEME.BORDER, 1, 0.15, tgtBanner)
+
+        local tgtIcon = create("Frame", {
+            Size = UDim2.fromOffset(50, 50),
+            Position = UDim2.new(0, 12, 0.5, -25),
+            BackgroundColor3 = THEME.P_MAIN,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, tgtBanner)
+        addCorner(25, tgtIcon)
+        addStroke(THEME.P_GLOW, 1.5, 0.2, tgtIcon)
+        addGradient(tgtIcon, {
+            ColorSequenceKeypoint.new(0, THEME.P_MAIN),
+            ColorSequenceKeypoint.new(1, THEME.P_BRIGHT),
+        }, 45)
+        create("TextLabel", {
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            Text = "🎯",
+            Font = FONT.Logo,
+            TextSize = 23,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 6,
+        }, tgtIcon)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 22),
+            Position = UDim2.new(0, 70, 0, 12),
+            BackgroundTransparency = 1,
+            Text = "الاستهداف",
+            Font = FONT.Bold,
+            TextSize = 14,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, tgtBanner)
+        create("TextLabel", {
+            Size = UDim2.new(1, -76, 0, 28),
+            Position = UDim2.new(0, 70, 0, 34),
+            BackgroundTransparency = 1,
+            Text = "ابحث عن أي لاعب بالسيرفر من أول حرفين واستهدفه فوراً.",
+            Font = FONT.Regular,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            TextWrapped = true,
+            ZIndex = 5,
+        }, tgtBanner)
+
+        -- Search Card
+        local searchCard = create("Frame", {
+            Name = "TargetSearchCard",
+            Size = UDim2.new(1, 0, 0, 96),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextTOrder(),
+            ZIndex = 4,
+        }, tgtPage)
+        addCorner(12, searchCard)
+        addStroke(THEME.BORDER, 1, 0.15, searchCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 20),
+            Position = UDim2.new(0, 12, 0, 9),
+            BackgroundTransparency = 1,
+            Text = "🔎  ابحث عن لاعب بالسيرفر",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, searchCard)
+
+        local historyBtn = create("TextButton", {
+            Name = "TargetHistoryBtn",
+            Size = UDim2.fromOffset(38, 38),
+            Position = UDim2.new(0, 10, 0, 42),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "🕘",
+            Font = FONT.Bold,
+            TextSize = 14,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, searchCard)
+        addCorner(8, historyBtn)
+        addStroke(THEME.BORDER, 1, 0.3, historyBtn)
+
+        local searchBox = create("TextBox", {
+            Name = "TargetSearchBox",
+            Size = UDim2.new(1, -66, 0, 38),
+            Position = UDim2.new(0, 56, 0, 42),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            BorderSizePixel = 0,
+            Text = "",
+            PlaceholderText = "اكتب أول حرفين من اسم اللاعب... @target",
+            PlaceholderColor3 = THEME.TX_SUBTLE,
+            Font = FONT.Regular,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ClearTextOnFocus = false,
+            ZIndex = 5,
+        }, searchCard)
+        addCorner(8, searchBox)
+        addStroke(THEME.BORDER, 1, 0.3, searchBox)
+        create("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }, searchBox)
+
+        -- Suggestions (dynamic)
+        local suggestBox = create("Frame", {
+            Name = "TargetSuggestions",
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = nextTOrder(),
+            ZIndex = 4,
+        }, tgtPage)
+        create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, suggestBox)
+
+        -- Profile Card
+        local profileCard = create("Frame", {
+            Name = "TargetProfileCard",
+            Size = UDim2.new(1, 0, 0, 158),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextTOrder(),
+            ZIndex = 4,
+        }, tgtPage)
+        addCorner(12, profileCard)
+        addStroke(THEME.BORDER, 1, 0.15, profileCard)
+
+        local avatarFrame = create("Frame", {
+            Size = UDim2.fromOffset(118, 118),
+            Position = UDim2.new(0, 12, 0, 20),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, profileCard)
+        addCorner(10, avatarFrame)
+        addStroke(THEME.P_GLOW, 1.5, 0.25, avatarFrame)
+        local avatarImg = create("ImageLabel", {
+            Name = "TargetAvatar",
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            Image = "",
+            ScaleType = Enum.ScaleType.Fit,
+            ZIndex = 6,
+        }, avatarFrame)
+        addCorner(10, avatarImg)
+        local avatarPlaceholder = create("TextLabel", {
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            Text = "🎯",
+            Font = FONT.Logo,
+            TextSize = 34,
+            TextColor3 = THEME.TX_SUBTLE,
+            ZIndex = 5,
+        }, avatarFrame)
+
+        local function makeInfoLabel(y, init, bold, size, color)
+            return create("TextLabel", {
+                Size = UDim2.new(1, -154, 0, 20),
+                Position = UDim2.new(0, 142, 0, y),
+                BackgroundTransparency = 1,
+                Text = init,
+                Font = bold and FONT.Bold or FONT.Medium,
+                TextSize = size,
+                TextColor3 = color,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 5,
+            }, profileCard)
+        end
+
+        local pNameLbl = makeInfoLabel(14, "اسم اللاعب: --", true, 12, THEME.TX_MAIN)
+        local pDispLbl = makeInfoLabel(40, "اسم العرض: --", false, 11, THEME.TX_DIM)
+        local pIdLbl = makeInfoLabel(62, "UserID: --", false, 11, THEME.TX_DIM)
+        local pAgeLbl = makeInfoLabel(84, "عمر الحساب: --", false, 11, THEME.P_GLOW)
+        local pJoinedLbl = makeInfoLabel(106, "تاريخ إنشاء الحساب: --", false, 10, THEME.TX_DIM)
+        local pLiveLbl = makeInfoLabel(128, "المسافة: --  |  الصحة: --", true, 10, THEME.OK)
+
+        -- Actions Card
+        local actionsCard = create("Frame", {
+            Name = "TargetActionsCard",
+            Size = UDim2.new(1, 0, 0, 130),
+            BackgroundColor3 = THEME.BG_CARD,
+            BackgroundTransparency = 0.05,
+            BorderSizePixel = 0,
+            LayoutOrder = nextTOrder(),
+            ZIndex = 4,
+        }, tgtPage)
+        addCorner(12, actionsCard)
+        addStroke(THEME.BORDER, 1, 0.15, actionsCard)
+
+        create("TextLabel", {
+            Size = UDim2.new(1, -24, 0, 20),
+            Position = UDim2.new(0, 12, 0, 9),
+            BackgroundTransparency = 1,
+            Text = "⚡  ميزات الاستهداف",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            ZIndex = 5,
+        }, actionsCard)
+
+        local tpBtn = create("TextButton", {
+            Name = "TargetTeleportBtn",
+            Size = UDim2.new(0.52, -14, 0, 36),
+            Position = UDim2.new(0.48, 2, 0, 38),
+            BackgroundColor3 = THEME.P_MAIN,
+            AutoButtonColor = false,
+            Text = "⇄  انتقال",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, actionsCard)
+        addCorner(8, tpBtn)
+        addStroke(THEME.P_GLOW, 1, 0.2, tpBtn)
+
+        local viewBtn = create("TextButton", {
+            Name = "TargetViewBtn",
+            Size = UDim2.new(0.48, -14, 0, 36),
+            Position = UDim2.new(0, 12, 0, 38),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "◉  مشاهدة",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_MAIN,
+            ZIndex = 5,
+        }, actionsCard)
+        addCorner(8, viewBtn)
+        addStroke(THEME.BORDER_HI, 1, 0.25, viewBtn)
+
+        local loopBtn = create("TextButton", {
+            Name = "TargetLoopTpBtn",
+            Size = UDim2.new(0.68, -16, 0, 36),
+            Position = UDim2.new(0.32, 4, 0, 84),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "🔁  انتقال متكرر: إيقاف",
+            Font = FONT.Bold,
+            TextSize = 11,
+            TextColor3 = THEME.TX_DIM,
+            ZIndex = 5,
+        }, actionsCard)
+        addCorner(8, loopBtn)
+        local loopStroke = addStroke(THEME.BORDER, 1, 0.25, loopBtn)
+
+        local clearBtn = create("TextButton", {
+            Name = "TargetClearBtn",
+            Size = UDim2.new(0.32, -14, 0, 36),
+            Position = UDim2.new(0, 12, 0, 84),
+            BackgroundColor3 = THEME.BG_CARD_HI,
+            AutoButtonColor = false,
+            Text = "✕  مسح الهدف",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.TX_DIM,
+            ZIndex = 5,
+        }, actionsCard)
+        addCorner(8, clearBtn)
+        addStroke(THEME.BORDER, 1, 0.25, clearBtn)
+
+        local statusLbl = create("TextLabel", {
+            Size = UDim2.new(1, -8, 0, 20),
+            BackgroundTransparency = 1,
+            Text = "لم يتم اختيار أي لاعب بعد — ابحث بالاسم بالأعلى",
+            Font = FONT.Bold,
+            TextSize = 10,
+            TextColor3 = THEME.P_GLOW,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            LayoutOrder = nextTOrder(),
+            ZIndex = 4,
+        }, tgtPage)
+
+        -- State + logic
+        local selectedTarget = nil
+        local loopTpOn = false
+        local loopTpGen = 0
+        local recentNames = {}
+        local suppressSearch = false
+
+        local function formatAge(days)
+            days = math.max(0, math.floor(tonumber(days) or 0))
+            if days >= 365 then
+                return string.format("%d يوم (حوالي %.1f سنة)", days, days / 365.25)
+            elseif days >= 30 then
+                return string.format("%d يوم (حوالي %d شهر)", days, math.floor(days / 30))
+            end
+            return string.format("%d يوم", days)
+        end
+
+        local function refreshLoopBtn()
+            loopBtn.Text = loopTpOn and "🔁  انتقال متكرر: يعمل ✓" or "🔁  انتقال متكرر: إيقاف"
+            loopBtn.BackgroundColor3 = loopTpOn and THEME.P_MAIN or THEME.BG_CARD_HI
+            loopBtn.TextColor3 = loopTpOn and THEME.TX_MAIN or THEME.TX_DIM
+            loopStroke.Color = loopTpOn and THEME.P_GLOW or THEME.BORDER
+        end
+
+        local function updateProfile()
+            if not selectedTarget then
+                avatarImg.Image = ""
+                avatarPlaceholder.Visible = true
+                pNameLbl.Text = "اسم اللاعب: --"
+                pDispLbl.Text = "اسم العرض: --"
+                pIdLbl.Text = "UserID: --"
+                pAgeLbl.Text = "عمر الحساب: --"
+                pJoinedLbl.Text = "تاريخ إنشاء الحساب: --"
+                pLiveLbl.Text = "المسافة: --  |  الصحة: --"
+                statusLbl.Text = "لم يتم اختيار أي لاعب بعد — ابحث بالاسم بالأعلى"
+                return
+            end
+            local plr = selectedTarget
+            avatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(plr.UserId) .. "&w=150&h=150"
+            avatarPlaceholder.Visible = false
+            pNameLbl.Text = "اسم اللاعب: @" .. tostring(plr.Name)
+            pDispLbl.Text = "اسم العرض: " .. tostring(displayNameOf(plr))
+            pIdLbl.Text = "UserID: " .. tostring(plr.UserId)
+            local days = tonumber(plr.AccountAge) or 0
+            pAgeLbl.Text = "عمر الحساب: " .. formatAge(days)
+            local createdTxt = "--"
+            pcall(function()
+                createdTxt = os.date("%Y/%m/%d", os.time() - days * 86400)
+            end)
+            pJoinedLbl.Text = "تاريخ إنشاء الحساب (تقريبي): " .. createdTxt
+            statusLbl.Text = "🎯  الهدف الحالي: " .. displayNameOf(plr) .. " (@" .. tostring(plr.Name) .. ")"
+        end
+
+        local function setLoopTp(on, silent)
+            if on and not selectedTarget then
+                showToast("🎯  اختر لاعباً أولاً من البحث")
+                return
+            end
+            loopTpOn = on and true or false
+            loopTpGen += 1
+            local myGen = loopTpGen
+            refreshLoopBtn()
+            if loopTpOn then
+                if not silent then showToast("🔁  بدأ الانتقال المتكرر إلى " .. displayNameOf(selectedTarget)) end
+                task.spawn(function()
+                    while loopTpOn and loopTpGen == myGen do
+                        local tgt = selectedTarget
+                        if not tgt or not tgt.Parent then
+                            loopTpOn = false
+                            refreshLoopBtn()
+                            break
+                        end
+                        pcall(function()
+                            local myChar = localPlayer.Character
+                            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                            local tChar = tgt.Character
+                            local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+                            if myChar and myRoot and tRoot then
+                                myChar:PivotTo(tRoot.CFrame * CFrame.new(0, 0, 3))
+                            end
+                        end)
+                        task.wait(0.35)
+                    end
+                end)
+            else
+                if not silent then showToast("🔁  تم إيقاف الانتقال المتكرر") end
+            end
+        end
+
+        if settings and settings._registeredToggles then
+            table.insert(settings._registeredToggles, {
+                title = "🎯 انتقال متكرر (الاستهداف)",
+                get = function() return loopTpOn end,
+                turnOff = function() setLoopTp(false, true) end,
+                setOn = function(v) setLoopTp(v and true or false, true) end,
+            })
+        end
+
+        local function clearSuggestions()
+            for _, ch in ipairs(suggestBox:GetChildren()) do
+                if not ch:IsA("UIListLayout") then ch:Destroy() end
+            end
+        end
+
+        local function selectTarget(plr)
+            if not plr or plr == localPlayer then return end
+            selectedTarget = plr
+            for i = #recentNames, 1, -1 do
+                if recentNames[i] == plr.Name then table.remove(recentNames, i) end
+            end
+            table.insert(recentNames, 1, plr.Name)
+            while #recentNames > 5 do table.remove(recentNames) end
+            suppressSearch = true
+            searchBox.Text = "@" .. plr.Name
+            suppressSearch = false
+            clearSuggestions()
+            updateProfile()
+            showToast("🎯  تم استهداف " .. displayNameOf(plr))
+        end
+
+        local function makeSuggestionRow(plr, order)
+            local row = create("TextButton", {
+                Name = "TargetSuggest_" .. tostring(plr.Name),
+                Size = UDim2.new(1, 0, 0, 52),
+                BackgroundColor3 = THEME.BG_CARD,
+                AutoButtonColor = false,
+                Text = "",
+                LayoutOrder = order,
+                ZIndex = 4,
+            }, suggestBox)
+            addCorner(9, row)
+            addStroke(THEME.BORDER, 1, 0.25, row)
+            create("ImageLabel", {
+                Size = UDim2.fromOffset(40, 40),
+                Position = UDim2.new(1, -48, 0.5, -20),
+                BackgroundTransparency = 1,
+                Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(plr.UserId) .. "&w=150&h=150",
+                ScaleType = Enum.ScaleType.Fit,
+                ZIndex = 5,
+            }, row)
+            create("TextLabel", {
+                Size = UDim2.new(1, -64, 0, 22),
+                Position = UDim2.new(0, 8, 0, 5),
+                BackgroundTransparency = 1,
+                Text = "@" .. tostring(plr.Name),
+                Font = FONT.Bold,
+                TextSize = 11,
+                TextColor3 = THEME.TX_MAIN,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 5,
+            }, row)
+            create("TextLabel", {
+                Size = UDim2.new(1, -64, 0, 18),
+                Position = UDim2.new(0, 8, 0, 28),
+                BackgroundTransparency = 1,
+                Text = "اسم العرض: " .. tostring(displayNameOf(plr)) .. "  •  عمر الحساب: " .. formatAge(plr.AccountAge),
+                Font = FONT.Medium,
+                TextSize = 9,
+                TextColor3 = THEME.TX_DIM,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                ZIndex = 5,
+            }, row)
+            row.MouseButton1Click:Connect(function()
+                selectTarget(plr)
+            end)
+        end
+
+        local function renderSuggestions(showRecents)
+            clearSuggestions()
+            if showRecents then
+                local order = 0
+                for _, name in ipairs(recentNames) do
+                    local plr = Players:FindFirstChild(name)
+                    if plr and plr ~= localPlayer then
+                        order += 1
+                        makeSuggestionRow(plr, order)
+                    end
+                end
+                if order == 0 then
+                    create("TextLabel", {
+                        Size = UDim2.new(1, 0, 0, 30),
+                        BackgroundTransparency = 1,
+                        Text = "لا توجد أهداف سابقة متاحة حالياً",
+                        Font = FONT.Medium,
+                        TextSize = 10,
+                        TextColor3 = THEME.TX_SUBTLE,
+                        LayoutOrder = 1,
+                        ZIndex = 4,
+                    }, suggestBox)
+                end
+                return
+            end
+
+            local query = (searchBox.Text or ""):gsub("@", ""):gsub("^%s+", ""):gsub("%s+$", ""):lower()
+            if #query == 0 then return end
+
+            local matches = {}
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= localPlayer then
+                    local nLower = tostring(plr.Name):lower()
+                    local dLower = tostring(displayNameOf(plr)):lower()
+                    local score = nil
+                    if nLower:sub(1, #query) == query or dLower:sub(1, #query) == query then
+                        score = 1
+                    elseif nLower:find(query, 1, true) or dLower:find(query, 1, true) then
+                        score = 2
+                    end
+                    if score then
+                        table.insert(matches, { player = plr, score = score })
+                    end
+                end
+            end
+            table.sort(matches, function(a, b)
+                if a.score ~= b.score then return a.score < b.score end
+                return tostring(a.player.Name):lower() < tostring(b.player.Name):lower()
+            end)
+
+            if #matches == 0 then
+                create("TextLabel", {
+                    Size = UDim2.new(1, 0, 0, 30),
+                    BackgroundTransparency = 1,
+                    Text = "لا يوجد لاعب بهذا الاسم في هذا السيرفر",
+                    Font = FONT.Medium,
+                    TextSize = 10,
+                    TextColor3 = THEME.TX_SUBTLE,
+                    LayoutOrder = 1,
+                    ZIndex = 4,
+                }, suggestBox)
+                return
+            end
+
+            local showCount = math.min(#matches, 8)
+            for i = 1, showCount do
+                makeSuggestionRow(matches[i].player, i)
+            end
+        end
+
+        searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+            if suppressSearch then return end
+            renderSuggestions(false)
+        end)
+        searchBox.FocusLost:Connect(function(enterPressed)
+            if not enterPressed then return end
+            local query = (searchBox.Text or ""):gsub("@", ""):gsub("^%s+", ""):gsub("%s+$", ""):lower()
+            if #query == 0 then return end
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= localPlayer then
+                    local nLower = tostring(plr.Name):lower()
+                    local dLower = tostring(displayNameOf(plr)):lower()
+                    if nLower:sub(1, #query) == query or dLower:sub(1, #query) == query then
+                        selectTarget(plr)
+                        return
+                    end
+                end
+            end
+        end)
+        historyBtn.MouseButton1Click:Connect(function()
+            if #recentNames == 0 then
+                showToast("🕘  لا توجد أهداف سابقة بعد")
+                return
+            end
+            renderSuggestions(true)
+        end)
+
+        local function needTarget()
+            if not selectedTarget or not selectedTarget.Parent then
+                showToast("🎯  اختر لاعباً أولاً من البحث")
+                return false
+            end
+            return true
+        end
+
+        tpBtn.MouseButton1Click:Connect(function()
+            if not needTarget() then return end
+            teleportToPlayer(selectedTarget, tpBtn)
+        end)
+        viewBtn.MouseButton1Click:Connect(function()
+            if not needTarget() then return end
+            startSpectating(selectedTarget)
+        end)
+        loopBtn.MouseButton1Click:Connect(function()
+            if not loopTpOn and not needTarget() then return end
+            setLoopTp(not loopTpOn)
+        end)
+        clearBtn.MouseButton1Click:Connect(function()
+            setLoopTp(false, true)
+            if spectate.active and spectate.target == selectedTarget then
+                stopSpectating("silent")
+            end
+            selectedTarget = nil
+            suppressSearch = true
+            searchBox.Text = ""
+            suppressSearch = false
+            clearSuggestions()
+            updateProfile()
+            showToast("🎯  تم مسح الهدف")
+        end)
+
+        Players.PlayerRemoving:Connect(function(plr)
+            if selectedTarget and plr.UserId == selectedTarget.UserId then
+                setLoopTp(false, true)
+                selectedTarget = nil
+                updateProfile()
+                showToast("🎯  غادر اللاعب المستهدف السيرفر")
+            end
+            if (searchBox.Text or "") ~= "" then
+                renderSuggestions(false)
+            end
+        end)
+        Players.PlayerAdded:Connect(function()
+            if (searchBox.Text or "") ~= "" and not selectedTarget then
+                renderSuggestions(false)
+            end
+        end)
+
+        task.spawn(function()
+            while screenGui and screenGui.Parent do
+                if tgtPage.Visible then
+                    if spectate.active and spectate.target and selectedTarget and spectate.target.UserId == selectedTarget.UserId then
+                        viewBtn.Text = "◉  إيقاف المشاهدة"
+                        viewBtn.BackgroundColor3 = THEME.DANGER
+                    else
+                        viewBtn.Text = "◉  مشاهدة"
+                        viewBtn.BackgroundColor3 = THEME.BG_CARD_HI
+                    end
+                    if selectedTarget and selectedTarget.Parent then
+                        local distTxt, hpTxt = "--", "--"
+                        pcall(function()
+                            local myRoot = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+                            local tChar = selectedTarget.Character
+                            local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+                            local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
+                            if myRoot and tRoot then
+                                distTxt = tostring(math.floor((myRoot.Position - tRoot.Position).Magnitude + 0.5))
+                            end
+                            if tHum then
+                                hpTxt = string.format("%d/%d", math.floor(tHum.Health + 0.5), math.floor(tHum.MaxHealth + 0.5))
+                            end
+                        end)
+                        pLiveLbl.Text = "المسافة: " .. distTxt .. "  |  الصحة: " .. hpTxt
+                    end
+                end
+                task.wait(0.5)
+            end
+        end)
+
+        updateProfile()
+        refreshLoopBtn()
+    end)
+
+    if okTgt then
+        print("[LYNEX] ✓ Targeting (الاستهداف) section loaded OK")
+    else
+        warn("[LYNEX] ✗ Targeting section FAILED:", errTgt)
     end
 end
 
